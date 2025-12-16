@@ -1,0 +1,14 @@
+html {
+  font-size: 13px;
+}
+
+/* 针对 Webkit 浏览器 (Chrome, Safari, Edge) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* 隐藏 Webkit 浏览器的滚动条 */
+}
+
+/* 针对 Firefox 浏览器 */
+.scrollbar-hide {
+  scrollbar-width: none; /* 隐藏 Firefox 的滚动条 */
+  -ms-overflow-style: none; /* 隐藏 IE/Edge 旧版浏览器的滚动条 */
+}
