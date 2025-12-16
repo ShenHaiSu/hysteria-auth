@@ -1,0 +1,19 @@
+{
+  "name": "back-end",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#core/*": "./src/core/*",
+    "#db/*": "./src/db/*",
+    "#modules/*": "./src/modules/*",
+    "#users/*": "./src/modules/users/*",
+    "#health/*": "./src/modules/health/*",
+    "#utils/*": "./src/utils/*"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "start": "bun run src/index.ts",
+    "migrate": "bun run src/db/migrator.ts"
+  }
+}

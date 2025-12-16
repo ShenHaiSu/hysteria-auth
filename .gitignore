@@ -3,6 +3,7 @@
 
 # 后端
 /backEnd/node_modules
+/backEnd/dbSet
 
 # 前端
 /frontend/node_modules
