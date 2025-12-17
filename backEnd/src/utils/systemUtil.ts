@@ -46,9 +46,10 @@ export function log(
   fields: Record<string, unknown> = {}
 ): void {
   const file = resolveDailyLogPath();
-  const line = `[${level}] ${formatDateTime(new Date())} | ${message} | ${formatFields(fields)}\n`;
+  const line = `[${level}] ${formatDateTime(new Date())} | ${message} | ${formatFields(fields)}`;
   try {
-    fs.appendFileSync(file, line, { encoding: "utf-8" });
+    fs.appendFileSync(file, line + "\n", { encoding: "utf-8" });
+    console.log(line);
   } catch (err) {
     // 降级输出到控制台
     console.error("[log_fallback]", line, err);
