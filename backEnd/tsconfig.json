@@ -6,15 +6,9 @@
     "strict": true,
     "noEmit": true,
     "types": ["bun-types", "@types/bun", "node"],
-    "baseUrl": "./",
     "skipLibCheck": true,
     "paths": {
-      "#core/*": ["src/core/*"],
-      "#db/*": ["src/db/*"],
-      "#modules/*": ["src/modules/*"],
-      "#users/*": ["src/modules/users/*"],
-      "#health/*": ["src/modules/health/*"],
-      "#utils/*": ["src/utils/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts"]

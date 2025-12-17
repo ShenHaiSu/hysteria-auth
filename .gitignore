@@ -4,6 +4,8 @@
 # 后端
 /backEnd/node_modules
 /backEnd/dbSet
+/backEnd/logs/*.log
 
 # 前端
 /frontend/node_modules
+

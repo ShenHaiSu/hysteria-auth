@@ -1,4 +1,4 @@
-import { corsHeaders, HttpContext, json, parseQuery, text } from "#core/http";
+import { corsHeaders, HttpContext, json, parseQuery, text } from "@/core/http";
 
 export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS";
 

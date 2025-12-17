@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { createUser, deleteUser, getUser, listUsers, updateUser } from "#users/repository";
+import { createUser, deleteUser, getUser, listUsers, updateUser } from "@/modules/users/repository";
 
 /**
  * 用户服务：聚合仓库能力，便于扩展验证、事件等

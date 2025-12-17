@@ -1,4 +1,4 @@
-import { getDb } from "#db/connection";
+import { getDb } from "@/db/connection";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";

@@ -1,11 +1,11 @@
-import { Router } from "#core/router";
-import { json } from "#core/http";
-import { getDb, closeDb } from "#db/connection";
-import { runMigrations } from "#db/migrator";
-import { healthRoutes } from "#health/routes";
-import { userRoutes } from "#users/routes";
-import { compose, createLoggingMiddleware } from "#core/middleware";
-import { createStaticMiddleware } from "#core/static";
+import { Router } from "@/core/router";
+import { json } from "@/core/http";
+import { getDb, closeDb } from "@/db/connection";
+import { runMigrations } from "@/db/migrator";
+import { healthRoutes } from "@/modules/health/routes";
+import { userRoutes } from "@/modules/users/routes";
+import { compose, createLoggingMiddleware } from "@/core/middleware";
+import { createStaticMiddleware } from "@/core/static";
 
 /**
  * 构建并启动 HTTP 服务

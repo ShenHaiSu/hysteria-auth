@@ -1,4 +1,4 @@
-import { corsHeaders } from "#core/http";
+import { corsHeaders } from "@/core/http";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";

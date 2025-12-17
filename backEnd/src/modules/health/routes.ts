@@ -1,5 +1,5 @@
-import { json } from "#core/http";
-import type { Route } from "#core/router";
+import { json } from "@/core/http";
+import type { Route } from "@/core/router";
 
 /**
  * 健康检查路由
