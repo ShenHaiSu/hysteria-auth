@@ -4,6 +4,7 @@ import { getDb, closeDb } from "@/db/connection";
 import { runMigrations } from "@/db/migrator";
 import { healthRoutes } from "@/modules/health/routes";
 import { userRoutes } from "@/modules/users/routes";
+import { statusRoutes } from "@/modules/status/routes";
 import { compose, createLoggingMiddleware } from "@/core/middleware";
 import { createStaticMiddleware } from "@/core/static";
 
@@ -20,6 +21,7 @@ async function main() {
   router.setNotFound(() => json({ message: "Route Not Found" }, 404));
   router.registerAll(healthRoutes(), "/api");
   router.registerAll(userRoutes(), "/api");
+  router.registerAll(statusRoutes(), "/api");
 
   // 读取端口配置
   const port = Number(process.env.PORT ?? 5172);
@@ -32,7 +34,10 @@ async function main() {
      * @param req 请求对象
      * @returns 响应对象
      */
-    fetch: compose([createLoggingMiddleware(), createStaticMiddleware()], (req) => router.handle(req)),
+    fetch: (req, srv) =>
+      compose([createLoggingMiddleware(), createStaticMiddleware()], (innerReq, innerSrv) =>
+        router.handle(innerReq, innerSrv)
+      )(req, srv),
     /**
      * 关闭钩子：释放资源
      */

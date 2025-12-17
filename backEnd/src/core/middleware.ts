@@ -1,8 +1,8 @@
 import { corsHeaders } from "@/core/http";
-import { formatDateTime } from "@/utils/dateUtil";
 import { log } from "@/utils/systemUtil";
+import type { Server } from "bun";
 
-export type FetchHandler = (req: Request) => Promise<Response> | Response;
+export type FetchHandler = (req: Request, server?: Server<any>) => Promise<Response> | Response;
 export type Middleware = (next: FetchHandler) => FetchHandler;
 
 /**
@@ -20,12 +20,12 @@ export function compose(middlewares: Middleware[], handler: FetchHandler): Fetch
  * @returns 日志中间件
  */
 export function createLoggingMiddleware(): Middleware {
-  return (next) => async (req) => {
+  return (next) => async (req, server) => {
     const start = Date.now();
     const url = new URL(req.url);
     let res: Response;
     try {
-      res = await next(req);
+      res = await next(req, server);
     } catch (err) {
       const dur = Date.now() - start;
       log("ERROR", "req_error", {
@@ -34,7 +34,7 @@ export function createLoggingMiddleware(): Middleware {
         query: url.search,
         duration_ms: dur,
         error: (err as Error)?.message ?? String(err),
-        ip: resolveClientIp(req),
+        ip: resolveClientIp(req, server),
       });
       throw err;
     }
@@ -48,11 +48,9 @@ export function createLoggingMiddleware(): Middleware {
     log("INFO", "req", {
       method: req.method,
       status: res.status,
+      ip: resolveClientIp(req, server),
       path: url.pathname + url.search,
       duration_ms: duration,
-      // ua: req.headers.get("user-agent") ?? "",
-      // time: formatDateTime(new Date()),
-      // ip: resolveClientIp(req),
     });
     return new Response(res.body, { status: res.status, headers: merged });
   };
@@ -63,7 +61,7 @@ export function createLoggingMiddleware(): Middleware {
  * @param req 请求对象
  * @returns 客户端 IP 字符串（可能为空）
  */
-function resolveClientIp(req: Request): string {
+function resolveClientIp(req: Request, server?: Server<any>): string {
   const xf = req.headers.get("x-forwarded-for");
   if (xf && xf.length > 0) {
     const first = xf.split(",")[0].trim();
@@ -80,5 +78,6 @@ function resolveClientIp(req: Request): string {
   if (cf && cf.trim()) return cf.trim();
   const cip = req.headers.get("x-client-ip");
   if (cip && cip.trim()) return cip.trim();
-  return "";
+  const addr = server?.requestIP(req)?.address ?? "";
+  return addr;
 }

@@ -1,11 +1,5 @@
 import type { Database } from "bun:sqlite";
-
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  created_at: string;
-}
+import type { User } from "@/composable/users/User";
 
 /**
  * 查询全部用户

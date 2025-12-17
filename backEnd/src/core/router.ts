@@ -1,4 +1,5 @@
 import { corsHeaders, HttpContext, json, parseQuery, text } from "@/core/http";
+import type { Server } from "bun";
 
 export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS";
 
@@ -25,10 +26,7 @@ function tokenize(path: string): string[] {
  * @param actual 实际路径段数组
  * @returns 是否匹配与参数结果
  */
-function matchSegments(
-  template: string[],
-  actual: string[]
-): { matched: boolean; params: Record<string, string> } {
+function matchSegments(template: string[], actual: string[]): { matched: boolean; params: Record<string, string> } {
   if (template.length !== actual.length) {
     return { matched: false, params: {} };
   }
@@ -93,9 +91,10 @@ export class Router {
    * @param req Request 对象
    * @returns Response 对象
    */
-  async handle(req: Request): Promise<Response> {
+  async handle(req: Request, server?: Server<any>): Promise<Response> {
     const url = new URL(req.url);
     const origin = req.headers.get("origin");
+    const ipAddr = server?.requestIP(req)?.address ?? "";
 
     // 预检请求处理
     if (req.method === "OPTIONS") {
@@ -112,6 +111,7 @@ export class Router {
         url,
         params: result.params,
         query: parseQuery(url),
+        ip: ipAddr,
       };
       try {
         const res = await route.handler(ctx);
@@ -133,6 +133,7 @@ export class Router {
       url,
       params: {},
       query: parseQuery(url),
+      ip: ipAddr,
     });
   }
 }

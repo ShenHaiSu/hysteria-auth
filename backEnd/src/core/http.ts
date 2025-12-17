@@ -5,11 +5,7 @@
  * @param headers 额外的响应头
  * @returns Response 对象
  */
-export function json(
-  data: unknown,
-  status = 200,
-  headers: Record<string, string> = {}
-): Response {
+export function json(data: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -26,11 +22,7 @@ export function json(
  * @param headers 额外的响应头
  * @returns Response 对象
  */
-export function text(
-  text: string,
-  status = 200,
-  headers: Record<string, string> = {}
-): Response {
+export function text(text: string, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(text, {
     status,
     headers: {
@@ -60,6 +52,7 @@ export interface HttpContext {
   url: URL;
   params: Record<string, string>;
   query: Query;
+  ip?: string;
 }
 
 /**
@@ -92,4 +85,3 @@ export function corsHeaders(origin: string | null): Record<string, string> {
     "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
   };
 }
-

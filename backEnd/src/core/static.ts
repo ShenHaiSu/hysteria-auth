@@ -2,6 +2,7 @@ import { corsHeaders } from "@/core/http";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
+import type { Server } from "bun";
 
 /**
  * 解析静态资源根目录绝对路径
@@ -94,10 +95,11 @@ export async function tryServeStatic(req: Request): Promise<Response | null> {
  * @returns 静态资源中间件
  */
 export function createStaticMiddleware() {
-  return (next: (req: Request) => Promise<Response> | Response) => async (req: Request) => {
+  return (next: (req: Request, server?: Server<any>) => Promise<Response> | Response) =>
+    async (req: Request, server?: Server<any>) => {
     const res = await tryServeStatic(req);
     if (res) return res;
-    return next(req);
+    return next(req, server);
   };
 }
 
