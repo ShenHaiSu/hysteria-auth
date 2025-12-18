@@ -12,10 +12,13 @@ ALTER TABLE users ADD COLUMN register_ip TEXT;
 ALTER TABLE users ADD COLUMN last_login_ip TEXT;
 ALTER TABLE users ADD COLUMN register_ts INTEGER DEFAULT (strftime('%s','now'));
 ALTER TABLE users ADD COLUMN last_login_ts INTEGER;
-ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1;
+ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 0;
 ALTER TABLE users ADD COLUMN proxy_expire_ts INTEGER;
 ALTER TABLE users ADD COLUMN updated_at TEXT;
+ALTER TABLE users ADD COLUMN permission TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_last_login_ts ON users(last_login_ts);
 CREATE INDEX IF NOT EXISTS idx_users_proxy_expire_ts ON users(proxy_expire_ts);
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
+CREATE INDEX IF NOT EXISTS idx_users_permission ON users(permission);
 
