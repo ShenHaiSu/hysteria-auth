@@ -2,9 +2,11 @@ import { Router } from "@/core/router";
 import { json } from "@/core/http";
 import { getDb, closeDb } from "@/db/connection";
 import { runMigrations } from "@/db/migrator";
-import { healthRoutes } from "@/modules/health/routes";
+// import { healthRoutes } from "@/modules/health/routes";
 import { userRoutes } from "@/modules/users/routes";
 import { statusRoutes } from "@/modules/status/routes";
+import { authRoutes } from "@/modules/auth/routes";
+import { nodeRoutes } from "@/modules/nodes/routes";
 import { compose, createLoggingMiddleware } from "@/core/middleware";
 import { createStaticMiddleware } from "@/core/static";
 
@@ -19,9 +21,11 @@ async function main() {
   // 注册路由
   const router = new Router();
   router.setNotFound(() => json({ message: "Route Not Found" }, 404));
-  router.registerAll(healthRoutes(), "/api");
+  // router.registerAll(healthRoutes(), "/api");
   router.registerAll(userRoutes(), "/api");
   router.registerAll(statusRoutes(), "/api");
+  router.registerAll(authRoutes(), "/api");
+  router.registerAll(nodeRoutes(), "/api");
 
   // 读取端口配置
   const port = Number(process.env.PORT ?? 5172);

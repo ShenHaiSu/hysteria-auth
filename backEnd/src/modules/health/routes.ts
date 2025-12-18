@@ -1,3 +1,7 @@
+/**
+ * 演示使用, 不进行实际路由的挂载
+ */
+
 import { json } from "@/core/http";
 import type { Route } from "@/core/router";
 
