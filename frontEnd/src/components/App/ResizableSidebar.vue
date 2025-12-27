@@ -2,14 +2,14 @@
   <aside
     class="relative shrink-0 border-r border-surface-200 bg-surface-0 min-h-screen overflow-hidden"
     :class="[
-      isDragging ? 'cursor-col-resize select-none' : 'transition-[width] duration-300 ease-in-out'
+      isDragging ? 'cursor-col-resize select-none' : 'transition-[width] duration-300 ease-in-out',
     ]"
     :style="{ width: width + 'px' }"
   >
     <!-- 顶部标题栏 -->
     <div class="flex items-center justify-between px-4 py-3 border-b border-surface-100 h-11.25">
-      <span 
-        v-show="width > COLLAPSED_WIDTH" 
+      <span
+        v-show="width > COLLAPSED_WIDTH"
         class="text-sm font-semibold text-surface-900 tracking-tight whitespace-nowrap overflow-hidden"
       >
         应用导航
@@ -20,19 +20,19 @@
         :class="{ 'w-full': width <= COLLAPSED_WIDTH }"
         title="切换侧边栏"
       >
-        <i :class="['pi', width <= COLLAPSED_WIDTH ? 'pi-chevron-right' : 'pi-chevron-left']" style="font-size: 0.875rem"></i>
+        <i
+          :class="['pi', width <= COLLAPSED_WIDTH ? 'pi-chevron-right' : 'pi-chevron-left']"
+          style="font-size: 0.875rem"
+        ></i>
       </button>
     </div>
 
     <!-- 菜单内容区域 -->
-    <div 
+    <div
       class="overflow-y-auto h-[calc(100vh-45px)] px-2 py-2 custom-scrollbar transition-opacity duration-200"
       :class="{ 'opacity-0 pointer-events-none': width <= COLLAPSED_WIDTH }"
     >
-      <PanelMenu
-        :model="sidebarMenuModel"
-        class="sidebar-menu"
-      />
+      <PanelMenu :model="sidebarMenuModel" class="sidebar-menu" />
     </div>
 
     <!-- 拖拽手柄 -->
@@ -43,9 +43,7 @@
     >
       <div
         class="h-full w-full transition-colors duration-200"
-        :class="[
-          isDragging ? 'bg-primary-500' : 'bg-transparent group-hover:bg-surface-300'
-        ]"
+        :class="[isDragging ? 'bg-primary-500' : 'bg-transparent group-hover:bg-surface-300']"
       />
     </div>
   </aside>
@@ -102,11 +100,11 @@ const onMouseDown = (e: MouseEvent): void => {
   isDragging.value = true
   startX.value = e.clientX
   startWidth.value = width.value
-  
+
   // 改变全局鼠标样式，防止拖拽过程中鼠标闪烁
   document.body.style.cursor = 'col-resize'
   document.body.style.userSelect = 'none'
-  
+
   window.addEventListener('mousemove', onMouseMove)
   window.addEventListener('mouseup', onMouseUp)
 }
@@ -117,10 +115,10 @@ const onMouseDown = (e: MouseEvent): void => {
  */
 const onMouseMove = (e: MouseEvent): void => {
   if (!isDragging.value) return
-  
+
   const delta = e.clientX - startX.value
   const targetWidth = startWidth.value + delta
-  
+
   // 使用限制函数确保宽度在合法范围内
   width.value = clampWidth(targetWidth)
 }
@@ -130,11 +128,11 @@ const onMouseMove = (e: MouseEvent): void => {
  */
 const onMouseUp = (): void => {
   isDragging.value = false
-  
+
   // 恢复全局样式
   document.body.style.cursor = ''
   document.body.style.userSelect = ''
-  
+
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('mouseup', onMouseUp)
 }

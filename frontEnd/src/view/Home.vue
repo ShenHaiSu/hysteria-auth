@@ -22,10 +22,10 @@
     </div>
 
     <!-- debug展示的 -->
-    <div class="mt-8">
+    <!-- <div class="mt-8">
       <Button label="测试按钮" icon="pi pi-check" />
       <DatePicker v-model="dateData" show-button-bar class="ml-4" />
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -35,11 +35,11 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
-import DatePicker from 'primevue/datepicker'
+// import DatePicker from 'primevue/datepicker'
 
 const authStore = useAuthStore()
 const router = useRouter()
-const dateData = ref<Date>(new Date())
+// const dateData = ref<Date>(new Date())
 const isLoggingOut = ref(false)
 
 // #region 逻辑处理 (Logic)
