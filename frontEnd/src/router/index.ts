@@ -1,8 +1,21 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { authGuard } from '@/router/middleware/auth'
+import loginRoute from '@/router/module/login'
+import { homeRoute } from '@/router/module/home'
 
+// #region 路由实例配置
+/**
+ * 创建并配置路由实例
+ */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [],
+  routes: [homeRoute, loginRoute],
 })
+
+/**
+ * 挂载全局前置守卫
+ */
+router.beforeEach(authGuard)
+// #endregion
 
 export default router

@@ -1,20 +1,33 @@
 <template>
-  <div class="flex min-h-screen w-full">
-    <ResizableSidebar />
-    <main class="flex-1 overflow-auto p-2">
-      <p class="text-2xl">APP.vue</p>
-      <Button label="test" icon="pi pi-check" />
-      <DatePicker v-model="dateData" show-button-bar />
-    </main>
-  </div>
+  <RouterView />
 </template>
 
 <script setup lang="ts">
-import { Button, DatePicker } from 'primevue'
-import { ref } from 'vue'
-import ResizableSidebar from '@/components/ResizableSidebar.vue'
+import { onMounted } from 'vue'
+import { RouterView } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const dateData = ref<Date>(new Date())
+const authStore = useAuthStore()
+
+onMounted(async () => {
+  // #region 初始化获取用户信息
+  // 如果本地有 token，尝试获取用户信息并挂载到 store
+  if (authStore.token) {
+    try {
+      await authStore.fetchMe()
+    } catch (error) {
+      console.error('初始化获取用户信息失败:', error)
+    }
+  }
+  // #endregion
+})
 </script>
 
-<style scoped></style>
+<style>
+/* 全局样式 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--p-font-family);
+}
+</style>

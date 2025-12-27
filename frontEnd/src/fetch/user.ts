@@ -1,14 +1,7 @@
 import client from '@/fetch/client';
-import type { UserInfo, UserListItem, UserSaveRequest, SuccessResponse } from '@/composable/user';
+import type { UserListItem, UserSaveRequest, SuccessResponse } from '@/composable/user';
 
-/**
- * 获取当前登录用户的基础信息
- * @returns 用户基础信息
- */
-export function getMe(): Promise<UserInfo> {
-  return client.get('/users/me');
-}
-
+// #region 用户管理接口
 /**
  * 管理员查询用户列表
  * @returns 用户列表
@@ -53,3 +46,4 @@ export function updateUser(id: number, data: UserSaveRequest): Promise<UserListI
 export function deleteUser(id: number): Promise<SuccessResponse> {
   return client.delete(`/users/${id}`);
 }
+// #endregion
