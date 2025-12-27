@@ -1,13 +1,11 @@
 import type { Database } from "bun:sqlite";
-import {
-  findActiveNodeServerByIp,
-  findActiveUserByProxyPassword,
-  findUserForLogin,
-  updateLoginAudit,
-  getUserInfoById,
-} from "./repository";
 import type { ActiveUser, AuthRequest, AuthResponse, LoginRequest, LoginResponse, AuthUserInfo } from "@/composable/auth/Auth";
-import { getBearerToken, signToken, verifyToken } from "./token";
+import { findActiveNodeServerByIp } from "@/modules/auth/repository";
+import { findActiveUserByProxyPassword } from "@/modules/auth/repository";
+import { findUserForLogin } from "@/modules/auth/repository";
+import { updateLoginAudit } from "@/modules/auth/repository";
+import { getUserInfoById } from "@/modules/auth/repository";
+import { getBearerToken, signToken, verifyToken } from "@/modules/auth/token";
 
 /**
  * 授权服务：校验节点服务器与用户代理密码
@@ -83,11 +81,7 @@ export class AuthService {
     const user = findUserForLogin(this.db, body.username, body.login_password_md5);
     if (!user) return null;
     updateLoginAudit(this.db, user.id, ip);
-    const token = signToken(
-      { uid: user.id, username: user.username, permission: user.permission },
-      this.getSecret(),
-      2 * 60 * 60
-    );
+    const token = signToken({ uid: user.id, username: user.username, permission: user.permission }, this.getSecret(), 2 * 60 * 60);
     return { token, user };
   }
 

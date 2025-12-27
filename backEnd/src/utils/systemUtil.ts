@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
-import { formatDateTime, formatYMD } from "./dateUtil";
-import { formatFields } from "./stringUtil";
+import { formatDateTime, formatYMD } from "@/utils/dateUtil";
+import { formatFields } from "@/utils/stringUtil";
 
 /**
  * 解析项目根目录（backEnd）绝对路径

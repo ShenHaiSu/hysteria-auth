@@ -1,6 +1,6 @@
 import type { Route } from "@/core/router";
 import { json } from "@/core/http";
-import { StatusService } from "./service";
+import { StatusService } from "@/modules/status/service";
 
 // #region 路由定义：/status/server 与 /status/client
 /**

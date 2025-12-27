@@ -1,7 +1,7 @@
 import type { Route } from "@/core/router";
 import { json, parseJson } from "@/core/http";
 import { getDb } from "@/db/connection";
-import { NodeService } from "./service";
+import { NodeService } from "@/modules/nodes/service";
 import { AuthService } from "@/modules/auth/service";
 
 /**
@@ -16,6 +16,8 @@ export function nodeRoutes(): Route[] {
       method: "GET",
       path: "/nodes",
       handler: ({ req, query }) => {
+        const session = auth.verifyRequestToken(req);
+        if (!session) return json({ message: "Unauthorized" }, 401);
         const filters = {
           server_group: typeof query.server_group === "string" ? query.server_group : undefined,
           ip_address: typeof query.ip_address === "string" ? query.ip_address : undefined,
@@ -71,6 +73,9 @@ export function nodeRoutes(): Route[] {
       method: "DELETE",
       path: "/nodes/:id",
       handler: ({ req, params }) => {
+        const session = auth.verifyRequestToken(req);
+        if (!session) return json({ message: "Unauthorized" }, 401);
+        if (session.permission !== "admin") return json({ message: "Forbidden" }, 403);
         const id = Number(params.id);
         const ok = service.remove(req, id);
         if (!ok) return json({ message: "Forbidden" }, 403);

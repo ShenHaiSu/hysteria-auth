@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 import type { NodeServer, NodeFilters, ProxyConfigItem } from "@/composable/nodes/NodeServer";
-import { listNodes, createNode, updateNode, deleteNode, listActiveProxyConfig } from "./repository";
+import { listNodes, createNode, updateNode, deleteNode, listActiveProxyConfig } from "@/modules/nodes/repository";
 import { verifyToken } from "@/modules/auth/token";
 
 export type Role = "admin" | "user";

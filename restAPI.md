@@ -221,7 +221,7 @@ const result = await res.json();
 ### GET /api/nodes
 - 路径：`/api/nodes`
 - 方法：`GET`
-- 权限：公开（无令牌亦可）；若使用普通用户角色（缺省或携带 `user` 令牌），默认附加 `is_active=1` 过滤；携带 `admin` 令牌可查询全部
+- 权限：需要令牌（任意角色）；使用普通用户角色携带 `user` 令牌时，默认附加 `is_active=1` 过滤；携带 `admin` 令牌可查询全部
 - 作用：查询代理节点列表
 - 原理：按筛选条件拼接SQL；普通用户默认附加is_active=1
 - 请求体结构：无；支持查询参数：
@@ -254,7 +254,9 @@ expire_to=unixSec
 ```
 - fetch 请求示范：
 ```js
-const res = await fetch("/api/nodes?server_group=groupA&is_active=1");
+const res = await fetch("/api/nodes?server_group=groupA&is_active=1", {
+  headers: { "authorization": `Bearer ${token}` }
+});
 const nodes = await res.json();
 ```
 

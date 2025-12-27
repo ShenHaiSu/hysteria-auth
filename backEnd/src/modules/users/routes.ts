@@ -1,7 +1,7 @@
 import type { Route } from "@/core/router";
 import { json, parseJson } from "@/core/http";
 import { getDb } from "@/db/connection";
-import { UserService } from "./service";
+import { UserService } from "@/modules/users/service";
 import { AuthService } from "@/modules/auth/service";
 
 /**
