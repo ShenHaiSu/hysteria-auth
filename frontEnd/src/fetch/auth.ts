@@ -1,5 +1,11 @@
-import client from '@/fetch/client';
-import type { LoginRequest, LoginResponse, AuthCheckRequest, AuthCheckResponse, AuthUser } from '@/composable/auth';
+import client from '@/fetch/client'
+import type {
+  LoginRequest,
+  LoginResponse,
+  AuthCheckRequest,
+  AuthCheckResponse,
+  AuthUser,
+} from '@/composable/auth'
 
 // #region 认证相关接口
 /**
@@ -8,7 +14,7 @@ import type { LoginRequest, LoginResponse, AuthCheckRequest, AuthCheckResponse, 
  * @returns 登录响应数据
  */
 export function login(data: LoginRequest): Promise<LoginResponse> {
-  return client.post('/login', data);
+  return client.post('/login', data)
 }
 
 /**
@@ -16,7 +22,15 @@ export function login(data: LoginRequest): Promise<LoginResponse> {
  * @returns 用户基础信息
  */
 export function getMe(): Promise<AuthUser> {
-  return client.get('/users/me');
+  return client.get('/users/me')
+}
+
+/**
+ * 用户退出登录
+ * @returns 退出结果
+ */
+export function logout(): Promise<{ ok: boolean }> {
+  return client.post('/logout')
 }
 // #endregion
 
@@ -27,6 +41,6 @@ export function getMe(): Promise<AuthUser> {
  * @returns 校验响应数据
  */
 export function authCheck(data: AuthCheckRequest): Promise<AuthCheckResponse> {
-  return client.post('/auth', data);
+  return client.post('/auth', data)
 }
 // #endregion

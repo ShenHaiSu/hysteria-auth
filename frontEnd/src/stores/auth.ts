@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { login as apiLogin, getMe as apiGetMe } from '@/fetch/auth'
+import { login as apiLogin, getMe as apiGetMe, logout as apiLogout } from '@/fetch/auth'
 import type { LoginRequest, AuthUser } from '@/composable/auth'
 
 /**
@@ -59,10 +59,14 @@ export const useAuthStore = defineStore('auth', () => {
    * 用户登出
    * 清理本地存储的令牌和内存中的用户信息
    */
-  function logout() {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('token')
+  async function logout() {
+    try {
+      await apiLogout()
+    } finally {
+      token.value = null
+      user.value = null
+      localStorage.removeItem('token')
+    }
   }
   // #endregion
 

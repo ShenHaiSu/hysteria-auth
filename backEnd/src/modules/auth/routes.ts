@@ -15,6 +15,7 @@ import type { AuthRequest, LoginRequest } from "@/composable/auth/Auth";
  */
 export function authRoutes(): Route[] {
   const service = new AuthService(getDb());
+  // #region 认证路由 (简体中文说明：处理授权、登录及退出登录)
   return [
     {
       method: "POST",
@@ -56,5 +57,17 @@ export function authRoutes(): Route[] {
         return json(result);
       },
     },
+    {
+      method: "POST",
+      path: "/logout",
+      /**
+       * 退出登录路由
+       * @returns 响应 JSON { ok: true }
+       */
+      handler: async () => {
+        return json({ ok: true });
+      },
+    },
   ];
+  // #endregion
 }
