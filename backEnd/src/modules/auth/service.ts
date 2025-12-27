@@ -1,10 +1,16 @@
 import type { Database } from "bun:sqlite";
 import type { ActiveUser, AuthRequest, AuthResponse, LoginRequest, LoginResponse, AuthUserInfo } from "@/composable/auth/Auth";
-import { findActiveNodeServerByIp } from "@/modules/auth/repository";
-import { findActiveUserByProxyPassword } from "@/modules/auth/repository";
-import { findUserForLogin } from "@/modules/auth/repository";
-import { updateLoginAudit } from "@/modules/auth/repository";
-import { getUserInfoById } from "@/modules/auth/repository";
+import {
+  findActiveNodeServerByIp,
+  findActiveUserByProxyPassword,
+  findUserForLogin,
+  updateLoginAudit,
+  getUserInfoById,
+  countUsers,
+  createInitialAdmin,
+  findUserWithPasswordByUsername,
+  updateUserPassword,
+} from "@/modules/auth/repository";
 import { getBearerToken, signToken, verifyToken } from "@/modules/auth/token";
 
 /**
@@ -71,6 +77,24 @@ export class AuthService {
     return { ok: true, id: this.computeIdentifier(user) };
   }
 
+  // #region 认证与登录逻辑 (简体中文说明：处理用户授权、登录及初始化)
+  /**
+   * 初始化默认用户
+   * 如果数据库中没有用户，则创建一个随机用户名的管理员，密码标记为 'empty'
+   */
+  initDefaultUser(): void {
+    const count = countUsers(this.db);
+    if (count === 0) {
+      const randomName = "admin_" + Math.random().toString(36).substring(2, 8);
+      const randomProxyPw = Math.random().toString(36).substring(2, 12);
+      createInitialAdmin(this.db, randomName, randomProxyPw);
+      console.log(`[auth] No users found. Created initial admin:`);
+      console.log(`[auth] Username: ${randomName}`);
+      console.log(`[auth] Password: empty (will be updated on first login)`);
+      console.log(`[auth] Proxy Password: ${randomProxyPw}`);
+    }
+  }
+
   /**
    * 执行登录逻辑并签发令牌
    * @param ip 登录来源 IP
@@ -78,12 +102,26 @@ export class AuthService {
    * @returns 登录响应（令牌与用户信息），失败抛出错误
    */
   login(ip: string, body: LoginRequest): LoginResponse | null {
-    const user = findUserForLogin(this.db, body.username, body.login_password_md5);
+    // 1. 尝试常规登录
+    let user = findUserForLogin(this.db, body.username, body.login_password_md5);
+
+    // 2. 如果常规登录失败，检查是否为 'empty' 密码初始化逻辑
+    if (!user) {
+      const existingUser = findUserWithPasswordByUsername(this.db, body.username);
+      if (existingUser && existingUser.login_password_md5 === "empty") {
+        // 更新密码并重新获取用户信息
+        updateUserPassword(this.db, existingUser.id, body.login_password_md5);
+        console.log(`[auth] Initial password updated for user: ${body.username}`);
+        user = findUserForLogin(this.db, body.username, body.login_password_md5);
+      }
+    }
+
     if (!user) return null;
     updateLoginAudit(this.db, user.id, ip);
     const token = signToken({ uid: user.id, username: user.username, permission: user.permission }, this.getSecret(), 2 * 60 * 60);
     return { token, user };
   }
+  // #endregion
 
   /**
    * 解析并校验请求头中的 Bearer 令牌

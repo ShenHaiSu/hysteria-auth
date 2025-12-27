@@ -6,6 +6,7 @@ import { runMigrations } from "@/db/migrator";
 import { userRoutes } from "@/modules/users/routes";
 import { statusRoutes } from "@/modules/status/routes";
 import { authRoutes } from "@/modules/auth/routes";
+import { AuthService } from "@/modules/auth/service";
 import { nodeRoutes } from "@/modules/nodes/routes";
 import { compose, createLoggingMiddleware } from "@/core/middleware";
 import { createStaticMiddleware } from "@/core/static";
@@ -15,8 +16,13 @@ import { createStaticMiddleware } from "@/core/static";
  */
 async function main() {
   // 初始化数据库并执行迁移
-  getDb();
+  const db = getDb();
   runMigrations();
+
+  // #region 启动后初始化逻辑 (简体中文说明：检查并初始化默认管理员)
+  const authService = new AuthService(db);
+  authService.initDefaultUser();
+  // #endregion
 
   // 注册路由
   const router = new Router();
@@ -39,9 +45,7 @@ async function main() {
      * @returns 响应对象
      */
     fetch: (req, srv) =>
-      compose([createLoggingMiddleware(), createStaticMiddleware()], (innerReq, innerSrv) =>
-        router.handle(innerReq, innerSrv)
-      )(req, srv),
+      compose([createLoggingMiddleware(), createStaticMiddleware()], (innerReq, innerSrv) => router.handle(innerReq, innerSrv))(req, srv),
     /**
      * 关闭钩子：释放资源
      */
