@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { authGuard } from '@/router/middleware/auth'
 import loginRoute from '@/router/module/login'
 import { homeRoute } from '@/router/module/home'
+import { userRoutes } from '@/router/module/user'
 
 // #region 路由实例配置
 /**
@@ -9,7 +10,7 @@ import { homeRoute } from '@/router/module/home'
  */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [homeRoute, loginRoute],
+  routes: [homeRoute, loginRoute, userRoutes],
 })
 
 /**

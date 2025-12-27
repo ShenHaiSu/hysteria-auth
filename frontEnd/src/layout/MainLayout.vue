@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import ResizableSidebar from '@/components/ResizableSidebar.vue'
+import ResizableSidebar from '@/components/App/ResizableSidebar.vue'
 </script>
 
 <style scoped></style>

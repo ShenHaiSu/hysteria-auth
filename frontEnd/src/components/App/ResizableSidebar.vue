@@ -29,10 +29,56 @@
 
     <!-- 菜单内容区域 -->
     <div
-      class="overflow-y-auto h-[calc(100vh-45px)] px-2 py-2 custom-scrollbar transition-opacity duration-200"
+      class="overflow-y-auto h-[calc(100vh-45px)] px-3 py-4 custom-scrollbar transition-opacity duration-200"
       :class="{ 'opacity-0 pointer-events-none': width <= COLLAPSED_WIDTH }"
     >
-      <PanelMenu :model="sidebarMenuModel" class="sidebar-menu" />
+      <PanelMenu
+        :model="sidebarMenuModel"
+        class="sidebar-menu w-full border-none shadow-none bg-transparent"
+      >
+        <template #item="{ item, props }">
+          <router-link v-if="item.to" v-slot="{ href, navigate, isActive }" :to="item.to" custom>
+            <a
+              :href="href"
+              v-bind="props.action"
+              @click="navigate"
+              class="flex items-center px-3 py-2.5 my-0.5 rounded-lg transition-all duration-200 group no-underline"
+              :class="[
+                isActive
+                  ? 'bg-primary-50 text-primary-600 font-medium shadow-sm'
+                  : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900',
+              ]"
+            >
+              <i
+                :class="[
+                  item.icon,
+                  isActive ? 'text-primary-500' : 'text-surface-400 group-hover:text-surface-600',
+                ]"
+                class="mr-3 text-lg transition-colors duration-200"
+              />
+              <span class="text-sm tracking-tight">{{ item.label }}</span>
+            </a>
+          </router-link>
+
+          <a
+            v-else
+            :href="item.url"
+            :target="item.target"
+            v-bind="props.action"
+            class="flex items-center px-3 py-2.5 my-0.5 rounded-lg text-surface-600 hover:bg-surface-50 hover:text-surface-900 transition-all duration-200 group no-underline cursor-pointer"
+          >
+            <i
+              :class="[item.icon]"
+              class="mr-3 text-lg text-surface-400 group-hover:text-surface-600 transition-colors duration-200"
+            />
+            <span class="text-sm font-semibold tracking-tight">{{ item.label }}</span>
+            <i
+              v-if="item.items"
+              class="pi pi-chevron-down ml-auto text-[10px] text-surface-400 group-hover:text-surface-600 transition-transform duration-200"
+            />
+          </a>
+        </template>
+      </PanelMenu>
     </div>
 
     <!-- 拖拽手柄 -->
@@ -51,8 +97,8 @@
 
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import { PanelMenu } from 'primevue'
-import { sidebarMenuModel } from '@/menu'
+import PanelMenu from 'primevue/panelmenu'
+import { sidebarMenuModel } from '@/asset/menu'
 
 // --- 状态定义 ---
 
@@ -155,39 +201,31 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.sidebar-menu :deep(.p-panelmenu-header-content) {
-  background-color: transparent;
+/* 移除默认的面板样式，使用自定义的布局 */
+.sidebar-menu :deep(.p-panelmenu-panel) {
   border: none;
-  padding: 0.375rem 0.5rem;
-  transition: background-color 0.2s;
-  border-radius: 0.375rem;
+  background: transparent;
 }
 
-.sidebar-menu :deep(.p-panelmenu-header-content:hover) {
-  background-color: var(--p-surface-100);
-}
-
+.sidebar-menu :deep(.p-panelmenu-header-content),
 .sidebar-menu :deep(.p-panelmenu-item-content) {
-  background-color: transparent;
-  border: none;
-  padding: 0.25rem 0.5rem;
-  transition: background-color 0.2s;
-  border-radius: 0.375rem;
+  background: transparent !important;
+  border: none !important;
 }
 
-.sidebar-menu :deep(.p-panelmenu-item-content:hover) {
-  background-color: var(--p-surface-50);
+.sidebar-menu :deep(.p-panelmenu-root-list),
+.sidebar-menu :deep(.p-panelmenu-submenu-list) {
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
 
-.sidebar-menu :deep(.p-panelmenu-header-label),
-.sidebar-menu :deep(.p-panelmenu-item-label) {
-  font-size: 13px;
-  color: var(--p-surface-700);
-}
-
-.sidebar-menu :deep(.p-panelmenu-icon) {
-  color: var(--p-surface-400);
-  font-size: 0.75rem;
+/* 子菜单缩进处理 */
+.sidebar-menu :deep(.p-panelmenu-submenu-list) {
+  margin-left: 1.25rem;
+  border-left: 1px solid var(--p-surface-100);
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 /* 自定义滚动条样式 */

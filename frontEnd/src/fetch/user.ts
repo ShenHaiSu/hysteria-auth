@@ -1,13 +1,14 @@
 import client from '@/fetch/client';
-import type { UserListItem, UserSaveRequest, SuccessResponse } from '@/composable/user';
+import type { UserListItem, UserSaveRequest, SuccessResponse, UserQuery, UserListResponse } from '@/composable/user';
 
 // #region 用户管理接口
 /**
  * 管理员查询用户列表
- * @returns 用户列表
+ * @param params 分页和过滤参数
+ * @returns 用户列表及总数
  */
-export function getUsers(): Promise<UserListItem[]> {
-  return client.get('/users');
+export function getUsers(params?: UserQuery): Promise<UserListResponse> {
+  return client.get('/users', { params });
 }
 
 /**
