@@ -158,7 +158,7 @@ const me = await res.json();
 - 响应体结构：
 
 ```json
-[{ "id": 1, "name": "string", "email": "string", "created_at": "ISO" }]
+[{ "id": 1, "username": "string", "email": "string", "created_at": "ISO" }]
 ```
 
 - fetch 请求示范：
@@ -181,7 +181,7 @@ const list = await res.json();
 - 响应体结构：
 
 ```json
-{ "id": 1, "name": "string", "email": "string", "created_at": "ISO" }
+{ "id": 1, "username": "string", "email": "string", "created_at": "ISO" }
 ```
 
 - fetch 请求示范：
@@ -203,13 +203,13 @@ const user = await res.json();
 - 请求体结构：
 
 ```json
-{ "name": "string", "email": "string" }
+{ "username": "string", "email": "string" }
 ```
 
 - 响应体结构：
 
 ```json
-{ "id": 2, "name": "string", "email": "string", "created_at": "ISO" }
+{ "id": 2, "username": "string", "email": "string", "created_at": "ISO" }
 ```
 
 - fetch 请求示范：
@@ -221,7 +221,7 @@ const res = await fetch("/api/users", {
     "content-type": "application/json",
     authorization: `Bearer ${token}`,
   },
-  body: JSON.stringify({ name: "Bob", email: "bob@example.com" }),
+  body: JSON.stringify({ username: "Bob", email: "bob@example.com" }),
 });
 const created = await res.json();
 ```
@@ -236,13 +236,13 @@ const created = await res.json();
 - 请求体结构：
 
 ```json
-{ "name": "string", "email": "string" }
+{ "username": "string", "email": "string" }
 ```
 
 - 响应体结构：
 
 ```json
-{ "id": 1, "name": "string", "email": "string", "created_at": "ISO" }
+{ "id": 1, "username": "string", "email": "string", "created_at": "ISO" }
 ```
 
 - fetch 请求示范：
@@ -254,7 +254,7 @@ const res = await fetch("/api/users/1", {
     "content-type": "application/json",
     authorization: `Bearer ${token}`,
   },
-  body: JSON.stringify({ name: "Alice", email: "alice@newmail.com" }),
+  body: JSON.stringify({ username: "Alice", email: "alice@newmail.com" }),
 });
 const updated = await res.json();
 ```
