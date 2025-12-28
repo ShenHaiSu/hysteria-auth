@@ -1,136 +1,67 @@
-<!-- 用户数据列表：展示用户信息并处理分页 -->
+<!-- 用户数据列表：根据屏幕宽度切换桌面端表格或移动端卡片视图 -->
 <template>
-  <div class="card">
-    <DataTable
-      :value="users"
+  <div class="space-y-4">
+    <!-- 桌面端视图 -->
+    <UserTableDesktop
+      v-if="!isMobile"
+      :users="users"
       :loading="loading"
-      dataKey="id"
-      responsiveLayout="scroll"
-      stripedRows
-      class="p-datatable-sm"
-      sortMode="single"
-      removableSort
-      rowHover
-    >
-      <template #empty> 未找到用户信息 </template>
-      <template #loading> 正在加载用户数据，请稍候... </template>
+      @edit="$emit('edit', $event)"
+      @delete="$emit('delete', $event)"
+    />
 
-      <Column field="id" header="ID" sortable style="width: 5rem"></Column>
-      <Column field="username" header="用户名" sortable></Column>
-      <Column field="email" header="邮箱" sortable></Column>
-      <Column field="permission" header="权限">
-        <template #body="slotProps">
-          <Tag
-            :value="slotProps.data.permission === 'admin' ? '管理' : '用户'"
-            :severity="slotProps.data.permission === 'admin' ? 'danger' : 'info'"
-          />
-        </template>
-      </Column>
-      <Column field="proxy_password" header="代理密码">
-        <template #body="slotProps">
-          <code
-            class="text-primary font-bold cursor-pointer hover:underline"
-            @click="copyToClipboard(slotProps.data.proxy_password)"
-            v-tooltip.top="'点击复制'"
-          >
-            {{ slotProps.data.proxy_password }}
-          </code>
-        </template>
-      </Column>
-      <Column field="formatted_proxy_expire_at" header="代理到期" sortable></Column>
-      <Column field="status_label" header="状态">
-        <template #body="slotProps">
-          <Tag
-            :value="slotProps.data.status_label"
-            :severity="slotProps.data.is_active ? 'success' : 'secondary'"
-          />
-        </template>
-      </Column>
-      <Column header="登录信息" class="text-sm">
-        <template #body="slotProps">
-          <div class="flex flex-col gap-1">
-            <div class="flex items-center gap-1" v-if="slotProps.data.last_login_ip">
-              <i class="pi pi-map-marker text-xs text-500"></i>
-              <span>{{ slotProps.data.last_login_ip }}</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <i class="pi pi-clock text-xs text-500"></i>
-              <span class="text-500">{{ slotProps.data.formatted_last_login_at }}</span>
-            </div>
-          </div>
-        </template>
-      </Column>
-      <Column field="formatted_created_at" header="创建时间" sortable></Column>
-      
-      <Column header="操作" style="min-width: 8rem">
-        <template #body="slotProps">
-          <div class="flex gap-2">
-            <Button
-              icon="pi pi-pencil"
-              outlined
-              rounded
-              severity="warn"
-              @click="$emit('edit', slotProps.data)"
-              v-tooltip.top="'编辑'"
-            />
-            <Button
-              icon="pi pi-trash"
-              outlined
-              rounded
-              severity="danger"
-              @click="$emit('delete', slotProps.data)"
-              v-tooltip.top="'删除'"
-            />
-          </div>
-        </template>
-      </Column>
-    </DataTable>
+    <!-- 移动端视图 -->
+    <UserTableMobile
+      v-else
+      :users="users"
+      :loading="loading"
+      @edit="$emit('edit', $event)"
+      @delete="$emit('delete', $event)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Button from 'primevue/button';
-import Tag from 'primevue/tag';
-import { useToast } from 'primevue/usetoast';
-import type { UserVO } from '@/composable/user';
+import { ref, onMounted, onUnmounted } from 'vue'
+import type { UserVO } from '@/composable/user'
+import UserTableDesktop from './UserTableDesktop.vue'
+import UserTableMobile from './UserTableMobile.vue'
 
 // #region 定义属性和事件
 defineProps<{
-  users: UserVO[];
-  loading: boolean;
-}>();
+  users: UserVO[]
+  loading: boolean
+}>()
 
-const emit = defineEmits<{
-  (e: 'edit', user: UserVO): void;
-  (e: 'delete', user: UserVO): void;
-}>();
+defineEmits<{
+  (e: 'edit', user: UserVO): void
+  (e: 'delete', user: UserVO): void
+}>()
+// #endregion
 
-const toast = useToast();
+// #region 响应式断点检测
+const isMobile = ref(false)
+let mediaQuery: MediaQueryList | null = null
 
 /**
- * 复制文本到剪切板
- * @param text 要复制的文本
+ * 更新移动端状态
+ * @param e MediaQueryListEvent
  */
-const copyToClipboard = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    toast.add({
-      severity: 'success',
-      summary: '复制成功',
-      detail: '代理密码已复制到剪切板',
-      life: 1000,
-    });
-  } catch (err) {
-    console.error('无法复制文本: ', err);
-    toast.add({
-      severity: 'error',
-      summary: '复制失败',
-      detail: '请手动复制',
-      life: 1000,
-    });
+const updateMatch = (e: MediaQueryListEvent | MediaQueryList) => {
+  isMobile.value = e.matches
+}
+
+onMounted(() => {
+  // 使用 Tailwind 默认的 md 断点 (768px)
+  mediaQuery = window.matchMedia('(max-width: 767px)')
+  isMobile.value = mediaQuery.matches
+  mediaQuery.addEventListener('change', updateMatch)
+})
+
+onUnmounted(() => {
+  if (mediaQuery) {
+    mediaQuery.removeEventListener('change', updateMatch)
   }
-};
+})
 // #endregion
 </script>
