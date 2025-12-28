@@ -1,7 +1,9 @@
 import type { Database } from "bun:sqlite";
+import { networkInterfaces } from "os";
 import type { ActiveUser, AuthRequest, AuthResponse, LoginRequest, LoginResponse, AuthUserInfo } from "@/composable/auth/Auth";
 import {
   findActiveNodeServerByIp,
+  findActiveNodeServerByIps,
   findActiveUserByProxyPassword,
   findUserForLogin,
   updateLoginAudit,
@@ -19,8 +21,52 @@ import { getBearerToken, signToken, verifyToken } from "@/modules/auth/token";
  */
 export class AuthService {
   private db: Database;
+  private static localIps: Set<string> | null = null;
+
   constructor(db: Database) {
     this.db = db;
+    this.initLocalIps();
+  }
+
+  /**
+   * 初始化本地 IP 列表（回环地址及所有网卡 IP）
+   */
+  private initLocalIps(): void {
+    if (AuthService.localIps !== null) return;
+    AuthService.localIps = new Set(["127.0.0.1", "::1", "localhost"]);
+    try {
+      const interfaces = networkInterfaces();
+      for (const name of Object.keys(interfaces)) {
+        for (const net of interfaces[name]!) {
+          AuthService.localIps.add(net.address);
+        }
+      }
+    } catch (err) {
+      console.error("[auth] Failed to get network interfaces:", err);
+    }
+  }
+
+  /**
+   * 判断是否为本地 IP
+   * @param ip 待检测 IP
+   * @returns 是否为本地 IP
+   */
+  isLocalIp(ip: string): boolean {
+    return AuthService.localIps?.has(ip) ?? false;
+  }
+
+  /**
+   * 尝试解析并覆写来源 IP。
+   * 如果是本地 IP，则在 node_server 中查找匹配的服务器 IP。
+   * @param sourceIp 原始来源 IP
+   * @returns 解析后的 IP，如果本地 IP 未找到匹配服务器则返回 null
+   */
+  resolveNodeIp(sourceIp: string): string | null {
+    if (this.isLocalIp(sourceIp)) {
+      const server = findActiveNodeServerByIps(this.db, Array.from(AuthService.localIps!));
+      return server?.ip_address ?? null;
+    }
+    return sourceIp;
   }
 
   /**
@@ -67,13 +113,9 @@ export class AuthService {
    * @returns 授权结果（ok 与 id）
    */
   validate(ip: string, payload: AuthRequest): AuthResponse {
-    if (!this.verifyNodeServer(ip)) {
-      return { ok: false, id: "" };
-    }
+    if (!this.verifyNodeServer(ip)) return { ok: false, id: "" };
     const user = this.findUserByProxyPassword(payload.auth);
-    if (!user) {
-      return { ok: false, id: "" };
-    }
+    if (!user) return { ok: false, id: "" };
     return { ok: true, id: this.computeIdentifier(user) };
   }
 

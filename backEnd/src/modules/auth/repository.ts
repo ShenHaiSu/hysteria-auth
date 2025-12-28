@@ -1,6 +1,8 @@
 import type { Database } from "bun:sqlite";
 import type { ActiveUser, AuthUserInfo } from "@/composable/auth/Auth";
 
+// #region 节点服务器相关
+
 /**
  * 根据来源 IP 判断节点服务器是否处于激活状态
  * @param db 数据库连接
@@ -15,6 +17,28 @@ export function findActiveNodeServerByIp(db: Database, ip: string): number | nul
   const row = stmt.get({ $ip: ip, $now: now }) as { id: number } | undefined;
   return row?.id ?? null;
 }
+
+/**
+ * 根据一组 IP 地址查找首个激活的节点服务器信息
+ * @param db 数据库连接
+ * @param ips IP 地址列表
+ * @returns 匹配到的节点服务器信息 { id, ip_address }，未匹配返回 null
+ */
+export function findActiveNodeServerByIps(db: Database, ips: string[]): { id: number; ip_address: string } | null {
+  const now = Math.floor(Date.now() / 1000);
+  for (const ip of ips) {
+    const stmt = db.query(
+      "SELECT id, ip_address FROM node_server WHERE ip_address = $ip AND is_active = 1 AND (expire_ts IS NULL OR expire_ts = 0 OR expire_ts > $now) LIMIT 1"
+    );
+    const row = stmt.get({ $ip: ip, $now: now }) as { id: number; ip_address: string } | undefined;
+    if (row) return row;
+  }
+  return null;
+}
+
+// #endregion
+
+// #region 用户身份验证
 
 /**
  * 通过用户的代理密码查找激活状态的用户
@@ -47,6 +71,25 @@ export function findUserForLogin(db: Database, username: string, md5: string): A
 }
 
 /**
+ * 查找指定用户名的用户（包含登录密码字段，用于初始化校验）
+ * @param db 数据库连接
+ * @param username 用户名
+ * @returns 用户基础信息及密码或 null
+ */
+export function findUserWithPasswordByUsername(db: Database, username: string): (AuthUserInfo & { login_password_md5: string }) | null {
+  const stmt = db.query(
+    `SELECT id, username, permission, is_active, proxy_expire_ts, last_login_ts, login_password_md5
+     FROM users WHERE username = $u LIMIT 1`
+  );
+  const row = stmt.get({ $u: username }) as (AuthUserInfo & { login_password_md5: string }) | undefined;
+  return row ?? null;
+}
+
+// #endregion
+
+// #region 用户管理与审计
+
+/**
  * 更新用户登录审计信息
  * @param db 数据库连接
  * @param id 用户 ID
@@ -74,7 +117,6 @@ export function countUsers(db: Database): number {
  * @param db 数据库连接
  * @param username 用户名
  * @param proxyPassword 代理密码
- * @param loginPasswordMd5 登录密码 MD5 (此处存为 'empty')
  */
 export function createInitialAdmin(db: Database, username: string, proxyPassword: string): void {
   const stmt = db.query(
@@ -87,21 +129,6 @@ export function createInitialAdmin(db: Database, username: string, proxyPassword
     $proxyPassword: proxyPassword,
     $ts: Math.floor(Date.now() / 1000),
   });
-}
-
-/**
- * 查找指定用户名的用户（包含登录密码字段，用于初始化校验）
- * @param db 数据库连接
- * @param username 用户名
- * @returns 用户基础信息及密码或 null
- */
-export function findUserWithPasswordByUsername(db: Database, username: string): (AuthUserInfo & { login_password_md5: string }) | null {
-  const stmt = db.query(
-    `SELECT id, username, permission, is_active, proxy_expire_ts, last_login_ts, login_password_md5
-     FROM users WHERE username = $u LIMIT 1`
-  );
-  const row = stmt.get({ $u: username }) as (AuthUserInfo & { login_password_md5: string }) | undefined;
-  return row ?? null;
 }
 
 /**
@@ -129,3 +156,5 @@ export function getUserInfoById(db: Database, id: number): AuthUserInfo | null {
   const row = stmt.get({ $id: id }) as AuthUserInfo | undefined;
   return row ?? null;
 }
+
+// #endregion

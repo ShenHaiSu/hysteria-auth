@@ -21,7 +21,8 @@ export function authRoutes(): Route[] {
       method: "POST",
       path: "/auth",
       handler: async ({ req, ip }) => {
-        if (!ip || !service.verifyNodeServer(ip)) {
+        const resolvedIp = ip ? service.resolveNodeIp(ip) : null;
+        if (!resolvedIp || !service.verifyNodeServer(resolvedIp)) {
           return json({ ok: false, id: "" }, 404);
         }
         let body: AuthRequest;
@@ -33,7 +34,7 @@ export function authRoutes(): Route[] {
         if (typeof body.addr !== "string" || typeof body.auth !== "string" || typeof body.tx !== "number") {
           return json({ ok: false, id: "" }, 404);
         }
-        const res = service.validate(ip, body);
+        const res = service.validate(resolvedIp, body);
         return res.ok ? json(res, 200) : json(res, 404);
       },
     },
