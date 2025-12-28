@@ -13,6 +13,7 @@ export function userRoutes(): Route[] {
   const service = new UserService(db);
   const auth = new AuthService(db);
   return [
+    // #region 基础信息与列表
     {
       method: "GET",
       path: "/users/me",
@@ -31,18 +32,26 @@ export function userRoutes(): Route[] {
         return json(service.list());
       },
     },
+    // #endregion
+
+    // #region 获取指定id的用户
     {
       method: "GET",
       path: "/users/:id",
       handler: ({ req, params }) => {
         const session = auth.verifyRequestToken(req);
         if (!session) return json({ message: "Unauthorized" }, 401);
-        if (session.permission !== "admin") return json({ message: "Forbidden" }, 403);
         const id = Number(params.id);
+        if (session.permission !== "admin" && session.uid !== id) {
+          return json({ message: "Forbidden" }, 403);
+        }
         const user = service.get(id);
         return user ? json(user) : json({ message: "Not Found" }, 404);
       },
     },
+    // #endregion
+
+    // #region 创建用户
     {
       method: "POST",
       path: "/users",
@@ -55,6 +64,9 @@ export function userRoutes(): Route[] {
         return json(user, 201);
       },
     },
+    // #endregion 创建用户
+
+    // #region 更新用户
     {
       method: "PUT",
       path: "/users/:id",
@@ -90,6 +102,9 @@ export function userRoutes(): Route[] {
         }
       },
     },
+    // #endregion 更新用户
+
+    // #region 删除用户
     {
       method: "DELETE",
       path: "/users/:id",
@@ -106,5 +121,6 @@ export function userRoutes(): Route[] {
         }
       },
     },
+    // #endregion
   ];
 }
