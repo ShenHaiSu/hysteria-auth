@@ -8,7 +8,12 @@ import { statusRoutes } from "@/modules/status/routes";
 import { authRoutes } from "@/modules/auth/routes";
 import { AuthService } from "@/modules/auth/service";
 import { nodeRoutes } from "@/modules/nodes/routes";
-import { compose, createLoggingMiddleware, createCompressionMiddleware } from "@/core/middleware";
+import { BlacklistService } from "@/modules/blacklist/service";
+import { compose } from "@/core/middleware";
+import { createLoggingMiddleware } from "@/middleware/logging";
+import { createCompressionMiddleware } from "@/middleware/compression";
+import { createRateLimitMiddleware } from "@/middleware/rateLimit";
+import { createUABlockerMiddleware, createHoneypotMiddleware, createSecurityHeadersMiddleware } from "@/middleware/security";
 import { createStaticMiddleware } from "@/core/static";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -24,6 +29,10 @@ async function main() {
   // #region 启动后初始化逻辑 (简体中文说明：检查并初始化默认管理员)
   const authService = new AuthService(db);
   authService.initDefaultUser();
+
+  const blacklistService = new BlacklistService(db);
+  // 每小时清理一次过期的黑名单记录
+  setInterval(() => blacklistService.cronCleanup(), 3600000);
   // #endregion
 
   // #region 证书环境检查 (简体中文说明：检查并创建 cert 目录，配置 SSL 证书)
@@ -76,8 +85,17 @@ async function main() {
      * @returns 响应对象
      */
     fetch: (req, srv) =>
-      compose([createLoggingMiddleware(), createCompressionMiddleware(), createStaticMiddleware()], (innerReq, innerSrv) =>
-        router.handle(innerReq, innerSrv)
+      compose(
+        [
+          createLoggingMiddleware(),
+          createSecurityHeadersMiddleware(),
+          createUABlockerMiddleware(blacklistService),
+          createHoneypotMiddleware(blacklistService),
+          createRateLimitMiddleware(blacklistService, 60000, 100), // 每分钟 100 次请求
+          createCompressionMiddleware(),
+          createStaticMiddleware(),
+        ],
+        (innerReq, innerSrv) => router.handle(innerReq, innerSrv)
       )(req, srv),
     /**
      * 关闭钩子：释放资源
