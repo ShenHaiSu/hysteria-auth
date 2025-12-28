@@ -16,15 +16,5 @@ export const sidebarMenuModel = ref<MenuItem[]>([
     label: '节点管理',
     icon: 'pi pi-server',
     to: '/nodes',
-  },
-  {
-    label: '报表中心',
-    icon: 'pi pi-file',
-    to: '/reports',
-  },
-  {
-    label: '设置',
-    icon: 'pi pi-cog',
-    to: '/settings',
-  },
+  }
 ])

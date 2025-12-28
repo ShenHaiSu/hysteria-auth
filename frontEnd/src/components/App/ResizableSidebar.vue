@@ -29,8 +29,8 @@
 
     <!-- 菜单内容区域 -->
     <div
-      class="overflow-y-auto h-[calc(100vh-56px)] px-3 py-4 custom-scrollbar transition-opacity duration-200"
-      :class="{ 'opacity-0 pointer-events-none': width <= COLLAPSED_WIDTH }"
+      class="overflow-y-auto h-[calc(100vh-56px)] py-4 custom-scrollbar transition-all duration-200"
+      :class="[width <= COLLAPSED_WIDTH ? 'px-2' : 'px-3']"
     >
       <nav class="flex flex-col gap-1.5">
         <router-link
@@ -43,21 +43,29 @@
           <a
             :href="href"
             @click="navigate"
-            class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 group no-underline"
+            class="flex items-center rounded-lg transition-all duration-200 group no-underline"
             :class="[
               isActive
                 ? 'bg-primary-50 text-primary-600 font-medium shadow-sm'
                 : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900',
+              width <= COLLAPSED_WIDTH ? 'justify-center px-0 py-3' : 'px-4 py-3',
             ]"
+            :title="width <= COLLAPSED_WIDTH ? (item.label as string) : ''"
           >
             <i
               :class="[
                 item.icon,
                 isActive ? 'text-primary-500' : 'text-surface-400 group-hover:text-surface-600',
+                width <= COLLAPSED_WIDTH ? 'mr-0' : 'mr-4',
               ]"
-              class="mr-4 text-xl transition-colors duration-200"
+              class="text-xl transition-all duration-200"
             />
-            <span class="text-base tracking-tight">{{ item.label }}</span>
+            <span
+              v-show="width > COLLAPSED_WIDTH"
+              class="text-base tracking-tight whitespace-nowrap overflow-hidden"
+            >
+              {{ item.label }}
+            </span>
           </a>
         </router-link>
       </nav>
