@@ -317,6 +317,12 @@ expire_to=unixSec
     "rent_ts": 1730000000,
     "expire_ts": 0,
     "fee": 0,
+    "proxy_port": "string",
+    "server_port": "number|null",
+    "note1": "string|null",
+    "note2": "string|null",
+    "note3": "string|null",
+    "note4": "string|null",
     "is_active": 1,
     "created_at": "ISO",
     "updated_at": "ISO|null"
@@ -352,6 +358,12 @@ const nodes = await res.json();
   "rent_ts": 1730000000,
   "expire_ts": 0,
   "fee": 0,
+  "proxy_port": "string",
+  "server_port": "number|null",
+  "note1": "string|null",
+  "note2": "string|null",
+  "note3": "string|null",
+  "note4": "string|null",
   "is_active": 1
 }
 ```
@@ -375,6 +387,7 @@ const res = await fetch("/api/nodes", {
     rent_ts: Math.floor(Date.now() / 1000),
     expire_ts: 0,
     fee: 0,
+    proxy_port: "443",
     is_active: 1,
   }),
 });
@@ -400,6 +413,12 @@ const created = await res.json();
   "rent_ts": 1730000000,
   "expire_ts": 0,
   "fee": 0,
+  "proxy_port": "string",
+  "server_port": "number|null",
+  "note1": "string|null",
+  "note2": "string|null",
+  "note3": "string|null",
+  "note4": "string|null",
   "is_active": 1
 }
 ```
@@ -457,7 +476,7 @@ const result = await res.json();
 
 ```json
 {
-  "items": [{ "server_group": "groupA", "ip_address": "1.2.3.4", "domain": null, "salamander": "string" }]
+  "items": [{ "server_group": "groupA", "ip_address": "1.2.3.4", "domain": null, "salamander": "string", "proxy_port": "string" }]
 }
 ```
 
