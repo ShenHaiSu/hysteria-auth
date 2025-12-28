@@ -20,11 +20,6 @@
 import ConfigFilter from '@/components/ConfigDownload/ConfigFilter.vue'
 import ConfigDisplay from '@/components/ConfigDownload/ConfigDisplay.vue'
 import Toast from 'primevue/toast'
-
-/**
- * 代理配置下载页面
- * 负责组装筛选器和展示器
- */
 </script>
 
 <style scoped>

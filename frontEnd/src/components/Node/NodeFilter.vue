@@ -6,40 +6,51 @@
     <div class="flex flex-wrap gap-4 items-end">
       <!-- 分组筛选 -->
       <div class="flex flex-col gap-2">
-        <label for="server_group" class="text-sm font-medium">节点分组</label>
+        <label for="server_group" class="text-sm font-medium text-surface-600 dark:text-surface-400"
+          >节点分组</label
+        >
         <InputText
           id="server_group"
           v-model="filters.server_group"
           placeholder="搜索分组..."
           class="w-full md:w-48"
+          @keyup.enter="handleSearch"
         />
       </div>
 
       <!-- IP 筛选 -->
       <div class="flex flex-col gap-2">
-        <label for="ip_address" class="text-sm font-medium">IP 地址</label>
+        <label for="ip_address" class="text-sm font-medium text-surface-600 dark:text-surface-400"
+          >IP 地址</label
+        >
         <InputText
           id="ip_address"
           v-model="filters.ip_address"
           placeholder="搜索 IP..."
           class="w-full md:w-48"
+          @keyup.enter="handleSearch"
         />
       </div>
 
       <!-- 域名筛选 -->
       <div class="flex flex-col gap-2">
-        <label for="domain" class="text-sm font-medium">域名</label>
+        <label for="domain" class="text-sm font-medium text-surface-600 dark:text-surface-400"
+          >域名</label
+        >
         <InputText
           id="domain"
           v-model="filters.domain"
           placeholder="搜索域名..."
           class="w-full md:w-48"
+          @keyup.enter="handleSearch"
         />
       </div>
 
       <!-- 状态筛选 -->
       <div class="flex flex-col gap-2">
-        <label for="is_active" class="text-sm font-medium">启用状态</label>
+        <label for="is_active" class="text-sm font-medium text-surface-600 dark:text-surface-400"
+          >启用状态</label
+        >
         <Select
           id="is_active"
           v-model="filters.is_active"
@@ -49,36 +60,15 @@
           placeholder="全部状态"
           class="w-full md:w-48"
           showClear
+          @change="handleSearch"
         />
       </div>
-
-      <!-- 到期时间范围
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">到期时间 (起)</label>
-        <DatePicker
-          v-model="expireFromDate"
-          showIcon
-          placeholder="开始日期"
-          class="w-full md:w-48"
-          @update:modelValue="onExpireFromChange"
-        />
-      </div>
-
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium">到期时间 (止)</label>
-        <DatePicker
-          v-model="expireToDate"
-          showIcon
-          placeholder="结束日期"
-          class="w-full md:w-48"
-          @update:modelValue="onExpireToChange"
-        />
-      </div> -->
 
       <!-- 操作按钮 -->
-      <div class="flex gap-2 ml-auto">
+      <div class="flex items-center gap-2 ml-auto">
         <Button label="重置" icon="pi pi-refresh" severity="secondary" @click="handleReset" />
-        <Button label="查询" icon="pi pi-search" @click="$emit('search')" />
+        <Button label="查询" icon="pi pi-search" @click="handleSearch" />
+        <Button label="新增节点" icon="pi pi-plus" severity="primary" @click="$emit('add')" />
       </div>
     </div>
   </div>
@@ -92,12 +82,15 @@ import Select from 'primevue/select'
 import Button from 'primevue/button'
 import DatePicker from 'primevue/datepicker'
 
+// #region 属性与事件定义
 const props = defineProps<{
   filters: NodeQueryParams
 }>()
 
-const emit = defineEmits(['search', 'reset'])
+const emit = defineEmits(['search', 'reset', 'add'])
+// #endregion
 
+// #region 状态定义
 /**
  * 状态选项定义
  */
@@ -116,9 +109,11 @@ watch(
     if (!newVal.expire_from) expireFromDate.value = null
     if (!newVal.expire_to) expireToDate.value = null
   },
-  { deep: true }
+  { deep: true },
 )
+// #endregion
 
+// #region 逻辑处理
 /**
  * 处理到期时间(起)变化
  */
@@ -136,6 +131,13 @@ function onExpireToChange(date: any) {
 }
 
 /**
+ * 触发查询事件
+ */
+function handleSearch() {
+  emit('search')
+}
+
+/**
  * 重置操作
  */
 function handleReset() {
@@ -143,6 +145,7 @@ function handleReset() {
   expireToDate.value = null
   emit('reset')
 }
+// #endregion
 </script>
 
 <style lang="css" scoped>

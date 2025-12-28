@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { authGuard } from '@/router/middleware/auth'
+import { checkAdminGuard } from '@/router/middleware/checkAdmin'
 import loginRoute from '@/router/module/login'
 import { homeRoute } from '@/router/module/home'
 import { userRoutes } from '@/router/module/user'
@@ -33,6 +34,7 @@ const router = createRouter({
  * 挂载全局前置守卫
  */
 router.beforeEach(authGuard)
+router.beforeEach(checkAdminGuard)
 // #endregion
 
 export default router

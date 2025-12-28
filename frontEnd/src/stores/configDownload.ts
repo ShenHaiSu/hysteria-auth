@@ -71,20 +71,8 @@ export const useConfigDownloadStore = defineStore('configDownload', () => {
       }
 
       // 2. 获取用户信息 (Proxy_password)
-      let proxyPassword = ''
       const userId = targetUserId.value || authStore.user?.id
-
-      if (!userId) {
-        // 如果没有 targetUserId 且 authStore 也没用户信息，尝试获取一次
-        await authStore.fetchMe()
-      }
-
-      const finalUserId = targetUserId.value || authStore.user?.id
-      if (finalUserId) {
-        // 无论是不是管理员，都尝试通过 getUserById 获取完整信息（包含 proxy_password）
-        const user = await getUserById(finalUserId)
-        proxyPassword = user.proxy_password
-      }
+      const proxyPassword = await getOrFetchProxyPassword(userId)
 
       if (!proxyPassword) throw new Error('无法获取代理密码，请检查用户配置')
 
@@ -93,14 +81,10 @@ export const useConfigDownloadStore = defineStore('configDownload', () => {
         // 根据索引生成展示别名
         const displayAlias = `${index.toFixed(0).padStart(2, '0')}_${node.server_group || 'Hysteria2 Node'}`
 
-        // 解析node中的proxy_port
-        // 如果是 数字-数字 就使用range 如果是纯数字 那就不是用range
-        
-
         return generateHy2Config(
           proxyPassword,
           node.domain || node.ip_address,
-          node.server_port || 443,
+          443,
           node.proxy_port,
           node.salamander,
           displayAlias,
@@ -117,6 +101,53 @@ export const useConfigDownloadStore = defineStore('configDownload', () => {
     }
   }
 
+  // #region 辅助函数 (Helper Functions)
+  /**
+   * 获取或拉取用户的代理密码
+   * @param userId 用户 ID
+   */
+  async function getOrFetchProxyPassword(userId?: number | null) {
+    if (!userId) {
+      await authStore.fetchMe()
+      userId = authStore.user?.id
+    }
+
+    if (userId) {
+      const user = await getUserById(userId)
+      return user.proxy_password
+    }
+    return ''
+  }
+
+  /**
+   * 为单个节点生成配置字符串
+   * @param node 节点对象 (兼容 NodeServer 和 ProxyConfigItem)
+   * @param alias 别名，如果不提供则使用 node.server_group
+   */
+  async function generateSingleConfig(node: any, alias?: string) {
+    try {
+      const userId = targetUserId.value || authStore.user?.id
+      const proxyPassword = await getOrFetchProxyPassword(userId)
+
+      if (!proxyPassword) {
+        throw new Error('无法获取代理密码')
+      }
+
+      return generateHy2Config(
+        proxyPassword,
+        node.domain || node.ip_address,
+        node.server_port || 443,
+        node.proxy_port,
+        node.salamander,
+        alias || node.server_group || 'Hysteria2 Node',
+      )
+    } catch (error) {
+      console.error('生成单节点配置失败:', error)
+      return ''
+    }
+  }
+  // #endregion
+
   return {
     filters,
     targetUserId,
@@ -127,5 +158,6 @@ export const useConfigDownloadStore = defineStore('configDownload', () => {
     loading,
     resetFilters,
     generateConfig,
+    generateSingleConfig,
   }
 })

@@ -8,7 +8,7 @@ import type { RouteRecordRaw } from 'vue-router'
 export const nodeRoutes: RouteRecordRaw = {
   path: '/nodes',
   component: () => import('@/layout/MainLayout.vue'),
-  meta: { requiresAuth: true },
+  meta: { requiresAuth: true, permissionAdmin: true },
   children: [
     {
       path: '',

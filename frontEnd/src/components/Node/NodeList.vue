@@ -1,26 +1,6 @@
 <!-- 节点列表展示组件 -->
 <template>
   <div class="space-y-4">
-    <!-- 头部工具栏 (移动端和桌面端共用) -->
-    <div
-      class="bg-surface-0 dark:bg-surface-900 rounded-lg shadow-sm border border-surface-200 dark:border-surface-700 p-4"
-    >
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2">
-          <i class="pi pi-server text-primary-500 text-xl"></i>
-          <span class="text-xl font-bold text-surface-900 dark:text-surface-0">节点列表</span>
-        </div>
-        <Button
-          label="新增节点"
-          icon="pi pi-plus"
-          size="small"
-          severity="primary"
-          raised
-          @click="$emit('add')"
-        />
-      </div>
-    </div>
-
     <!-- 根据屏幕宽度切换视图 -->
     <NodeListDesktop
       v-if="!isMobile"
@@ -46,7 +26,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import type { NodeServer } from '@/composable/node'
-import Button from 'primevue/button'
 import NodeListDesktop from './NodeListDesktop.vue'
 import NodeListMobile from './NodeListMobile.vue'
 
@@ -55,7 +34,7 @@ defineProps<{
   loading: boolean
 }>()
 
-defineEmits(['add', 'edit', 'delete', 'stop', 'copy'])
+defineEmits(['edit', 'delete', 'stop', 'copy'])
 
 // 响应式断点检测
 const isMobile = ref(false)

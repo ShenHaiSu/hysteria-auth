@@ -7,13 +7,12 @@
     </div>
 
     <!-- 筛选区域 -->
-    <NodeFilter :filters="filters" @search="loadNodes" @reset="resetFilters" />
+    <NodeFilter :filters="filters" @search="loadNodes" @reset="resetFilters" @add="openAdd" />
 
     <!-- 列表展示 -->
     <NodeList
       :nodes="nodes"
       :loading="loading"
-      @add="openAdd"
       @edit="openEdit"
       @delete="confirmDelete"
       @stop="handleStop"

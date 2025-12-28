@@ -8,7 +8,7 @@ import type { RouteRecordRaw } from 'vue-router'
 export const userRoutes: RouteRecordRaw = {
   path: '/users',
   component: () => import('@/layout/MainLayout.vue'),
-  meta: { requiresAuth: true },
+  meta: { requiresAuth: true, permissionAdmin: true },
   children: [
     {
       path: '',

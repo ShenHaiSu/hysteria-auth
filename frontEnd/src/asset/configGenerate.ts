@@ -15,13 +15,14 @@
  * - {proxy_display_alias} 为代理显示别名，用于识别不同的配置
  */
 
+// #region 配置生成逻辑
 /**
  * 生成 Hysteria 2 配置文件链接
- * 
+ *
  * @param {string} password - 用户配置的代理密码
  * @param {string} domainOrIp - 服务器域名或 IP 地址
  * @param {number} basePort - 服务器监听端口
- * @param {string} portRange - 端口范围，格式为 "start-end"，如 "50000-59999"
+ * @param {string} portRange - 端口范围，格式为 "start-end"，如 "50000-59999" 或者指定端口号 "445"
  * @param {string} obfsPassword - 混淆密码
  * @param {string} proxyDisplayAlias - 代理显示别名
  * @returns {string} 生成的 hy2 链接字符串
@@ -35,10 +36,18 @@ export const generateConfig = (
   proxyDisplayAlias: string,
 ): string => {
   const params: string[] = []
+  let effectivePort = basePort
 
-  // 处理端口范围: 如果不是范围格式则不包含 mport 参数
-  if (portRange && portRange.includes('-')) {
-    params.push(`mport=${portRange}`)
+  // 处理端口配置: 如果是范围格式则包含 mport 参数，如果是指定端口号则覆写 basePort
+  if (portRange) {
+    if (portRange.includes('-')) {
+      params.push(`mport=${portRange}`)
+    } else {
+      const parsedPort = parseInt(portRange, 10)
+      if (!isNaN(parsedPort)) {
+        effectivePort = parsedPort
+      }
+    }
   }
 
   // 处理混淆配置: 如果没有混淆密码则不生成 obfs 相关配置
@@ -50,5 +59,6 @@ export const generateConfig = (
   const queryString = params.length > 0 ? `?${params.join('&')}` : ''
   const alias = encodeURIComponent(proxyDisplayAlias)
 
-  return `hy2://${password}@${domainOrIp}:${basePort}/${queryString}#${alias}`
+  return `hy2://${password}@${domainOrIp}:${effectivePort}/${queryString}#${alias}`
 }
+// #endregion
