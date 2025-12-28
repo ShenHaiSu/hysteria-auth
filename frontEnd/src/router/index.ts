@@ -3,6 +3,7 @@ import { authGuard } from '@/router/middleware/auth'
 import loginRoute from '@/router/module/login'
 import { homeRoute } from '@/router/module/home'
 import { userRoutes } from '@/router/module/user'
+import { nodeRoutes } from '@/router/module/node'
 import { errorRoutes } from '@/router/module/error'
 
 // #region 路由实例配置
@@ -18,6 +19,8 @@ const router = createRouter({
     homeRoute,
     // 用户模块路由
     userRoutes,
+    // 节点模块路由
+    nodeRoutes,
     // 兜底 404 路由 (必须放在最后)
     errorRoutes,
   ],

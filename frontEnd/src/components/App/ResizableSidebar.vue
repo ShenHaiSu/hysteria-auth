@@ -7,78 +7,60 @@
     :style="{ width: width + 'px' }"
   >
     <!-- 顶部标题栏 -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-surface-100 h-11.25">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-surface-100 h-14">
       <span
         v-show="width > COLLAPSED_WIDTH"
-        class="text-sm font-semibold text-surface-900 tracking-tight whitespace-nowrap overflow-hidden"
+        class="text-lg font-semibold text-surface-900 tracking-tight whitespace-nowrap overflow-hidden"
       >
         应用导航
       </span>
       <button
         @click="toggleCollapse"
-        class="p-1.5 rounded-md hover:bg-surface-100 text-surface-500 transition-colors duration-200 flex items-center justify-center"
+        class="p-2 rounded-md hover:bg-surface-100 text-surface-500 transition-colors duration-200 flex items-center justify-center"
         :class="{ 'w-full': width <= COLLAPSED_WIDTH }"
         title="切换侧边栏"
       >
         <i
           :class="['pi', width <= COLLAPSED_WIDTH ? 'pi-chevron-right' : 'pi-chevron-left']"
-          style="font-size: 0.875rem"
+          style="font-size: 1rem"
         ></i>
       </button>
     </div>
 
     <!-- 菜单内容区域 -->
     <div
-      class="overflow-y-auto h-[calc(100vh-45px)] px-3 py-4 custom-scrollbar transition-opacity duration-200"
+      class="overflow-y-auto h-[calc(100vh-56px)] px-3 py-4 custom-scrollbar transition-opacity duration-200"
       :class="{ 'opacity-0 pointer-events-none': width <= COLLAPSED_WIDTH }"
     >
-      <PanelMenu
-        :model="sidebarMenuModel"
-        class="sidebar-menu w-full border-none shadow-none bg-transparent"
-      >
-        <template #item="{ item, props }">
-          <router-link v-if="item.to" v-slot="{ href, navigate, isActive }" :to="item.to" custom>
-            <a
-              :href="href"
-              v-bind="props.action"
-              @click="navigate"
-              class="flex items-center px-3 py-2.5 my-0.5 rounded-lg transition-all duration-200 group no-underline"
-              :class="[
-                isActive
-                  ? 'bg-primary-50 text-primary-600 font-medium shadow-sm'
-                  : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900',
-              ]"
-            >
-              <i
-                :class="[
-                  item.icon,
-                  isActive ? 'text-primary-500' : 'text-surface-400 group-hover:text-surface-600',
-                ]"
-                class="mr-3 text-lg transition-colors duration-200"
-              />
-              <span class="text-sm tracking-tight">{{ item.label }}</span>
-            </a>
-          </router-link>
-
+      <nav class="flex flex-col gap-1.5">
+        <router-link
+          v-for="(item, index) in sidebarMenuModel"
+          :key="typeof item.label === 'string' ? item.label : index"
+          :to="item.to"
+          v-slot="{ href, navigate, isActive }"
+          custom
+        >
           <a
-            v-else
-            :href="item.url"
-            :target="item.target"
-            v-bind="props.action"
-            class="flex items-center px-3 py-2.5 my-0.5 border border-transparent rounded-lg text-surface-600 hover:bg-surface-50 hover:text-surface-900 transition-all duration-200 group no-underline cursor-pointer -bottom-px"
+            :href="href"
+            @click="navigate"
+            class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 group no-underline"
+            :class="[
+              isActive
+                ? 'bg-primary-50 text-primary-600 font-medium shadow-sm'
+                : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900',
+            ]"
           >
             <i
-              :class="[item.icon]"
-              class="mr-3 text-lg text-surface-400 group-hover:text-surface-600 transition-colors duration-200"
+              :class="[
+                item.icon,
+                isActive ? 'text-primary-500' : 'text-surface-400 group-hover:text-surface-600',
+              ]"
+              class="mr-4 text-xl transition-colors duration-200"
             />
-            <span class="text-sm font-semibold tracking-tight">{{ item.label }}</span>
-            <i
-              v-if="item.items"
-              class="pi pi-chevron-down ml-auto text-[10px] text-surface-400 group-hover:text-surface-600 transition-transform duration-200"
-            />
+            <span class="text-base tracking-tight">{{ item.label }}</span>
           </a>
-        </template>
-      </PanelMenu>
+        </router-link>
+      </nav>
     </div>
 
     <!-- 拖拽手柄 -->
@@ -97,7 +79,6 @@
 
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import PanelMenu from 'primevue/panelmenu'
 import { sidebarMenuModel } from '@/asset/menu'
 
 // --- 状态定义 ---
@@ -201,33 +182,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* 移除默认的面板样式，使用自定义的布局 */
-.sidebar-menu :deep(.p-panelmenu-panel) {
-  border: none;
-  background: transparent;
-}
-
-.sidebar-menu :deep(.p-panelmenu-header-content),
-.sidebar-menu :deep(.p-panelmenu-item-content) {
-  background: transparent !important;
-  border: none !important;
-}
-
-.sidebar-menu :deep(.p-panelmenu-root-list),
-.sidebar-menu :deep(.p-panelmenu-submenu-list) {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-/* 子菜单缩进处理 */
-.sidebar-menu :deep(.p-panelmenu-submenu-list) {
-  margin-left: 1.25rem;
-  border-left: 1px solid var(--p-surface-100);
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-
 /* 自定义滚动条样式 */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;

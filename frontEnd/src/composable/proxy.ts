@@ -6,6 +6,7 @@ export interface ProxyConfigItem {
   ip_address: string;
   domain: string | null;
   salamander: string;
+  proxy_port: string;
 }
 
 /**

@@ -11,7 +11,13 @@ export interface NodeServer {
   rent_ts: number;
   expire_ts: number;
   fee: number;
-  is_active: number;
+  proxy_port: string;
+  server_port: number | null;
+  note1: string | null;
+  note2: string | null;
+  note3: string | null;
+  note4: string | null;
+  is_active: 0 | 1;
   created_at: string;
   updated_at: string | null;
 }
@@ -32,13 +38,19 @@ export interface NodeQueryParams {
  * 新增/更新节点请求体
  */
 export interface NodeSaveRequest {
-  ip_address?: string;
-  domain?: string | null;
-  server_group?: string;
-  salamander?: string;
-  idc_name?: string | null;
-  rent_ts?: number;
-  expire_ts?: number;
-  fee?: number;
-  is_active?: number;
+  ip_address: string;
+  domain: string | null;
+  server_group: string;
+  salamander: string;
+  idc_name: string | null;
+  rent_ts: number;
+  expire_ts: number;
+  fee: number;
+  proxy_port: string;
+  server_port: number | null;
+  note1: string | null;
+  note2: string | null;
+  note3: string | null;
+  note4: string | null;
+  is_active: 0 | 1;
 }
