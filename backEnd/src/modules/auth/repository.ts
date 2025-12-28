@@ -75,11 +75,10 @@ export function countUsers(db: Database): number {
  */
 export function createInitialAdmin(db: Database, username: string, proxyPassword: string): void {
   const stmt = db.query(
-    `INSERT INTO users (name, email, username, login_password_md5, proxy_password, is_active, permission, register_ts)
-     VALUES ($name, $email, $username, 'empty', $proxyPassword, 1, 'admin', $ts)`
+    `INSERT INTO users (email, username, login_password_md5, proxy_password, is_active, permission, register_ts)
+     VALUES ($email, $username, 'empty', $proxyPassword, 1, 'admin', $ts)`
   );
   stmt.run({
-    $name: username,
     $email: `${username}@internal`,
     $username: username,
     $proxyPassword: proxyPassword,

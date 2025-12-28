@@ -30,23 +30,23 @@ export class UserService {
 
   /**
    * 创建新用户
-   * @param name 名称
+   * @param username 用户名
    * @param email 邮箱
    * @returns 新用户
    */
-  create(name: string, email: string) {
-    return createUser(this.db, name, email);
+  create(username: string, email: string) {
+    return createUser(this.db, username, email);
   }
 
   /**
    * 更新现有用户
    * @param id 用户 ID
-   * @param name 名称
+   * @param username 用户名
    * @param email 邮箱
    * @returns 更新后的用户或 null
    */
-  update(id: number, name: string, email: string) {
-    return updateUser(this.db, id, name, email);
+  update(id: number, username: string, email: string) {
+    return updateUser(this.db, id, username, email);
   }
 
   /**

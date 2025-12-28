@@ -50,8 +50,8 @@ export function userRoutes(): Route[] {
         const session = auth.verifyRequestToken(req);
         if (!session) return json({ message: "Unauthorized" }, 401);
         if (session.permission !== "admin") return json({ message: "Forbidden" }, 403);
-        const body = await parseJson<{ name: string; email: string }>(req);
-        const user = service.create(body.name, body.email);
+        const body = await parseJson<{ username: string; email: string }>(req);
+        const user = service.create(body.username, body.email);
         return json(user, 201);
       },
     },
@@ -63,8 +63,8 @@ export function userRoutes(): Route[] {
         if (!session) return json({ message: "Unauthorized" }, 401);
         if (session.permission !== "admin") return json({ message: "Forbidden" }, 403);
         const id = Number(params.id);
-        const body = await parseJson<{ name: string; email: string }>(req);
-        const user = service.update(id, body.name, body.email);
+        const body = await parseJson<{ username: string; email: string }>(req);
+        const user = service.update(id, body.username, body.email);
         return user ? json(user) : json({ message: "Not Found" }, 404);
       },
     },
