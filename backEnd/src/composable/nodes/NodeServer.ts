@@ -8,6 +8,12 @@ export interface NodeServer {
   rent_ts: number | null;
   expire_ts: number | null;
   fee: number;
+  proxy_port: string;
+  server_port: number | null;
+  note1: string | null;
+  note2: string | null;
+  note3: string | null;
+  note4: string | null;
   is_active: number;
   created_at: string;
   updated_at: string | null;
@@ -27,4 +33,5 @@ export interface ProxyConfigItem {
   ip_address: string;
   domain: string | null;
   salamander: string;
+  proxy_port: string;
 }

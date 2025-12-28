@@ -49,6 +49,12 @@ export function nodeRoutes(): Route[] {
           rent_ts: body.rent_ts ? Number(body.rent_ts) : Math.floor(Date.now() / 1000),
           expire_ts: body.expire_ts ? Number(body.expire_ts) : null,
           fee: body.fee ? Number(body.fee) : 0,
+          proxy_port: String(body.proxy_port ?? ""),
+          server_port: body.server_port ? Number(body.server_port) : null,
+          note1: body.note1 ? String(body.note1) : null,
+          note2: body.note2 ? String(body.note2) : null,
+          note3: body.note3 ? String(body.note3) : null,
+          note4: body.note4 ? String(body.note4) : null,
           is_active: body.is_active ? Number(body.is_active) : 1,
         });
         if (!created) return json({ message: "Forbidden" }, 403);

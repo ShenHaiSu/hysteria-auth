@@ -8,8 +8,11 @@ import type { ActiveUser, AuthUserInfo } from "@/composable/auth/Auth";
  * @returns 匹配到的节点服务器 ID，未匹配返回 null
  */
 export function findActiveNodeServerByIp(db: Database, ip: string): number | null {
-  const stmt = db.query("SELECT id FROM node_server WHERE ip_address = $ip AND is_active = 1 LIMIT 1");
-  const row = stmt.get({ $ip: ip }) as { id: number } | undefined;
+  const now = Math.floor(Date.now() / 1000);
+  const stmt = db.query(
+    "SELECT id FROM node_server WHERE ip_address = $ip AND is_active = 1 AND (expire_ts IS NULL OR expire_ts = 0 OR expire_ts > $now) LIMIT 1"
+  );
+  const row = stmt.get({ $ip: ip, $now: now }) as { id: number } | undefined;
   return row?.id ?? null;
 }
 

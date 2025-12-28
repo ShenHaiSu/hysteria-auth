@@ -35,7 +35,7 @@ export function listNodes(db: Database, filters: NodeFilters = {}): NodeServer[]
     bindings.push(filters.expire_to);
   }
   const sql =
-    "SELECT id, ip_address, domain, server_group, salamander, idc_name, rent_ts, expire_ts, fee, is_active, created_at, updated_at FROM node_server" +
+    "SELECT id, ip_address, domain, server_group, salamander, idc_name, rent_ts, expire_ts, fee, proxy_port, server_port, note1, note2, note3, note4, is_active, created_at, updated_at FROM node_server" +
     (where.length ? ` WHERE ${where.join(" AND ")}` : "") +
     " ORDER BY id DESC";
   const stmt = db.query(sql);
@@ -50,8 +50,8 @@ export function listNodes(db: Database, filters: NodeFilters = {}): NodeServer[]
  */
 export function createNode(db: Database, node: Omit<NodeServer, "id" | "created_at" | "updated_at">): NodeServer {
   const insert = db.query(
-    `INSERT INTO node_server (ip_address, domain, server_group, salamander, idc_name, rent_ts, expire_ts, fee, is_active)
-     VALUES ($ip, $dom, $group, $salamander, $idc, $rent, $exp, $fee, $active)`
+    `INSERT INTO node_server (ip_address, domain, server_group, salamander, idc_name, rent_ts, expire_ts, fee, proxy_port, server_port, note1, note2, note3, note4, is_active)
+     VALUES ($ip, $dom, $group, $salamander, $idc, $rent, $exp, $fee, $proxy_port, $server_port, $note1, $note2, $note3, $note4, $active)`
   );
   insert.run({
     $ip: node.ip_address,
@@ -62,11 +62,17 @@ export function createNode(db: Database, node: Omit<NodeServer, "id" | "created_
     $rent: node.rent_ts ?? Math.floor(Date.now() / 1000),
     $exp: node.expire_ts ?? null,
     $fee: node.fee ?? 0,
+    $proxy_port: node.proxy_port,
+    $server_port: node.server_port ?? null,
+    $note1: node.note1 ?? null,
+    $note2: node.note2 ?? null,
+    $note3: node.note3 ?? null,
+    $note4: node.note4 ?? null,
     $active: node.is_active ?? 1,
   });
   const idRow = db.query("SELECT last_insert_rowid() as id").get() as { id: number };
   const stmt = db.query(
-    `SELECT id, ip_address, domain, server_group, salamander, idc_name, rent_ts, expire_ts, fee, is_active, created_at, updated_at
+    `SELECT id, ip_address, domain, server_group, salamander, idc_name, rent_ts, expire_ts, fee, proxy_port, server_port, note1, note2, note3, note4, is_active, created_at, updated_at
      FROM node_server WHERE id = $id LIMIT 1`
   );
   return stmt.get({ $id: idRow.id }) as NodeServer;
@@ -91,6 +97,12 @@ export function updateNode(db: Database, id: number, patch: Partial<NodeServer>)
     "rent_ts",
     "expire_ts",
     "fee",
+    "proxy_port",
+    "server_port",
+    "note1",
+    "note2",
+    "note3",
+    "note4",
     "is_active",
   ];
   for (const key of candidates) {
@@ -115,7 +127,7 @@ export function updateNode(db: Database, id: number, patch: Partial<NodeServer>)
  */
 export function getNodeById(db: Database, id: number): NodeServer | null {
   const stmt = db.query(
-    `SELECT id, ip_address, domain, server_group, salamander, idc_name, rent_ts, expire_ts, fee, is_active, created_at, updated_at
+    `SELECT id, ip_address, domain, server_group, salamander, idc_name, rent_ts, expire_ts, fee, proxy_port, server_port, note1, note2, note3, note4, is_active, created_at, updated_at
      FROM node_server WHERE id = $id LIMIT 1`
   );
   const row = stmt.get({ $id: id }) as NodeServer | undefined;
@@ -141,7 +153,7 @@ export function deleteNode(db: Database, id: number): boolean {
 export function listActiveProxyConfig(db: Database): ProxyConfigItem[] {
   const now = Math.floor(Date.now() / 1000);
   const stmt = db.query(
-    `SELECT server_group, ip_address, domain, salamander
+    `SELECT server_group, ip_address, domain, salamander, proxy_port
      FROM node_server
      WHERE is_active = 1 AND (expire_ts IS NULL OR expire_ts = 0 OR expire_ts > $now)
      ORDER BY server_group ASC, id DESC`
