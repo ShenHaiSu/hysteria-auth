@@ -16,5 +16,10 @@ export const sidebarMenuModel = ref<MenuItem[]>([
     label: '节点管理',
     icon: 'pi pi-server',
     to: '/nodes',
-  }
+  },
+  {
+    label: '配置下载',
+    icon: 'pi pi-download',
+    to: '/config-download',
+  },
 ])

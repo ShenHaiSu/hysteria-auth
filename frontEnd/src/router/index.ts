@@ -4,6 +4,7 @@ import loginRoute from '@/router/module/login'
 import { homeRoute } from '@/router/module/home'
 import { userRoutes } from '@/router/module/user'
 import { nodeRoutes } from '@/router/module/node'
+import { configRoutes } from '@/router/module/config'
 import { errorRoutes } from '@/router/module/error'
 
 // #region 路由实例配置
@@ -21,6 +22,8 @@ const router = createRouter({
     userRoutes,
     // 节点模块路由
     nodeRoutes,
+    // 配置下载路由
+    configRoutes,
     // 兜底 404 路由 (必须放在最后)
     errorRoutes,
   ],
