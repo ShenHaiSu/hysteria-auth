@@ -8,11 +8,13 @@ import { statusRoutes } from "@/modules/status/routes";
 import { authRoutes } from "@/modules/auth/routes";
 import { AuthService } from "@/modules/auth/service";
 import { nodeRoutes } from "@/modules/nodes/routes";
-import { compose, createLoggingMiddleware } from "@/core/middleware";
+import { compose, createLoggingMiddleware, createCompressionMiddleware } from "@/core/middleware";
 import { createStaticMiddleware } from "@/core/static";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 /**
- * 构建并启动 HTTP 服务
+ * 构建并启动 HTTP/HTTPS 服务
  */
 async function main() {
   // 初始化数据库并执行迁移
@@ -22,6 +24,34 @@ async function main() {
   // #region 启动后初始化逻辑 (简体中文说明：检查并初始化默认管理员)
   const authService = new AuthService(db);
   authService.initDefaultUser();
+  // #endregion
+
+  // #region 证书环境检查 (简体中文说明：检查并创建 cert 目录，配置 SSL 证书)
+  // 定位 cert 文件夹（src 的同级目录，即项目根目录下的 cert）
+  const certDir = join(process.cwd(), "cert");
+  if (!existsSync(certDir)) {
+    console.log(`[server] 正在创建证书目录: ${certDir}`);
+    mkdirSync(certDir, { recursive: true });
+  }
+
+  const keyPath = join(certDir, "server.key");
+  const crtPath = join(certDir, "server.crt");
+  let tls = undefined;
+
+  // 只有当 key 和 crt 同时存在时才尝试加载 TLS
+  if (existsSync(keyPath) && existsSync(crtPath)) {
+    try {
+      tls = {
+        key: readFileSync(keyPath),
+        cert: readFileSync(crtPath),
+      };
+      console.log("[server] 检测到 SSL 证书，将以 HTTPS 模式启动");
+    } catch (err) {
+      console.error("[server] 加载证书失败，将回退到 HTTP 模式:", err);
+    }
+  } else {
+    console.log("[server] 未检测到完整的证书文件 (server.key/server.crt)，使用 HTTP 模式");
+  }
   // #endregion
 
   // 注册路由
@@ -39,13 +69,16 @@ async function main() {
   // 启动 Bun HTTP 服务
   const server = Bun.serve({
     port,
+    tls,
     /**
      * 统一入口：中间件链路 + 路由派发
      * @param req 请求对象
      * @returns 响应对象
      */
     fetch: (req, srv) =>
-      compose([createLoggingMiddleware(), createStaticMiddleware()], (innerReq, innerSrv) => router.handle(innerReq, innerSrv))(req, srv),
+      compose([createLoggingMiddleware(), createCompressionMiddleware(), createStaticMiddleware()], (innerReq, innerSrv) =>
+        router.handle(innerReq, innerSrv)
+      )(req, srv),
     /**
      * 关闭钩子：释放资源
      */
@@ -55,7 +88,8 @@ async function main() {
     },
   });
 
-  console.log(`[server] listening on http://localhost:${server.port}`);
+  const protocol = tls ? "https" : "http";
+  console.log(`[server] listening on ${protocol}://localhost:${server.port}`);
 
   // 优雅退出
   const shutdown = () => {

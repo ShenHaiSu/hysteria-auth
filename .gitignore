@@ -5,7 +5,10 @@
 /backEnd/node_modules
 /backEnd/dbSet
 /backEnd/logs/*.log
+/backEnd/cert/server.crt
+/backEnd/cert/server.key
 
 # 前端
 /frontend/node_modules
+
 
