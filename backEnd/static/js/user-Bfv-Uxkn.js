@@ -1,0 +1,1 @@
+import{b3 as r}from"./index-CurZRE90.js";function u(){return r.get("/users")}function n(e){return r.get(`/users/${e}`)}function a(e){return r.post("/users",e)}function o(e,s){return r.put(`/users/${e}`,s)}function c(e){return r.delete(`/users/${e}`)}export{u as a,a as c,c as d,n as g,o as u};

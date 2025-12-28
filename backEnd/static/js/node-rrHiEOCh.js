@@ -1,0 +1,1 @@
+import{b3 as t}from"./index-CurZRE90.js";function d(e){return t.get("/nodes",{params:e})}function r(e){return t.post("/nodes",e)}function s(e,n){return t.put(`/nodes/${e}`,n)}function u(e){return t.delete(`/nodes/${e}`)}export{r as c,u as d,d as g,s as u};
