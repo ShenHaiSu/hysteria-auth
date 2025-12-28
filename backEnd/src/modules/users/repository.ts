@@ -75,15 +75,27 @@ export function createUser(db: Database, username: string, email: string): User 
  * @param id 用户 ID
  * @param username 用户名
  * @param email 邮箱
+ * @param permission 权限 (admin | user)
+ * @param is_active 启用状态 (1 | 0)
  * @returns 更新后的用户或 null
  */
-export function updateUser(db: Database, id: number, username: string, email: string): User | null {
+export function updateUser(db: Database, id: number, username: string, email: string, permission: "admin" | "user", is_active: number): User | null {
   const update = db.query(`
     UPDATE users 
-    SET username = $username, email = $email, updated_at = datetime('now') 
+    SET username = $username, 
+        email = $email, 
+        permission = $permission, 
+        is_active = $is_active, 
+        updated_at = datetime('now') 
     WHERE id = $id
   `);
-  update.run({ $username: username, $email: email, $id: id });
+  update.run({
+    $username: username,
+    $email: email,
+    $permission: permission,
+    $is_active: is_active,
+    $id: id,
+  });
   return getUser(db, id);
 }
 

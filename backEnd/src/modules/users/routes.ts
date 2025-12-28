@@ -59,25 +59,45 @@ export function userRoutes(): Route[] {
       method: "PUT",
       path: "/users/:id",
       handler: async ({ req, params }) => {
-        const session = auth.verifyRequestToken(req);
+        const session = auth.verifyRequestToken(req) as { uid: number; permission: string } | null;
         if (!session) return json({ message: "Unauthorized" }, 401);
         if (session.permission !== "admin") return json({ message: "Forbidden" }, 403);
         const id = Number(params.id);
-        const body = await parseJson<{ username: string; email: string }>(req);
-        const user = service.update(id, body.username, body.email);
-        return user ? json(user) : json({ message: "Not Found" }, 404);
+        const body = await parseJson<{
+          username: string;
+          email: string;
+          permission: "admin" | "user";
+          is_active: number;
+        }>(req);
+        try {
+          const user = service.update(
+            id,
+            body.username,
+            body.email,
+            body.permission,
+            body.is_active,
+            session.uid
+          );
+          return user ? json(user) : json({ message: "Not Found" }, 404);
+        } catch (e: any) {
+          return json({ message: e.message }, 400);
+        }
       },
     },
     {
       method: "DELETE",
       path: "/users/:id",
       handler: ({ req, params }) => {
-        const session = auth.verifyRequestToken(req);
+        const session = auth.verifyRequestToken(req) as { uid: number; permission: string } | null;
         if (!session) return json({ message: "Unauthorized" }, 401);
         if (session.permission !== "admin") return json({ message: "Forbidden" }, 403);
         const id = Number(params.id);
-        const ok = service.remove(id);
-        return json({ success: ok });
+        try {
+          const ok = service.remove(id, session.uid);
+          return json({ success: ok });
+        } catch (e: any) {
+          return json({ message: e.message }, 400);
+        }
       },
     },
   ];
