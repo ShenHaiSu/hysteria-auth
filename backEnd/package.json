@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run src/index.ts",
-    "start": "bun run src/index.ts",
+    "dev": "bun run migrate && bun run src/index.ts",
+    "start": "bun run migrate && bun run src/index.ts",
     "migrate": "bun run src/db/migrator.ts"
   }
 }
