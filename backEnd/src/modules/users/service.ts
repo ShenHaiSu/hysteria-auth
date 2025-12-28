@@ -45,10 +45,23 @@ export class UserService {
    * @param email 邮箱
    * @param permission 权限
    * @param is_active 是否启用
+   * @param proxy_password 代理密码
+   * @param proxy_expire_ts 代理到期时间
+   * @param login_password_md5 登录密码 (MD5)
    * @param operatorId 当前操作者 ID
    * @returns 更新后的用户或 null
    */
-  update(id: number, username: string, email: string, permission: "admin" | "user", is_active: number, operatorId: number) {
+  update(
+    id: number,
+    username: string,
+    email: string,
+    permission: "admin" | "user",
+    is_active: number,
+    proxy_password: string,
+    proxy_expire_ts: number | null,
+    login_password_md5: string | undefined,
+    operatorId: number
+  ) {
     // 防御性逻辑：不允许管理员将自己的权限下调或禁用自己
     if (id === operatorId) {
       if (permission !== "admin") {
@@ -58,7 +71,17 @@ export class UserService {
         throw new Error("Cannot deactivate your own account");
       }
     }
-    return updateUser(this.db, id, username, email, permission, is_active);
+    return updateUser(
+      this.db,
+      id,
+      username,
+      email,
+      permission,
+      is_active,
+      proxy_password,
+      proxy_expire_ts,
+      login_password_md5
+    );
   }
 
   /**

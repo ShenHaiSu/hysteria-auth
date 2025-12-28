@@ -68,6 +68,9 @@ export function userRoutes(): Route[] {
           email: string;
           permission: "admin" | "user";
           is_active: number;
+          proxy_password: string;
+          proxy_expire_ts: number | null;
+          login_password_md5?: string;
         }>(req);
         try {
           const user = service.update(
@@ -76,6 +79,9 @@ export function userRoutes(): Route[] {
             body.email,
             body.permission,
             body.is_active,
+            body.proxy_password,
+            body.proxy_expire_ts,
+            body.login_password_md5,
             session.uid
           );
           return user ? json(user) : json({ message: "Not Found" }, 404);

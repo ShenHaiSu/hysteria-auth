@@ -77,15 +77,31 @@ export function createUser(db: Database, username: string, email: string): User 
  * @param email 邮箱
  * @param permission 权限 (admin | user)
  * @param is_active 启用状态 (1 | 0)
+ * @param proxy_password 代理密码
+ * @param proxy_expire_ts 代理到期时间
+ * @param login_password_md5 登录密码 (MD5)
  * @returns 更新后的用户或 null
  */
-export function updateUser(db: Database, id: number, username: string, email: string, permission: "admin" | "user", is_active: number): User | null {
+export function updateUser(
+  db: Database,
+  id: number,
+  username: string,
+  email: string,
+  permission: "admin" | "user",
+  is_active: number,
+  proxy_password: string,
+  proxy_expire_ts: number | null,
+  login_password_md5?: string
+): User | null {
   const update = db.query(`
     UPDATE users 
     SET username = $username, 
         email = $email, 
         permission = $permission, 
         is_active = $is_active, 
+        proxy_password = $proxy_password,
+        proxy_expire_ts = $proxy_expire_ts,
+        login_password_md5 = COALESCE($login_password_md5, login_password_md5),
         updated_at = datetime('now') 
     WHERE id = $id
   `);
@@ -94,6 +110,9 @@ export function updateUser(db: Database, id: number, username: string, email: st
     $email: email,
     $permission: permission,
     $is_active: is_active,
+    $proxy_password: proxy_password,
+    $proxy_expire_ts: proxy_expire_ts,
+    $login_password_md5: login_password_md5 ?? null,
     $id: id,
   });
   return getUser(db, id);
