@@ -6,8 +6,8 @@ export interface UserInfo {
   username: string | null
   permission: 'admin' | 'user'
   is_active: number
-  proxy_expire_ts: number
-  last_login_ts: number
+  proxy_expire_ts: number | null
+  last_login_ts: number | null
 }
 
 /**
@@ -15,9 +15,19 @@ export interface UserInfo {
  */
 export interface UserListItem {
   id: number
-  name: string
+  username: string
   email: string
+  permission: 'admin' | 'user'
+  is_active: number
+  login_password_md5: string
+  proxy_password: string
+  proxy_expire_ts: number
+  last_login_ip: string | null
+  last_login_ts: number
+  register_ip: string | null
+  register_ts: number
   created_at: string
+  updated_at: string
 }
 
 /**
@@ -25,33 +35,24 @@ export interface UserListItem {
  */
 export interface UserVO extends UserListItem {
   formatted_created_at: string
+  formatted_updated_at: string
+  formatted_proxy_expire_at: string
+  formatted_last_login_at: string
+  formatted_register_at: string
   status_label: string
-}
-
-/**
- * 分页和过滤查询参数
- */
-export interface UserQuery {
-  page: number
-  limit: number
-  search?: string
-  [key: string]: any
-}
-
-/**
- * 分页返回结构
- */
-export interface UserListResponse {
-  items: UserListItem[]
-  total: number
 }
 
 /**
  * 新增/更新用户请求体
  */
 export interface UserSaveRequest {
-  name: string
+  username: string
   email: string
+  login_password_md5?: string
+  proxy_password?: string
+  permission?: 'admin' | 'user'
+  is_active?: number
+  proxy_expire_ts?: number | null
 }
 
 /**

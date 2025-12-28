@@ -45,14 +45,14 @@ export function useUserLogic() {
     try {
       if (selectedUser.value) {
         await store.editUser(selectedUser.value.id, data);
-        toast.add({ severity: 'success', summary: '成功', detail: '用户信息已更新', life: 3000 });
+        toast.add({ severity: 'success', summary: '成功', detail: '用户信息已更新', life: 1000 });
       } else {
         await store.addUser(data);
-        toast.add({ severity: 'success', summary: '成功', detail: '用户已新增', life: 3000 });
+        toast.add({ severity: 'success', summary: '成功', detail: '用户已新增', life: 1000 });
       }
       showDialog.value = false;
     } catch (error) {
-      toast.add({ severity: 'error', summary: '错误', detail: '操作失败', life: 3000 });
+      toast.add({ severity: 'error', summary: '错误', detail: '操作失败', life: 1000 });
     } finally {
       saving.value = false;
     }
@@ -64,7 +64,7 @@ export function useUserLogic() {
    */
   const confirmDelete = (user: UserVO) => {
     confirm.require({
-      message: `确定要删除用户 "${user.name}" 吗？此操作不可撤销。`,
+      message: `确定要删除用户 "${user.username}" 吗？此操作不可撤销。`,
       header: '删除确认',
       icon: 'pi pi-exclamation-triangle',
       rejectLabel: '取消',

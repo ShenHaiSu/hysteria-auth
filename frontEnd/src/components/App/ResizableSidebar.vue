@@ -65,7 +65,7 @@
             :href="item.url"
             :target="item.target"
             v-bind="props.action"
-            class="flex items-center px-3 py-2.5 my-0.5 rounded-lg text-surface-600 hover:bg-surface-50 hover:text-surface-900 transition-all duration-200 group no-underline cursor-pointer"
+            class="flex items-center px-3 py-2.5 my-0.5 border border-transparent rounded-lg text-surface-600 hover:bg-surface-50 hover:text-surface-900 transition-all duration-200 group no-underline cursor-pointer -bottom-px"
           >
             <i
               :class="[item.icon]"

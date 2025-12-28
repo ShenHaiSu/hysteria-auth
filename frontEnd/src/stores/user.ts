@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { getUsers, getUserById, createUser, updateUser, deleteUser } from '@/fetch/user'
-import type { UserListItem, UserSaveRequest, UserVO, UserQuery } from '@/composable/user'
+import type { UserListItem, UserSaveRequest, UserVO } from '@/composable/user'
 
 /**
  * 用户管理相关的 Pinia Store (管理员专用)
@@ -10,26 +10,44 @@ import type { UserListItem, UserSaveRequest, UserVO, UserQuery } from '@/composa
 export const useUserStore = defineStore('user', () => {
   // #region 状态 (State)
   const users = ref<UserListItem[]>([])
-  const totalRecords = ref(0)
   const currentUser = ref<UserListItem | null>(null)
   const loading = ref(false)
 
-  // 分页与过滤状态
-  const first = ref(0) // PrimeVue DataTable 起始行索引
-  const rows = ref(10) // 每页行数
-  const page = computed(() => Math.floor(first.value / rows.value) + 1)
+  // 过滤状态
   const search = ref('')
   // #endregion
 
   // #region 计算属性 (Getters)
   /**
-   * 将 DTO 转换为 VO
+   * 将 DTO 转换为 VO，并根据搜索词进行前端过滤
    */
   const userVOs = computed<UserVO[]>(() => {
-    return users.value.map((user) => ({
+    let filteredUsers = users.value
+
+    if (search.value) {
+      const s = search.value.toLowerCase()
+      filteredUsers = users.value.filter(
+        (user) => user.username.toLowerCase().includes(s) || user.email.toLowerCase().includes(s),
+      )
+    }
+
+    return filteredUsers.map((user) => ({
       ...user,
-      formatted_created_at: new Date(user.created_at).toLocaleString(),
-      status_label: '正常', // 这里可以根据业务逻辑扩展
+      formatted_created_at: user.created_at ? new Date(user.created_at).toLocaleString() : '-',
+      formatted_updated_at: user.updated_at ? new Date(user.updated_at).toLocaleString() : '-',
+      formatted_proxy_expire_at:
+        user.proxy_expire_ts && user.proxy_expire_ts > 0
+          ? new Date(user.proxy_expire_ts * 1000).toLocaleString()
+          : '永久',
+      formatted_last_login_at:
+        user.last_login_ts && user.last_login_ts > 0
+          ? new Date(user.last_login_ts * 1000).toLocaleString()
+          : '从未登录',
+      formatted_register_at:
+        user.register_ts && user.register_ts > 0
+          ? new Date(user.register_ts * 1000).toLocaleString()
+          : '-',
+      status_label: user.is_active ? '正常' : '禁用',
     }))
   })
   // #endregion
@@ -41,28 +59,11 @@ export const useUserStore = defineStore('user', () => {
   async function fetchUsers() {
     loading.value = true
     try {
-      const query: UserQuery = {
-        page: page.value,
-        limit: rows.value,
-        search: search.value || undefined,
-      }
-      const response = await getUsers(query)
-      console.log(response)
-
-      users.value = response.items
-      totalRecords.value = response.total
+      const response = await getUsers()
+      users.value = response
     } finally {
       loading.value = false
     }
-  }
-
-  /**
-   * 处理分页点击
-   */
-  function onPage(event: { first: number; rows: number }) {
-    first.value = event.first
-    rows.value = event.rows
-    fetchUsers()
   }
 
   /**
@@ -70,8 +71,6 @@ export const useUserStore = defineStore('user', () => {
    */
   function onSearch(query: string) {
     search.value = query
-    first.value = 0 // 重置到第一页
-    fetchUsers()
   }
 
   /**
@@ -148,18 +147,14 @@ export const useUserStore = defineStore('user', () => {
   return {
     users,
     userVOs,
-    totalRecords,
     currentUser,
     loading,
-    first,
-    rows,
     search,
     fetchUsers,
     fetchUserById,
     addUser,
     editUser,
     removeUser,
-    onPage,
     onSearch,
   }
 })

@@ -3,27 +3,61 @@
   <div class="card">
     <DataTable
       :value="users"
-      :lazy="true"
-      :paginator="true"
-      :rows="rows"
-      :first="first"
-      :totalRecords="totalRecords"
       :loading="loading"
-      @page="onPage"
       dataKey="id"
       responsiveLayout="scroll"
       stripedRows
       class="p-datatable-sm"
+      sortMode="single"
+      removableSort
+      rowHover
     >
       <template #empty> 未找到用户信息 </template>
       <template #loading> 正在加载用户数据，请稍候... </template>
 
       <Column field="id" header="ID" sortable style="width: 5rem"></Column>
-      <Column field="name" header="姓名" sortable></Column>
+      <Column field="username" header="用户名" sortable></Column>
       <Column field="email" header="邮箱" sortable></Column>
+      <Column field="permission" header="权限">
+        <template #body="slotProps">
+          <Tag
+            :value="slotProps.data.permission === 'admin' ? '管理' : '用户'"
+            :severity="slotProps.data.permission === 'admin' ? 'danger' : 'info'"
+          />
+        </template>
+      </Column>
+      <Column field="proxy_password" header="代理密码">
+        <template #body="slotProps">
+          <code
+            class="text-primary font-bold cursor-pointer hover:underline"
+            @click="copyToClipboard(slotProps.data.proxy_password)"
+            v-tooltip.top="'点击复制'"
+          >
+            {{ slotProps.data.proxy_password }}
+          </code>
+        </template>
+      </Column>
+      <Column field="formatted_proxy_expire_at" header="代理到期" sortable></Column>
       <Column field="status_label" header="状态">
         <template #body="slotProps">
-          <Tag :value="slotProps.data.status_label" severity="success" />
+          <Tag
+            :value="slotProps.data.status_label"
+            :severity="slotProps.data.is_active ? 'success' : 'secondary'"
+          />
+        </template>
+      </Column>
+      <Column header="登录信息" class="text-sm">
+        <template #body="slotProps">
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-1" v-if="slotProps.data.last_login_ip">
+              <i class="pi pi-map-marker text-xs text-500"></i>
+              <span>{{ slotProps.data.last_login_ip }}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <i class="pi pi-clock text-xs text-500"></i>
+              <span class="text-500">{{ slotProps.data.formatted_last_login_at }}</span>
+            </div>
+          </div>
         </template>
       </Column>
       <Column field="formatted_created_at" header="创建时间" sortable></Column>
@@ -59,30 +93,44 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
+import { useToast } from 'primevue/usetoast';
 import type { UserVO } from '@/composable/user';
 
 // #region 定义属性和事件
 defineProps<{
   users: UserVO[];
-  totalRecords: number;
-  rows: number;
-  first: number;
   loading: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'page', event: any): void;
   (e: 'edit', user: UserVO): void;
   (e: 'delete', user: UserVO): void;
 }>();
-// #endregion
 
-// #region 事件转发
+const toast = useToast();
+
 /**
- * 分页事件转发
+ * 复制文本到剪切板
+ * @param text 要复制的文本
  */
-const onPage = (event: any) => {
-  emit('page', event);
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.add({
+      severity: 'success',
+      summary: '复制成功',
+      detail: '代理密码已复制到剪切板',
+      life: 1000,
+    });
+  } catch (err) {
+    console.error('无法复制文本: ', err);
+    toast.add({
+      severity: 'error',
+      summary: '复制失败',
+      detail: '请手动复制',
+      life: 1000,
+    });
+  }
 };
 // #endregion
 </script>
