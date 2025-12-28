@@ -33,7 +33,7 @@ export class AuthService {
    */
   private initLocalIps(): void {
     if (AuthService.localIps !== null) return;
-    AuthService.localIps = new Set(["127.0.0.1", "::1", "localhost"]);
+    AuthService.localIps = new Set(["127.0.0.1", "::1", "localhost", "::ffff:127.0.0.1"]);
     try {
       const interfaces = networkInterfaces();
       for (const name of Object.keys(interfaces)) {
