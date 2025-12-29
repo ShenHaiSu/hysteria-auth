@@ -84,19 +84,17 @@
           <div class="flex gap-2">
             <Button
               icon="pi pi-pencil"
-              outlined
-              rounded
               severity="warn"
+              label="编辑"
+              size="small"
               @click="$emit('edit', slotProps.data)"
-              v-tooltip.top="'编辑'"
             />
             <Button
               icon="pi pi-trash"
-              outlined
-              rounded
               severity="danger"
+              label="删除"
+              size="small"
               @click="$emit('delete', slotProps.data)"
-              v-tooltip.top="'删除'"
             />
           </div>
         </template>

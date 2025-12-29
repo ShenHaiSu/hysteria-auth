@@ -11,6 +11,8 @@
       stripedRows
       removableSort
       rowHover
+      resizableColumns
+      columnResizeMode="fit"
       class="p-datatable-sm"
       :pt="{
         column: {
@@ -121,14 +123,20 @@
 
       <Column header="操作" :exportable="false">
         <template #body="{ data }">
-          <div class="flex gap-3 justify-end">
+          <div class="flex gap-3 w-auto">
             <Button
               icon="pi pi-pencil"
               label="编辑"
               severity="secondary"
               size="small"
-              v-tooltip.top="'编辑'"
               @click="$emit('edit', data)"
+            ></Button>
+            <Button
+              icon="pi pi-copy"
+              label="复用"
+              severity="info"
+              size="small"
+              @click="$emit('copy', data)"
             ></Button>
             <Button
               icon="pi pi-stop"
@@ -136,23 +144,13 @@
               severity="danger"
               size="small"
               :disabled="!data.is_active"
-              v-tooltip.top="data.is_active ? '停用' : '已停用'"
               @click="$emit('stop', data)"
-            ></Button>
-            <Button
-              icon="pi pi-copy"
-              label="复用"
-              severity="info"
-              size="small"
-              v-tooltip.top="'复用'"
-              @click="$emit('copy', data)"
             ></Button>
             <Button
               icon="pi pi-trash"
               label="删除"
               severity="danger"
               size="small"
-              v-tooltip.top="'删除'"
               @click="$emit('delete', data)"
             ></Button>
           </div>

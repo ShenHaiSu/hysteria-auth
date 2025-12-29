@@ -30,17 +30,19 @@
               <label for="username" class="font-medium text-surface-700 dark:text-surface-200"
                 >用户名</label
               >
-              <div class="relative">
-                <i class="pi pi-user absolute left-3 top-1/2 -translate-y-1/2 text-surface-400"></i>
+              <InputGroup>
+                <InputGroupAddon>
+                  <i class="pi pi-user text-surface-400"></i>
+                </InputGroupAddon>
                 <InputText
                   id="username"
                   v-model="loginForm.username"
                   placeholder="请输入用户名"
-                  class="w-full pl-10"
+                  class="w-full"
                   :disabled="authStore.loading"
                   required
                 />
-              </div>
+              </InputGroup>
             </div>
 
             <!-- 密码输入 -->
@@ -48,28 +50,22 @@
               <label for="password" class="font-medium text-surface-700 dark:text-surface-200"
                 >密码</label
               >
-              <div class="relative">
+              <InputGroup>
+                <InputGroupAddon>
+                  <i class="pi pi-lock text-surface-400"></i>
+                </InputGroupAddon>
                 <Password
                   id="password"
                   v-model="loginForm.password"
                   placeholder="请输入密码"
                   class="w-full"
-                  input-class="w-full pl-10"
+                  input-class="w-full"
                   :feedback="false"
                   toggle-mask
                   :disabled="authStore.loading"
                   required
-                >
-                  <template #header>
-                    <i
-                      class="pi pi-lock absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 z-10"
-                    ></i>
-                  </template>
-                </Password>
-                <i
-                  class="pi pi-lock absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 z-10 pointer-events-none"
-                ></i>
-              </div>
+                />
+              </InputGroup>
             </div>
 
             <!-- 错误信息提示 -->
@@ -97,13 +93,15 @@
 
 <script setup lang="ts">
 // #region 导入
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import md5 from 'md5'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
+import InputGroup from 'primevue/inputgroup'
+import InputGroupAddon from 'primevue/inputgroupaddon'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 // #endregion
@@ -113,7 +111,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 /** 登录表单数据 */
-const loginForm = reactive({
+const loginForm = ref({
   username: '',
   password: '',
 })
@@ -131,7 +129,7 @@ const errorMsg = ref('')
  * 4. 成功后跳转到首页
  */
 async function handleLogin() {
-  if (!loginForm.username || !loginForm.password) {
+  if (!loginForm.value.username || !loginForm.value.password) {
     errorMsg.value = '请输入用户名和密码'
     return
   }
@@ -141,8 +139,8 @@ async function handleLogin() {
   try {
     // 构造登录请求，密码使用 MD5 加密
     await authStore.login({
-      username: loginForm.username,
-      login_password_md5: md5(loginForm.password),
+      username: loginForm.value.username,
+      login_password_md5: md5(loginForm.value.password),
     })
 
     // 登录成功，跳转到首页
