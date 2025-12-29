@@ -11,7 +11,7 @@
 - `users`（用户）
   - 说明：记录用户身份与鉴权信息。
   - 关键字段：
-    - `username`（唯一）、`login_password_md5`（登录口令摘要）、`proxy_password`（代理认证口令）
+    - `username`（唯一）、`email`（唯一）、`login_password_md5`（登录口令摘要）、`proxy_password`（代理认证口令）
     - `permission`（`admin` | `user`）、`is_active`（启用状态）
     - `proxy_expire_ts`（代理到期时间，单位秒；NULL/0 表示长期有效）
     - `register_ts`、`last_login_ts`、`register_ip`、`last_login_ip`
@@ -22,14 +22,19 @@
     - `ip_address`（必填）、`domain`（可选）
     - `server_group`（分组标识）
     - 共享属性：
-      - `proxy_port`（代理端口）
-      - `server_port`（服务端端口）允许为空
+      - `proxy_port`（代理端口，默认 443，支持范围如 1000-2000）
+      - `server_port`（服务端端口）允许为空，用于主从同步
       - `idc_name`（供应商）、
       - `salamander`（混淆口令）、
       - `rent_ts`（购买时间，默认当前）、
       - `expire_ts`（到期时间，NULL/0 表示长期有效）、
       - `fee`（租用费用）
+    - `note1` ~ `note4`（备注字段）
     - `is_active`（启用状态）、`created_at`、`updated_at`
+- `ip_blacklist`（IP 黑名单）
+  - 说明：持久化封禁恶意 IP。
+  - 关键字段：
+    - `ip`（唯一）、`reason`（封禁原因）、`blocked_at`、`expires_at`（到期时间，NULL 为永久）、`is_active`
   - 说明：
     - 同一物理/逻辑节点的多个地址（如 IPv4/IPv6）以多条记录表示，通过 `server_group` 归组并共享属性。
     - 本项目后端有可能部署在代理节点上, 所以会出现服务端端口这个字段, 如果内容为null或者0说明没有该服务器上面没有部署认证服务器
@@ -102,32 +107,37 @@
 - 到期处理：到期后可选择自动/人工将 `is_active` 置为 0；或仅依赖 `expire_ts` 在认证阶段拒绝。
 - 退役节点：删除记录或设置 `is_active=0`。
 
+## 安全防护与特征隐藏
+
+### 1. 暴力请求防护 (Rate Limiting)
+- **机制**：基于内存存储的 IP 访问频率限制。
+- **配置**：默认限制为每分钟 100 次请求（可在 `src/index.ts` 修改）。
+- **自动封禁**：当单 IP 请求频率超过限制的 2 倍（即 >200次/分）时，系统将自动触发持久化封禁，将该 IP 加入黑名单并限制访问 60 分钟。
+
+### 2. DDoS 与恶意爬虫预防
+- **User-Agent 过滤**：自动识别并拦截常见的自动化工具（如 `curl`, `wget`, `python-requests`, `sqlmap`, `nmap` 等）。触发拦截后，该 IP 将被封禁 24 小时。
+- **蜜罐路由 (Honeypot)**：设置敏感路径陷阱（如 `.env`, `.git`, `wp-login.php`, `config.php` 等）。任何尝试访问这些路径的客户端将被视为攻击者，触发**永久封禁**。
+- **持久化黑名单**：所有自动封禁的 IP 均记录在 `ip_blacklist` 表中，支持跨重启持久化。系统每小时自动清理过期的封禁记录。
+
+### 3. 服务器特征隐藏
+- **响应头混淆**：
+  - 移除 `X-Powered-By` 响应头，防止泄露后端技术栈（Bun/Elysia）。
+  - 伪装 `Server` 响应头为 `nginx`，干扰攻击者对真实服务器环境的判断。
+- **安全头增强**：
+  - 强制开启 `X-Content-Type-Options: nosniff`。
+  - 开启 `X-XSS-Protection: 1; mode=block`。
+
 ## 安全与合规
 
-- 口令存储：当前使用 `login_password_md5`；建议迁移为带盐强散列（如 `bcrypt`/`argon2`），并建立口令轮换策略。
-- 日志与审计：记录登录尝试、认证失败、节点变更与到期处理，便于审计与回溯。
-- 最小权限：所有管理接口仅对 `admin` 开放；`user` 仅保留必要访问能力。
-
-## 性能与扩展
-
-- 索引覆盖：`server_group`、`is_active`、到期字段应具备良好索引支持，以满足高并发查询。
-- 一致性保障：数据库触发器提供强一致；应用层批量更新应采用事务，避免并发竞争。
-- 可扩展字段：可根据需要在 `node_server` 增加端口、地域、协议版本、权重等，支持更复杂的路由与分流。
-
-## 安全与合规
-
-- 口令存储：目前使用 `login_password_md5`，建议后续升级为带盐的强散列（如 `bcrypt/argon2`），并引入口令轮换策略。
-- 日志与审计：记录登录尝试、认证失败、节点变更与到期处理，便于审计与回溯。
-- 访问控制：所有管理接口仅对 `admin` 开放；对 `user` 做最小权限原则。
+- **认证安全**：
+  - 代理认证：要求 `users.is_active=1`，且 `proxy_expire_ts` 未到期。
+  - 管理接口：要求 `admin` 角色，并校验会话令牌（JWT）。
+- **口令存储**：当前使用 `login_password_md5`；建议后续迁移为 `bcrypt`/`argon2` 等带盐强散列。
+- **黑名单预检**：所有 API 请求在进入业务逻辑前，均会经过黑名单中间件校验 IP 合法性。
+- **日志审计**：记录所有触发限流、蜜罐及恶意 UA 的行为，便于后续安全溯源。
 
 ## 性能与扩展
 
 - 索引覆盖：`server_group`、`is_active`、到期字段的组合筛选需具备良好索引支持。
 - 分组一致性：数据库层触发器保障强一致；应用层仍应在事务内处理批量更新，避免竞争。
 - 可扩展字段：可在 `node_server` 增加端口、地域、协议版本等，以满足更复杂的接入。
-
-## 开发注意事项
-
-- Windows 环境优先；在 IDE 外部已具备实时预览，无需本地 dev 运行。
-- 使用 PrimeVue/TailwindCSS 时，请以最新官方文档为准。
-- Vue 前端开发默认使用 `ref`，不使用 `reactive`。
