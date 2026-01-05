@@ -6,7 +6,7 @@
       <h1 class="text-2xl font-bold">用户管理</h1>
     </div>
     <!-- 1. 搜索过滤以及操作栏 -->
-    <UserToolbar :initial-search="store.search" @search="store.onSearch" @add="openNew" />
+    <UserFilter :initial-search="store.search" @search="store.onSearch" @add="openNew" />
 
     <!-- 2. 数据列表展示的 datatable 栏 -->
     <UserTable
@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import UserToolbar from '@/components/User/UserToolbar.vue'
+import UserFilter from '@/components/User/UserFilter.vue'
 import UserTable from '@/components/User/UserTable.vue'
 import UserDialog from '@/components/User/UserDialog.vue'
 import { useUserLogic } from '@/composable/User/useUserLogic'

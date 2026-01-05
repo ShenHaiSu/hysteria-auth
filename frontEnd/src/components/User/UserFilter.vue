@@ -3,13 +3,13 @@
   <div
     class="bg-surface-0 dark:bg-surface-900 p-4 rounded-lg shadow-sm mb-4 border border-surface-200 dark:border-surface-700"
   >
-    <div class="flex flex-wrap items-end gap-4">
+    <div class="flex flex-col md:flex-row md:items-end gap-4">
       <!-- 搜索筛选 -->
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 grow">
         <label for="user_search" class="text-sm font-medium text-surface-600 dark:text-surface-400"
           >用户搜索</label
         >
-        <IconField iconPosition="left">
+        <IconField iconPosition="left" class="w-full">
           <InputIcon class="pi pi-search" />
           <InputText
             id="user_search"
@@ -22,10 +22,29 @@
       </div>
 
       <!-- 操作按钮 -->
-      <div class="flex items-center gap-2 ml-auto">
-        <Button label="重置" icon="pi pi-refresh" severity="secondary" @click="handleReset" />
-        <Button label="查询" icon="pi pi-search" @click="handleSearch" />
-        <Button label="新增用户" icon="pi pi-plus" severity="primary" @click="$emit('add')" />
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto md:ml-auto">
+        <div class="flex gap-2 flex-1 md:flex-none">
+          <Button
+            label="重置"
+            icon="pi pi-refresh"
+            severity="secondary"
+            class="flex-1 md:flex-none"
+            @click="handleReset"
+          ></Button>
+          <Button
+            label="查询"
+            icon="pi pi-search"
+            class="flex-1 md:flex-none"
+            @click="handleSearch"
+          ></Button>
+        </div>
+        <Button
+          label="新增用户"
+          icon="pi pi-plus"
+          severity="primary"
+          class="w-full md:w-auto"
+          @click="$emit('add')"
+        ></Button>
       </div>
     </div>
   </div>
@@ -55,14 +74,16 @@ const searchValue = ref(props.initialSearch || '')
 
 // #region 逻辑处理
 /**
- * 触发搜索事件
+ * 处理搜索操作
+ * 触发 'search' 事件并传递当前搜索关键词
  */
 const handleSearch = () => {
   emit('search', searchValue.value)
 }
 
 /**
- * 重置搜索
+ * 处理重置操作
+ * 清空搜索关键词并触发 'search' 事件
  */
 const handleReset = () => {
   searchValue.value = ''

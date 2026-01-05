@@ -3,9 +3,9 @@
   <div
     class="bg-surface-0 dark:bg-surface-900 p-4 rounded-lg shadow-sm mb-4 border border-surface-200 dark:border-surface-700"
   >
-    <div class="flex flex-wrap gap-4 items-end">
+    <div class="flex flex-col md:flex-row md:flex-wrap md:items-end gap-4">
       <!-- 分组筛选 -->
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 w-full md:w-auto">
         <label for="server_group" class="text-sm font-medium text-surface-600 dark:text-surface-400"
           >节点分组</label
         >
@@ -19,7 +19,7 @@
       </div>
 
       <!-- IP 筛选 -->
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 w-full md:w-auto">
         <label for="ip_address" class="text-sm font-medium text-surface-600 dark:text-surface-400"
           >IP 地址</label
         >
@@ -33,7 +33,7 @@
       </div>
 
       <!-- 域名筛选 -->
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 w-full md:w-auto">
         <label for="domain" class="text-sm font-medium text-surface-600 dark:text-surface-400"
           >域名</label
         >
@@ -47,7 +47,7 @@
       </div>
 
       <!-- 状态筛选 -->
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 w-full md:w-auto">
         <label for="is_active" class="text-sm font-medium text-surface-600 dark:text-surface-400"
           >启用状态</label
         >
@@ -65,10 +65,29 @@
       </div>
 
       <!-- 操作按钮 -->
-      <div class="flex items-center gap-2 ml-auto">
-        <Button label="重置" icon="pi pi-refresh" severity="secondary" @click="handleReset" />
-        <Button label="查询" icon="pi pi-search" @click="handleSearch" />
-        <Button label="新增节点" icon="pi pi-plus" severity="primary" @click="$emit('add')" />
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto md:ml-auto">
+        <div class="flex gap-2 flex-1 md:flex-none">
+          <Button
+            label="重置"
+            icon="pi pi-refresh"
+            severity="secondary"
+            class="flex-1 md:flex-none"
+            @click="handleReset"
+          />
+          <Button
+            label="查询"
+            icon="pi pi-search"
+            class="flex-1 md:flex-none"
+            @click="handleSearch"
+          />
+        </div>
+        <Button
+          label="新增节点"
+          icon="pi pi-plus"
+          severity="primary"
+          class="w-full md:w-auto"
+          @click="$emit('add')"
+        />
       </div>
     </div>
   </div>
@@ -116,6 +135,8 @@ watch(
 // #region 逻辑处理
 /**
  * 处理到期时间(起)变化
+ * 将 Date 对象转换为秒级时间戳并更新 filters
+ * @param date 选中的日期对象
  */
 function onExpireFromChange(date: any) {
   const finalDate = date instanceof Date ? date : null
@@ -124,6 +145,8 @@ function onExpireFromChange(date: any) {
 
 /**
  * 处理到期时间(止)变化
+ * 将 Date 对象转换为秒级时间戳并更新 filters
+ * @param date 选中的日期对象
  */
 function onExpireToChange(date: any) {
   const finalDate = date instanceof Date ? date : null
@@ -132,13 +155,15 @@ function onExpireToChange(date: any) {
 
 /**
  * 触发查询事件
+ * 通知父组件执行搜索逻辑
  */
 function handleSearch() {
   emit('search')
 }
 
 /**
- * 重置操作
+ * 执行重置操作
+ * 清空内部日期状态并通知父组件重置筛选条件
  */
 function handleReset() {
   expireFromDate.value = null

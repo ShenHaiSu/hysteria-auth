@@ -2,10 +2,12 @@
   <div
     class="bg-surface-0 dark:bg-surface-900 p-4 rounded-lg shadow-sm mb-4 border border-surface-200 dark:border-surface-700"
   >
-    <div class="flex flex-wrap gap-4 items-end">
+    <div class="flex flex-col md:flex-row md:flex-wrap md:items-end gap-4">
       <!-- 节点分组筛选 (参考 NodeFilter.vue) -->
-      <div class="flex flex-col gap-2">
-        <label for="server_group" class="text-sm font-medium text-surface-600 dark:text-surface-400">节点分组</label>
+      <div class="flex flex-col gap-2 w-full md:w-auto">
+        <label for="server_group" class="text-sm font-medium text-surface-600 dark:text-surface-400"
+          >节点分组</label
+        >
         <InputText
           id="server_group"
           v-model="store.filters.server_group"
@@ -16,8 +18,10 @@
       </div>
 
       <!-- IP 筛选 -->
-      <div class="flex flex-col gap-2">
-        <label for="ip_address" class="text-sm font-medium text-surface-600 dark:text-surface-400">IP 地址</label>
+      <div class="flex flex-col gap-2 w-full md:w-auto">
+        <label for="ip_address" class="text-sm font-medium text-surface-600 dark:text-surface-400"
+          >IP 地址</label
+        >
         <InputText
           id="ip_address"
           v-model="store.filters.ip_address"
@@ -28,8 +32,10 @@
       </div>
 
       <!-- 域名筛选 -->
-      <div class="flex flex-col gap-2">
-        <label for="domain" class="text-sm font-medium text-surface-600 dark:text-surface-400">域名</label>
+      <div class="flex flex-col gap-2 w-full md:w-auto">
+        <label for="domain" class="text-sm font-medium text-surface-600 dark:text-surface-400">
+          域名
+        </label>
         <InputText
           id="domain"
           v-model="store.filters.domain"
@@ -40,8 +46,10 @@
       </div>
 
       <!-- 状态筛选 -->
-      <div class="flex flex-col gap-2">
-        <label for="is_active" class="text-sm font-medium text-surface-600 dark:text-surface-400">启用状态</label>
+      <div class="flex flex-col gap-2 w-full md:w-auto">
+        <label for="is_active" class="text-sm font-medium text-surface-600 dark:text-surface-400"
+          >启用状态</label
+        >
         <Select
           id="is_active"
           v-model="store.filters.is_active"
@@ -56,8 +64,10 @@
       </div>
 
       <!-- 用户选择 (仅管理员可见) -->
-      <div v-if="authStore.isAdmin" class="flex flex-col gap-2">
-        <label for="target-user" class="text-sm font-medium text-surface-600 dark:text-surface-400">目标用户</label>
+      <div v-if="authStore.isAdmin" class="flex flex-col gap-2 w-full md:w-auto">
+        <label for="target-user" class="text-sm font-medium text-surface-600 dark:text-surface-400"
+          >目标用户</label
+        >
         <Select
           id="target-user"
           v-model="store.targetUserId"
@@ -73,19 +83,20 @@
       </div>
 
       <!-- 操作按钮 -->
-      <div class="flex items-center gap-2 ml-auto">
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto md:ml-auto">
         <Button
           label="重置"
           icon="pi pi-refresh"
           severity="secondary"
+          class="flex-1 md:flex-none"
           @click="store.resetFilters"
         />
         <Button
           label="生成配置"
           icon="pi pi-cog"
           :loading="store.loading"
+          class="p-button-primary flex-1 md:flex-none"
           @click="handleSearch"
-          class="p-button-primary"
         />
       </div>
     </div>
@@ -132,7 +143,8 @@ onMounted(async () => {
 
 // #region 逻辑处理
 /**
- * 触发生成配置操作 (即此处的"查询"行为)
+ * 触发生成配置操作
+ * 调用 store 中的方法根据当前筛选条件生成配置文件
  */
 function handleSearch() {
   store.generateConfig()
