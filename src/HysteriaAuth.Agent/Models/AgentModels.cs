@@ -189,3 +189,13 @@ public class AgentLoggingConfig
     public string LogLevel { get; set; } = "Information";
     public string? File { get; set; }
 }
+
+// ============================
+// 踢用户下线请求（Phase 3）
+// ============================
+
+public class KickUserRequest
+{
+    public string Username { get; set; } = string.Empty;
+    public string NodeId { get; set; } = string.Empty;
+}

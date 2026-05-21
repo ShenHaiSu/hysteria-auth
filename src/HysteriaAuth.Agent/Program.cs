@@ -36,7 +36,12 @@ builder.Services.AddSingleton(agentConfig);
 builder.Services.AddSingleton(agentConfig);
 builder.Services.AddSingleton<SystemMonitor>();
 builder.Services.AddSingleton<AuthProxy>();
-builder.Services.AddHostedService<StatusReporter>(); // 后台心跳上报
+builder.Services.AddHostedService<StatusReporter>();   // 心跳上报后台服务（同时作为单例供 TrafficCollector 注入）
+builder.Services.AddHostedService<TrafficCollector>(); // Phase 3: 流量采集后台服务
+builder.Services.AddHttpClient("TrafficStats", client =>
+{
+    // TrafficCollector 在运行时设置 BaseAddress，此处仅注册命名客户端
+});
 
 // ============================
 // 3. 配置监听地址
@@ -91,9 +96,9 @@ app.MapGet("/health", () =>
     {
         { "system_monitor", "running" },
         { "auth_proxy", "running" },
-        { "master_reachable", "unknown" },      // Phase 3 完善探活
-        { "hysteria_reachable", "unknown" },    // Phase 3 完善探活
-        { "traffic_collector", "pending" }      // Phase 3 变为 "running"
+        { "master_reachable", "unknown" },
+        { "hysteria_reachable", "unknown" },
+        { "traffic_collector", "running" }      // Phase 3: 已启动
     };
 
     return Results.Ok(new
@@ -106,7 +111,40 @@ app.MapGet("/health", () =>
 });
 
 // ============================
-// 6. 启动应用
+// 6. 踢用户下线端点 — POST /kick-user (Phase 3, 由主服务器 KickService 调用)
+// ============================
+app.MapPost("/kick-user", async (HttpContext context) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var request = await context.Request.ReadFromJsonAsync<HysteriaAuth.Agent.Models.KickUserRequest>();
+        if (request == null || string.IsNullOrWhiteSpace(request.Username))
+        {
+            context.Response.StatusCode = 400;
+            return;
+        }
+
+        // 转发到 Hysteria POST /kick
+        using var client = new HttpClient();
+        var trafficBaseUrl = $"http://{agentConfig.TrafficStats.ListenAddress}:{agentConfig.TrafficStats.ListenPort}";
+        var kickUrl = $"{trafficBaseUrl}/kick?secret={Uri.EscapeDataString(agentConfig.TrafficStats.Secret)}";
+        var content = JsonContent.Create(new { username = request.Username });
+
+        var response = await client.PostAsync(kickUrl, content);
+        context.Response.StatusCode = response.IsSuccessStatusCode ? 200 : 502;
+        logger.LogInformation("踢用户下线: {Username}, Hysteria响应: {Code}",
+            request.Username, (int)response.StatusCode);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "踢用户下线失败: {Message}", ex.Message);
+        context.Response.StatusCode = 502;
+    }
+});
+
+// ============================
+// 7. 启动应用
 // ============================
 app.Logger.LogInformation("Edge Agent 启动完成: NodeId={NodeId}, AuthProxy={Addr}:{Port}",
     agentConfig.NodeId,

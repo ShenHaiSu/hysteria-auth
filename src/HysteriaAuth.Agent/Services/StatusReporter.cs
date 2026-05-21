@@ -5,8 +5,8 @@ using HysteriaAuth.Agent.Models;
 namespace HysteriaAuth.Agent.Services;
 
 /// <summary>
-/// 状态上报模块 — 定时将系统监控数据通过心跳上报到主服务器。
-/// Phase 2 只上报系统状态（CPU/内存/网络），userTraffic 和 onlineUsers 为空对象（Phase 3 填充）。
+/// 状态上报模块 — 定时将系统监控数据 + 流量数据通过心跳上报到主服务器。
+/// Phase 3: 集成 TrafficCollector 采集的 userTraffic 和 onlineUsers 到心跳中。
 /// </summary>
 public class StatusReporter : BackgroundService
 {
@@ -14,6 +14,10 @@ public class StatusReporter : BackgroundService
     private readonly SystemMonitor _systemMonitor;
     private readonly HttpClient _httpClient;
     private readonly ILogger<StatusReporter> _logger;
+
+    // Phase 3: 流量数据（由 TrafficCollector 设置）
+    private TrafficData? _pendingTrafficData;
+    private readonly object _trafficLock = new();
 
     public StatusReporter(
         AgentConfig config,
@@ -24,6 +28,17 @@ public class StatusReporter : BackgroundService
         _systemMonitor = systemMonitor;
         _httpClient = new HttpClient();
         _logger = logger;
+    }
+
+    /// <summary>
+    /// 由 TrafficCollector 调用，设置待合并的流量数据。
+    /// </summary>
+    public void SetTrafficData(TrafficData data)
+    {
+        lock (_trafficLock)
+        {
+            _pendingTrafficData = data;
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,6 +71,14 @@ public class StatusReporter : BackgroundService
 
     private async Task SendHeartbeatAsync(SystemMetrics metrics, CancellationToken ct)
     {
+        // Phase 3: 获取待合并的流量数据
+        TrafficData? trafficData;
+        lock (_trafficLock)
+        {
+            trafficData = _pendingTrafficData;
+            _pendingTrafficData = null; // 消费后清空
+        }
+
         var payload = new HeartbeatPayload
         {
             NodeId = _config.NodeId,
@@ -68,7 +91,10 @@ public class StatusReporter : BackgroundService
             NetworkInMbps = metrics.NetworkInMbps,
             NetworkOutMbps = metrics.NetworkOutMbps,
             ActiveConnections = metrics.ActiveConnections,
-            ReportedAt = metrics.CollectedAt
+            ReportedAt = metrics.CollectedAt,
+            // Phase 3: 填充流量数据
+            UserTraffic = trafficData?.UserTraffic ?? new Dictionary<string, UserTrafficEntry>(),
+            OnlineUsers = trafficData?.OnlineUsers ?? new Dictionary<string, int>()
         };
 
         var maxRetries = _config.Reporter.RetryCount;
@@ -88,8 +114,9 @@ public class StatusReporter : BackgroundService
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogDebug("心跳上报成功: CPU={Cpu}%, Mem={Mem}%",
-                        metrics.CpuUsagePercent, metrics.MemoryUsagePercent);
+                    _logger.LogDebug("心跳上报成功: CPU={Cpu}%, Mem={Mem}%, 流量用户={TrafficCount}",
+                        metrics.CpuUsagePercent, metrics.MemoryUsagePercent,
+                        payload.UserTraffic.Count);
                     return;
                 }
 
