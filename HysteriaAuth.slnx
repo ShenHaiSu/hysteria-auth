@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HysteriaAuth.Agent/HysteriaAuth.Agent.csproj" />
+    <Project Path="src/HysteriaAuth.Master/HysteriaAuth.Master.csproj" />
+  </Folder>
+</Solution>
