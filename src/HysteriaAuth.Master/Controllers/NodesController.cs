@@ -5,7 +5,7 @@ using HysteriaAuth.Master.Services;
 namespace HysteriaAuth.Master.Controllers;
 
 /// <summary>
-/// 节点管理控制器 — Phase 2 核心交付。
+/// 节点管理控制器 — Phase 2/3。
 /// 提供节点预注册、注册（令牌+旧版）、配置同步、列表/详情/历史状态、心跳上报、密钥轮换。
 /// </summary>
 [ApiController]

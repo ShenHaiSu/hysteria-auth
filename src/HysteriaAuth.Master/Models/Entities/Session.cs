@@ -27,6 +27,12 @@ public class Session
 
     public long BytesOut { get; set; }
 
+    /// <summary>
+    /// 连续不在线计数：用于 idle → closed 状态判断（连续 3 次不在线则关闭）。
+    /// Phase 3 新增字段。
+    /// </summary>
+    public int IdleCount { get; set; }
+
     [Required]
     [MaxLength(16)]
     public string Status { get; set; } = "active";

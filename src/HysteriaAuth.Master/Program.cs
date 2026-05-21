@@ -40,6 +40,8 @@ builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IAuthLogRepository, AuthLogRepository>();
 builder.Services.AddScoped<INodeRepository, NodeRepository>();
 builder.Services.AddScoped<INodeStatusRepository, NodeStatusRepository>();
+builder.Services.AddScoped<ITrafficRepository, TrafficRepository>();  // Phase 3
+builder.Services.AddScoped<ISessionRepository, SessionRepository>();  // Phase 3
 
 // ============================
 // AES 加密服务（节点密钥加密存储）
@@ -56,11 +58,14 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NodeService>();
+builder.Services.AddScoped<TrafficService>();    // Phase 3
+builder.Services.AddScoped<KickService>();      // Phase 3
 
 // ============================
-// 后台服务（节点离线检测）
+// 后台服务（节点离线检测 + 数据保留策略）
 // ============================
 builder.Services.AddHostedService<NodeHealthCheckService>();
+builder.Services.AddHostedService<DataRetentionService>(); // Phase 3
 
 // ============================
 // CORS 配置（仅管理 API 需要）

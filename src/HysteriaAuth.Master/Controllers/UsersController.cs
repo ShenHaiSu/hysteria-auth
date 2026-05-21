@@ -9,10 +9,12 @@ namespace HysteriaAuth.Master.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly UserService _userService;
+    private readonly TrafficService _trafficService;
 
-    public UsersController(UserService userService)
+    public UsersController(UserService userService, TrafficService trafficService)
     {
         _userService = userService;
+        _trafficService = trafficService;
     }
 
     /// <summary>
@@ -78,5 +80,17 @@ public class UsersController : ControllerBase
     {
         await _userService.ResetTrafficAsync(userId);
         return Ok(new { message = "流量已重置" });
+    }
+
+    /// <summary>
+    /// 获取用户流量统计（管理员操作，Phase 3）
+    /// </summary>
+    [HttpGet("{userId:long}/traffic-stats")]
+    public async Task<IActionResult> GetTrafficStats(
+        long userId,
+        [FromQuery] string period = "month")
+    {
+        var stats = await _trafficService.GetUserTrafficStatsAsync(userId, period);
+        return Ok(stats);
     }
 }

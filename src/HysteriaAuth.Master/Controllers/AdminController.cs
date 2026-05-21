@@ -9,10 +9,12 @@ namespace HysteriaAuth.Master.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly AdminService _adminService;
+    private readonly KickService _kickService;
 
-    public AdminController(AdminService adminService)
+    public AdminController(AdminService adminService, KickService kickService)
     {
         _adminService = adminService;
+        _kickService = kickService;
     }
 
     /// <summary>
@@ -84,5 +86,16 @@ public class AdminController : ControllerBase
             TotalTrafficToday = 0,
             TotalTrafficThisMonth = 0
         });
+    }
+
+    /// <summary>
+    /// 管理员踢用户下线（Phase 3）。
+    /// 建议同时通过 PUT /api/v1/users/{userId} 将用户 isActive 设为 false。
+    /// </summary>
+    [HttpPost("kick-user")]
+    public async Task<IActionResult> KickUser([FromBody] KickUserRequest request)
+    {
+        await _kickService.AdminKickUserAsync(request);
+        return Ok(new { message = $"用户 {request.Username} 已踢下线" });
     }
 }

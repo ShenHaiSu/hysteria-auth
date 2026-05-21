@@ -182,3 +182,33 @@ public class RotateSecretResponse
     public string NewSecret { get; set; } = string.Empty;
     public int NewSecretVersion { get; set; }
 }
+
+// ============================
+// 踢用户下线
+// ============================
+
+public class KickUserRequest
+{
+    public string Username { get; set; } = string.Empty;
+    public string NodeId { get; set; } = string.Empty;
+}
+
+// ============================
+// 用户流量统计 (Phase 3)
+// ============================
+
+public class UserTrafficStatsResponse
+{
+    public long UserId { get; set; }
+    public string Period { get; set; } = string.Empty;
+    public long TotalBytesIn { get; set; }
+    public long TotalBytesOut { get; set; }
+    public List<TrafficDataPoint> DataPoints { get; set; } = new();
+}
+
+public class TrafficDataPoint
+{
+    public DateTime Date { get; set; }
+    public long BytesIn { get; set; }
+    public long BytesOut { get; set; }
+}

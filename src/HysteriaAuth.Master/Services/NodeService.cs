@@ -10,28 +10,38 @@ namespace HysteriaAuth.Master.Services;
 
 /// <summary>
 /// 节点管理服务 — 负责节点的预注册、注册、配置同步、心跳处理、密钥轮换等全部业务逻辑。
+/// Phase 3: 心跳处理扩展为包含完整的流量扣减、幂等检查、会话管理、超额踢人。
 /// </summary>
 public class NodeService
 {
     private readonly INodeRepository _nodeRepo;
     private readonly INodeStatusRepository _nodeStatusRepo;
+    private readonly ITrafficRepository _trafficRepo;
     private readonly AppDbContext _context;
     private readonly AesEncryptionService _aes;
+    private readonly TrafficService _trafficService;
+    private readonly KickService _kickService;
     private readonly ILogger<NodeService> _logger;
     private readonly string _masterServerUrl;
 
     public NodeService(
         INodeRepository nodeRepo,
         INodeStatusRepository nodeStatusRepo,
+        ITrafficRepository trafficRepo,
         AppDbContext context,
         AesEncryptionService aes,
+        TrafficService trafficService,
+        KickService kickService,
         IConfiguration configuration,
         ILogger<NodeService> logger)
     {
         _nodeRepo = nodeRepo;
         _nodeStatusRepo = nodeStatusRepo;
+        _trafficRepo = trafficRepo;
         _context = context;
         _aes = aes;
+        _trafficService = trafficService;
+        _kickService = kickService;
         _logger = logger;
         _masterServerUrl = configuration.GetValue<string>("MasterServerUrl") ?? "https://master.example.com";
     }
@@ -266,7 +276,7 @@ public class NodeService
     }
 
     // ============================
-    // 3.7 心跳处理（Phase 2 仅系统状态，不含流量数据）
+    // 3.7 心跳处理（Phase 3 含完整流量扣减 + 幂等检查 + 会话管理 + 超额踢人）
     // ============================
 
     public async Task ProcessHeartbeatAsync(HeartbeatRequest request)
@@ -275,7 +285,7 @@ public class NodeService
 
         try
         {
-            // 1. 写入节点系统状态
+            // === 1. 写入节点系统状态（Phase 2 原有） ===
             _context.NodeStatuses.Add(new NodeStatus
             {
                 NodeId = request.NodeId,
@@ -291,17 +301,91 @@ public class NodeService
                 ReportedAt = request.ReportedAt
             });
 
-            // 2. 写入节点流量汇总（Phase 2 可为 0）
+            // === 2. 流量处理（Phase 3 新增） ===
+            long totalBytesIn = 0, totalBytesOut = 0;
+            int activeUsers = 0;
+
+            if (request.UserTraffic != null && request.UserTraffic.Count > 0)
+            {
+                foreach (var (username, traffic) in request.UserTraffic)
+                {
+                    // 2a. 生成幂等键
+                    var idempotencyKey = TrafficService.GenerateIdempotencyKey(
+                        request.NodeId, username, request.ReportedAt);
+
+                    // 2b. 幂等检查
+                    var exists = await _trafficRepo.CheckIdempotencyKeyExistsAsync(idempotencyKey);
+                    if (exists)
+                    {
+                        _logger.LogDebug("跳过重复流量: {Key}", idempotencyKey);
+                        totalBytesIn += traffic.Rx;
+                        totalBytesOut += traffic.Tx;
+                        activeUsers++;
+                        continue;
+                    }
+
+                    // 2c. 获取用户
+                    var user = await _context.Users
+                        .FirstOrDefaultAsync(u => u.Username == username);
+                    if (user == null)
+                    {
+                        _logger.LogDebug("跳过未知用户流量: {Username}", username);
+                        continue;
+                    }
+
+                    // 2d. 先更新用户已用流量（乐观并发重试）。
+                    //     注意：UpdateUsedTrafficAsync 内部会调用 SaveChangesAsync + ChangeTracker.Clear，
+                    //     因此在其之前不能 Add TrafficRecord（否则会被 Clear 丢弃）。
+                    await _trafficService.UpdateUsedTrafficAsync(
+                        user.Id, traffic.Rx + traffic.Tx);
+
+                    // 2e. 再写入流量记录（UpdateUsedTraffic 已清理 ChangeTracker，此时可安全 Add）
+                    _context.TrafficRecords.Add(new TrafficRecord
+                    {
+                        UserId = user.Id,
+                        BytesIn = traffic.Rx,   // Hysteria rx = 用户上传
+                        BytesOut = traffic.Tx,  // Hysteria tx = 用户下载
+                        NodeId = request.NodeId,
+                        IdempotencyKey = idempotencyKey,
+                        RecordedAt = request.ReportedAt
+                    });
+
+                    // 2f. 检查是否超额 → 触发踢用户下线
+                    //     重新加载以获取 UpdateUsedTrafficAsync 后的最新值
+                    var updatedUser = await _context.Users
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.Id == user.Id);
+                    if (updatedUser != null
+                        && updatedUser.TotalTrafficBytes > 0
+                        && updatedUser.UsedTrafficBytes >= updatedUser.TotalTrafficBytes)
+                    {
+                        _logger.LogWarning("用户 {Username} 流量超额: {Used}/{Total}，触发踢下线",
+                            username, updatedUser.UsedTrafficBytes, updatedUser.TotalTrafficBytes);
+
+                        // 事务内触发踢人——KickService 使用独立 HttpClient，不影响事务
+                        _ = _kickService.KickUserAsync(username, request.NodeId);
+                    }
+
+                    totalBytesIn += traffic.Rx;
+                    totalBytesOut += traffic.Tx;
+                    activeUsers++;
+                }
+            }
+
+            // === 3. 会话更新（Phase 3 新增） ===
+            await _trafficService.UpdateSessionsAsync(request.NodeId, request.OnlineUsers);
+
+            // === 4. 写入节点流量汇总（Phase 3 填充真实值） ===
             _context.NodeTraffics.Add(new NodeTraffic
             {
                 NodeId = request.NodeId,
-                TotalBytesIn = 0,
-                TotalBytesOut = 0,
-                ActiveUsers = 0,
+                TotalBytesIn = totalBytesIn,
+                TotalBytesOut = totalBytesOut,
+                ActiveUsers = activeUsers,
                 RecordedAt = DateTime.UtcNow
             });
 
-            // 3. 更新节点心跳时间和激活状态
+            // === 5. 更新节点心跳时间和激活状态 ===
             var node = await _nodeRepo.GetByIdAsync(request.NodeId);
             if (node != null)
             {
@@ -311,6 +395,15 @@ public class NodeService
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            _logger.LogDebug("心跳处理完成: NodeId={NodeId}, 流量用户={TrafficCount}, 在线用户={OnlineCount}",
+                request.NodeId, activeUsers, request.OnlineUsers?.Count ?? 0);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError("流量扣减并发冲突，事务回滚: NodeId={NodeId}", request.NodeId);
+            throw; // 让异常中间件返回 500
         }
         catch
         {
