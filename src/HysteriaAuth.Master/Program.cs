@@ -5,6 +5,8 @@ using HysteriaAuth.Master.Data;
 using HysteriaAuth.Master.Middleware;
 using HysteriaAuth.Master.Repositories;
 using HysteriaAuth.Master.Services;
+using INodeRepository = HysteriaAuth.Master.Repositories.INodeRepository;
+using INodeStatusRepository = HysteriaAuth.Master.Repositories.INodeStatusRepository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +38,15 @@ builder.Services.AddControllers()
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IAuthLogRepository, AuthLogRepository>();
+builder.Services.AddScoped<INodeRepository, NodeRepository>();
+builder.Services.AddScoped<INodeStatusRepository, NodeStatusRepository>();
+
+// ============================
+// AES 加密服务（节点密钥加密存储）
+// ============================
+var encryptionKey = builder.Configuration.GetValue<string>("Encryption:MasterKey")
+    ?? Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+builder.Services.AddSingleton(new AesEncryptionService(encryptionKey));
 
 // ============================
 // Service 层注册
@@ -44,6 +55,12 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<NodeService>();
+
+// ============================
+// 后台服务（节点离线检测）
+// ============================
+builder.Services.AddHostedService<NodeHealthCheckService>();
 
 // ============================
 // CORS 配置（仅管理 API 需要）

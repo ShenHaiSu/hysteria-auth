@@ -10,11 +10,13 @@ public class AuthService
 {
     private readonly IUserRepository _userRepo;
     private readonly IAuthLogRepository _authLogRepo;
+    private readonly NodeService _nodeService;
 
-    public AuthService(IUserRepository userRepo, IAuthLogRepository authLogRepo)
+    public AuthService(IUserRepository userRepo, IAuthLogRepository authLogRepo, NodeService nodeService)
     {
         _userRepo = userRepo;
         _authLogRepo = authLogRepo;
+        _nodeService = nodeService;
     }
 
     /// <summary>
@@ -58,7 +60,16 @@ public class AuthService
             throw new ForbiddenException("traffic_exhausted", "流量已用尽");
         }
 
-        // Step 6: 节点允许?
+        // Step 6: 节点允许? (Phase 2: 增加节点活跃检查)
+        // 6a. 检查节点是否活跃（离线节点拒绝认证）
+        var isNodeActive = await _nodeService.IsNodeActiveAsync(request.NodeId);
+        if (!isNodeActive)
+        {
+            await LogFailureAsync(user.Id, request, "node_not_allowed");
+            throw new ForbiddenException("node_not_allowed", "节点不可用");
+        }
+
+        // 6b. 检查用户节点白名单
         if (!string.IsNullOrEmpty(user.AllowedNodes))
         {
             try
