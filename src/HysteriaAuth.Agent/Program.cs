@@ -1,33 +1,57 @@
-using System.Net;
 using System.Text.Json;
 using HysteriaAuth.Agent.Models;
 using HysteriaAuth.Agent.Services;
 
+// ============================
+// Phase 2: Edge Agent 完整启动序列
+// ============================
+// 启动顺序: 1. 加载配置 → 2. 令牌比对/注册 → 3. 启动所有模块 → 4. 发送首次心跳
+// ============================
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================
-// 加载 agent.json 配置
+// 1. 初始化 — 加载配置 + 令牌比对 + 注册
 // ============================
-var agentConfig = LoadAgentConfig("Config/agent.json");
+var configPath = args.Length > 0 && !args[0].StartsWith("--")
+    ? args[0] : "Config/agent.json";
+
+var loggerFactory = LoggerFactory.Create(cfg => cfg.AddConsole().SetMinimumLevel(LogLevel.Information));
+var initLogger = loggerFactory.CreateLogger<Initializer>();
+var initializer = new Initializer(configPath, initLogger);
+
+var initSuccess = await initializer.InitializeAsync(args);
+if (!initSuccess)
+{
+    Console.Error.WriteLine("[FATAL] Edge Agent 初始化失败，退出。");
+    Environment.Exit(1);
+}
+
+var agentConfig = initializer.Config;
 builder.Services.AddSingleton(agentConfig);
 
 // ============================
-// Service 层注册
+// 2. 注册服务
 // ============================
+builder.Services.AddSingleton(agentConfig);
+builder.Services.AddSingleton<SystemMonitor>();
 builder.Services.AddSingleton<AuthProxy>();
+builder.Services.AddHostedService<StatusReporter>(); // 后台心跳上报
 
 // ============================
-// 最小化配置：只监听认证代理端口
+// 3. 配置监听地址
 // ============================
+// 认证代理监听 localhost:8080（Hysteria 通过此端口调用 /auth）
 builder.WebHost.UseUrls($"http://{agentConfig.AuthProxy.ListenAddress}:{agentConfig.AuthProxy.ListenPort}");
 
 var app = builder.Build();
 
 // ============================
-// 认证代理端点 — POST /auth (Hysteria 原生协议)
+// 4. 认证代理端点 — POST /auth (Hysteria 原生协议)
 // ============================
-app.MapPost("/auth", async (HttpContext context, AuthProxy authProxy, ILogger<Program> logger) =>
+app.MapPost("/auth", async (HttpContext context, AuthProxy authProxy) =>
 {
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
     try
     {
         var request = await context.Request.ReadFromJsonAsync<HysteriaAuthRequest>();
@@ -59,52 +83,34 @@ app.MapPost("/auth", async (HttpContext context, AuthProxy authProxy, ILogger<Pr
 });
 
 // ============================
-// 健康检查端点
+// 5. 健康检查端点 — GET /health
 // ============================
-app.MapGet("/health", () => Results.Ok(new
+app.MapGet("/health", () =>
 {
-    Status = "healthy",
-    NodeId = agentConfig.NodeId,
-    Timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-    Checks = new Dictionary<string, object>
+    var checks = new Dictionary<string, object>
     {
-        { "auth_proxy", "running" }
-    }
-}));
+        { "system_monitor", "running" },
+        { "auth_proxy", "running" },
+        { "master_reachable", "unknown" },      // Phase 3 完善探活
+        { "hysteria_reachable", "unknown" },    // Phase 3 完善探活
+        { "traffic_collector", "pending" }      // Phase 3 变为 "running"
+    };
+
+    return Results.Ok(new
+    {
+        Status = "healthy",
+        NodeId = agentConfig.NodeId,
+        Timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+        Checks = checks
+    });
+});
+
+// ============================
+// 6. 启动应用
+// ============================
+app.Logger.LogInformation("Edge Agent 启动完成: NodeId={NodeId}, AuthProxy={Addr}:{Port}",
+    agentConfig.NodeId,
+    agentConfig.AuthProxy.ListenAddress,
+    agentConfig.AuthProxy.ListenPort);
 
 app.Run();
-
-// ============================
-// 加载 agent.json
-// ============================
-static AgentConfig LoadAgentConfig(string path)
-{
-    if (!File.Exists(path))
-    {
-        // 尝试从 appsettings.json 查找
-        path = "appsettings.json";
-    }
-
-    if (File.Exists(path))
-    {
-        var json = File.ReadAllText(path);
-        var config = JsonSerializer.Deserialize<AgentConfig>(json, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
-        if (config != null) return config;
-    }
-
-    // 返回默认配置
-    return new AgentConfig
-    {
-        NodeId = Guid.NewGuid().ToString(),
-        NodeName = "Edge Node",
-        MasterServerUrl = "https://master.example.com",
-        AuthProxy = new AgentAuthProxyConfig
-        {
-            ListenAddress = "127.0.0.1",
-            ListenPort = 8080
-        }
-    };
-}
