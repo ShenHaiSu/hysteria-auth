@@ -1,6 +1,6 @@
 # Hysteria 认证后端系统 — 后端开发规范
 
-> **文档版本**: v1.0 | **制定日期**: 2026-05-21 | **适用范围**: 主服务器 (Master Server) + 边缘节点 (Edge Agent) 全部后端开发
+> **文档版本**: v1.1 | **更新日期**: 2026-05-22 | **适用范围**: 主服务器 (Master Server) + 边缘节点 (Edge Agent) 全部后端开发
 >
 > **来源**: 本规范提取自 [`document/architect/`](../architect/README.md) 全部架构设计文档，所有后端开发人员**必须严格遵守**。
 
@@ -114,7 +114,7 @@ var now = DateTime.Now; // 禁止
 
 | 组件 | 技术选型 |
 |------|----------|
-| 开发语言 | C# (.NET 8.0) |
+| 开发语言 | C# (.NET 10.0) |
 | Web 框架 | ASP.NET Core |
 | 数据库 | SQLite |
 | ORM | Entity Framework Core |
@@ -137,7 +137,8 @@ src/
 │   │   ├── AppDbContext.cs        # EF Core 数据库上下文
 │   │   └── Migrations/            # EF Core 迁移文件
 │   ├── Middleware/                 # 中间件（认证、异常、限流、审计）
-│   ├── Config/                    # 强类型配置类
+│   ├── Config/                    # 强类型配置类（含 SpaSettings）
+│   ├── wwwroot/                   # SPA 前端构建产物（路径可配置）
 │   ├── appsettings.json
 │   └── Program.cs
 │
@@ -157,7 +158,7 @@ src/
 | **Controllers** | HTTP 请求路由、输入参数校验、响应格式化。**不包含业务逻辑。** |
 | **Services** | 业务逻辑编排、事务管理。所有核心业务在此层实现。 |
 | **Repositories** | 数据访问抽象。每个实体对应一个仓储接口和实现。**不包含业务逻辑。** |
-| **Middleware** | 横切关注点：JWT 认证、节点密钥认证、全局异常处理、速率限制、审计日志。 |
+| **Middleware** | 横切关注点：JWT 认证、节点密钥认证、全局异常处理、速率限制、审计日志、SPA 静态文件托管。 |
 
 ### 2.4 命名约定
 
@@ -755,8 +756,8 @@ public async Task<AuthResult> AuthenticateAsync(AuthRequest request)
 |------|----------|
 | `Trace` | 请求/响应详情、SQL 参数 |
 | `Debug` | 缓存命中/未命中、幂等检查结果 |
-| `Information` | 服务启动/停止、流量采集完成、节点注册成功 |
-| `Warning` | 主服务器响应慢、流量采集跳过、心跳超时 |
+| `Information` | 服务启动/停止、流量采集完成、节点注册成功、SPA 路径解析 |
+| `Warning` | 主服务器响应慢、流量采集跳过、心跳超时、SPA 目录不存在 |
 | `Error` | 认证失败、数据库错误、API 不可达 |
 | `Critical` | 服务崩溃、数据库损坏 |
 
@@ -859,6 +860,12 @@ public async Task<AuthResult> AuthenticateAsync(AuthRequest request)
         "AllowedHeaders": ["Authorization", "Content-Type"],
         "MaxAgeSeconds": 3600
     },
+    "Spa": {
+        "Enabled": true,
+        "StaticFilesPath": "wwwroot",
+        "FallbackFile": "index.html",
+        "CacheMaxAgeSeconds": 86400
+    },
     "Backup": {
         "AutoBackupEnabled": true,
         "BackupIntervalHours": 24,
@@ -935,7 +942,7 @@ public async Task<AuthResult> AuthenticateAsync(AuthRequest request)
 | 组件 | 要求 |
 |------|------|
 | 操作系统 | Ubuntu 20.04+ / Debian 11+ |
-| 运行时 | .NET 8.0 Runtime |
+| 运行时 | .NET 10.0（`--self-contained` 发布后可不需要系统运行时） |
 | 主服务器 RAM | ≥ 1GB |
 | Edge Agent RAM | ≥ 256MB |
 | 主服务器磁盘 | ≥ 10GB |
@@ -968,6 +975,46 @@ trafficStats:
   listen: 127.0.0.1:9999                # ← 仅本地回环，禁止公网暴露
   secret: your_traffic_stats_secret     # ← 与 agent.json 中一致
 ```
+
+### 13.5 SPA 静态文件托管
+
+> 详细设计参见 [`spa-integration.md`](../architect/spa-integration.md)
+
+Master 服务器通过 `UseStaticFiles` + `MapFallbackToFile` 托管 Vue3+Vite7 SPA 前端构建产物。相关配置：
+
+| 配置项 | 位置 | 说明 |
+|--------|------|------|
+| `Spa.Enabled` | `appsettings.json` | 是否启用 SPA 托管，默认 `true` |
+| `Spa.StaticFilesPath` | `appsettings.json` | 前端构建产物路径，支持相对/绝对路径，默认 `"wwwroot"` |
+| `Spa.FallbackFile` | `appsettings.json` | SPA 兜底文件名，默认 `"index.html"` |
+| `SpaSettings.cs` | `Config/` 目录 | 强类型配置类 |
+
+**关键规则**：
+- 启动时自动将 `StaticFilesPath` 解析为绝对路径并校验目录存在性
+- 目录不存在时记录 Warning 日志但不阻止启动（仅 API 功能可用）
+- `MapFallbackToFile` 必须在 `MapControllers` **之后**注册，确保 API 优先匹配
+- CORS 配置对静态文件路径无效（仅对 `/api/*` 路由生效）
+
+### 13.6 跨平台交叉编译
+
+使用 .NET `--runtime` (RID) + `--self-contained` 参数实现交叉编译，无需目标平台安装 .NET Runtime。
+
+| 编译目标 | 命令 |
+|----------|------|
+| Windows→Linux | `dotnet publish -r linux-x64 --self-contained true -o publish/linux-x64` |
+| Windows→Windows | `dotnet publish -r win-x64 --self-contained true -o publish/local-dev` |
+
+**Windows 环境可用脚本**：
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/dev-build.ps1` | 本地开发构建（win-x64 + 前端 SPA） |
+| `scripts/publish-linux.ps1` | 交叉编译 Linux 版本 + 打包 tar.gz |
+
+**步骤**：
+1. 编译后端：`dotnet publish -r {RID} --self-contained true`
+2. 复制前端：将 `vite build` 产物复制到输出目录的 `wwwroot/`
+3. 部署：Linux 上直接执行 `HysteriaAuth.Master`（ELF 二进制）
 
 ---
 
