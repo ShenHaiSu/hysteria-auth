@@ -1,0 +1,59 @@
+{
+  "title": "用户管理",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "username": "用户名",
+      "email": "邮箱",
+      "totalTraffic": "总流量配额",
+      "usedTraffic": "已用流量",
+      "isActive": "状态",
+      "createdAt": "创建时间",
+      "expiresAt": "过期时间",
+      "allowedNodes": "允许节点",
+      "remark": "备注",
+      "actions": "操作"
+    }
+  },
+  "form": {
+    "createTitle": "创建用户",
+    "editTitle": "编辑用户",
+    "fields": {
+      "username": { "label": "用户名" },
+      "password": { "label": "密码" },
+      "email": { "label": "邮箱" },
+      "totalTrafficBytes": { "label": "总流量配额", "hint": "0 表示不限" },
+      "isActive": { "label": "激活状态" },
+      "expiresAt": { "label": "过期时间" },
+      "allowedNodes": { "label": "允许连接节点" },
+      "remark": { "label": "备注" }
+    }
+  },
+  "detail": {
+    "basicInfo": "基本信息",
+    "trafficStats": "流量统计",
+    "trafficTrend": "流量趋势"
+  },
+  "traffic": {
+    "title": "流量统计",
+    "totalUsed": "已使用流量",
+    "totalQuota": "总流量配额",
+    "usageRate": "使用率",
+    "period": {
+      "day": "今日",
+      "week": "本周",
+      "month": "本月",
+      "all": "全部"
+    }
+  },
+  "toast": {
+    "createSuccess": "用户创建成功",
+    "updateSuccess": "用户更新成功",
+    "deleteSuccess": "用户删除成功",
+    "deleteConfirm": "确定要删除该用户吗？此操作不可恢复。",
+    "resetTrafficSuccess": "流量重置成功",
+    "kickSuccess": "用户已下线",
+    "deleteFailed": "用户删除失败",
+    "notFound": "用户不存在"
+  }
+}

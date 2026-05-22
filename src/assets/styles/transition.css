@@ -1,0 +1,33 @@
+/* 路由加载浮窗：滑入/滑出 */
+.loading-bar-slide-enter-active {
+  transition: transform var(--duration-fast) var(--easing-decelerate);
+}
+.loading-bar-slide-leave-active {
+  transition: transform var(--duration-base) var(--easing-accelerate);
+}
+.loading-bar-slide-enter-from,
+.loading-bar-slide-leave-to {
+  transform: translateY(-100%);
+}
+
+/* loading-bar 扫光动画 */
+@keyframes loading-bar-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+.animate-loading-bar {
+  animation: loading-bar-indeterminate 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* 列表进入：逐项滑入 (配合 TransitionGroup) */
+.list-enter-active {
+  transition: all var(--duration-slow) var(--easing-decelerate);
+}
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}

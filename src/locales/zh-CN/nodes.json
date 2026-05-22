@@ -1,0 +1,53 @@
+{
+  "title": "节点管理",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "name": "节点名称",
+      "ipAddress": "IP 地址",
+      "port": "端口",
+      "isActive": "状态",
+      "location": "地区",
+      "lastHeartbeat": "最后心跳",
+      "provisionStatus": "注册状态",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    }
+  },
+  "form": {
+    "registerTitle": "预注册节点",
+    "fields": {
+      "name": { "label": "节点名称" },
+      "location": { "label": "地区" },
+      "port": { "label": "端口" },
+      "trafficStatsPort": { "label": "流量统计端口" }
+    }
+  },
+  "detail": {
+    "basicInfo": "基本信息",
+    "statusHistory": "状态历史",
+    "secretInfo": "密钥信息",
+    "secretVersion": "密钥版本"
+  },
+  "status": {
+    "cpu": "CPU 使用率",
+    "memory": "内存使用率",
+    "memoryUsed": "已用内存",
+    "memoryTotal": "总内存",
+    "networkIn": "网络流入",
+    "networkOut": "网络流出",
+    "activeConnections": "活跃连接数",
+    "period": {
+      "1h": "最近1小时",
+      "6h": "最近6小时",
+      "24h": "最近24小时",
+      "7d": "最近7天"
+    }
+  },
+  "toast": {
+    "registerSuccess": "节点预注册成功",
+    "rotateSecretSuccess": "密钥轮换成功",
+    "kickSuccess": "用户已下线",
+    "deleteConfirm": "确定要删除该节点吗？"
+  }
+}

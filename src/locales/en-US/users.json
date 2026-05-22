@@ -1,0 +1,59 @@
+{
+  "title": "User Management",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "username": "Username",
+      "email": "Email",
+      "totalTraffic": "Total Quota",
+      "usedTraffic": "Used Traffic",
+      "isActive": "Status",
+      "createdAt": "Created",
+      "expiresAt": "Expires",
+      "allowedNodes": "Allowed Nodes",
+      "remark": "Remark",
+      "actions": "Actions"
+    }
+  },
+  "form": {
+    "createTitle": "Create User",
+    "editTitle": "Edit User",
+    "fields": {
+      "username": { "label": "Username" },
+      "password": { "label": "Password" },
+      "email": { "label": "Email" },
+      "totalTrafficBytes": { "label": "Total Traffic Quota", "hint": "0 means unlimited" },
+      "isActive": { "label": "Active" },
+      "expiresAt": { "label": "Expires At" },
+      "allowedNodes": { "label": "Allowed Nodes" },
+      "remark": { "label": "Remark" }
+    }
+  },
+  "detail": {
+    "basicInfo": "Basic Info",
+    "trafficStats": "Traffic Stats",
+    "trafficTrend": "Traffic Trend"
+  },
+  "traffic": {
+    "title": "Traffic Stats",
+    "totalUsed": "Used Traffic",
+    "totalQuota": "Total Quota",
+    "usageRate": "Usage Rate",
+    "period": {
+      "day": "Today",
+      "week": "This Week",
+      "month": "This Month",
+      "all": "All"
+    }
+  },
+  "toast": {
+    "createSuccess": "User created",
+    "updateSuccess": "User updated",
+    "deleteSuccess": "User deleted",
+    "deleteConfirm": "Are you sure you want to delete this user? This cannot be undone.",
+    "resetTrafficSuccess": "Traffic reset",
+    "kickSuccess": "User kicked offline",
+    "deleteFailed": "Failed to delete user",
+    "notFound": "User not found"
+  }
+}

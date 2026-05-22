@@ -1,0 +1,53 @@
+{
+  "title": "Node Management",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "name": "Node Name",
+      "ipAddress": "IP Address",
+      "port": "Port",
+      "isActive": "Status",
+      "location": "Location",
+      "lastHeartbeat": "Last Heartbeat",
+      "provisionStatus": "Provision Status",
+      "createdAt": "Created",
+      "actions": "Actions"
+    }
+  },
+  "form": {
+    "registerTitle": "Pre-register Node",
+    "fields": {
+      "name": { "label": "Node Name" },
+      "location": { "label": "Location" },
+      "port": { "label": "Port" },
+      "trafficStatsPort": { "label": "Traffic Stats Port" }
+    }
+  },
+  "detail": {
+    "basicInfo": "Basic Info",
+    "statusHistory": "Status History",
+    "secretInfo": "Secret Info",
+    "secretVersion": "Secret Version"
+  },
+  "status": {
+    "cpu": "CPU Usage",
+    "memory": "Memory Usage",
+    "memoryUsed": "Used Memory",
+    "memoryTotal": "Total Memory",
+    "networkIn": "Network In",
+    "networkOut": "Network Out",
+    "activeConnections": "Active Connections",
+    "period": {
+      "1h": "Last Hour",
+      "6h": "Last 6 Hours",
+      "24h": "Last 24 Hours",
+      "7d": "Last 7 Days"
+    }
+  },
+  "toast": {
+    "registerSuccess": "Node pre-registered",
+    "rotateSecretSuccess": "Secret rotated",
+    "kickSuccess": "User kicked offline",
+    "deleteConfirm": "Are you sure you want to delete this node?"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "title": "Audit Logs",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "action": "Action",
+      "targetType": "Target Type",
+      "targetName": "Target Name",
+      "adminUsername": "Operator",
+      "detail": "Detail",
+      "ipAddress": "IP Address",
+      "createdAt": "Timestamp"
+    }
+  },
+  "actions": {
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "login": "Login",
+    "logout": "Logout",
+    "kick_user": "Kick User"
+  },
+  "targets": {
+    "user": "User",
+    "node": "Node",
+    "admin": "Admin",
+    "system": "System"
+  },
+  "filters": {
+    "action": "Action",
+    "targetType": "Target Type",
+    "adminId": "Operator",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "allActions": "All Actions",
+    "allTargets": "All Targets"
+  }
+}

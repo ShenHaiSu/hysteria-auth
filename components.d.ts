@@ -13,7 +13,6 @@ declare module 'vue' {
   export interface GlobalComponents {
     Button: typeof import('primevue/button')['default']
     ConfirmDialog: typeof import('primevue/confirmdialog')['default']
-    ConfirmPopup: typeof import('primevue/confirmpopup')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Toast: typeof import('primevue/toast')['default']

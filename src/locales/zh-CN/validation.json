@@ -1,0 +1,18 @@
+{
+  "required": "此项为必填",
+  "minLength": "至少需要 {min} 个字符",
+  "maxLength": "最多 {max} 个字符",
+  "minValue": "最小值为 {min}",
+  "maxValue": "最大值为 {max}",
+  "pattern": "格式不正确",
+  "email": "请输入有效的邮箱地址",
+  "url": "请输入有效的 URL",
+  "integer": "请输入整数",
+  "number": "请输入数字",
+  "password": "密码至少包含8个字符",
+  "passwordMatch": "两次输入的密码不一致",
+  "username": "用户名只能包含字母、数字和下划线",
+  "trafficBytes": "请输入有效的流量值（0 或不限，或正整数）",
+  "port": "端口号范围为 1-65535",
+  "ipAddress": "请输入有效的 IP 地址"
+}
