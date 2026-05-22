@@ -3,4 +3,7 @@
     <Project Path="src/HysteriaAuth.Agent/HysteriaAuth.Agent.csproj" />
     <Project Path="src/HysteriaAuth.Master/HysteriaAuth.Master.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HysteriaAuth.Tests/HysteriaAuth.Tests.csproj" />
+  </Folder>
 </Solution>
