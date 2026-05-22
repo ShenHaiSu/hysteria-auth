@@ -1,0 +1,17 @@
+[Unit]
+Description=Hysteria Auth Edge Agent
+After=network.target hysteria-server.service
+Requires=hysteria-server.service
+
+[Service]
+Type=notify
+User=root
+Group=root
+WorkingDirectory=/opt/hysteria-auth/agent
+ExecStart=/usr/bin/dotnet /opt/hysteria-auth/agent/HysteriaAuth.Agent.dll
+Restart=always
+RestartSec=5
+Environment=ASPNETCORE_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target

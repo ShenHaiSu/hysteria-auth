@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # 主服务器
+  hysteria-auth-master:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.master
+    container_name: hysteria-auth-master
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - hysteria-auth-data:/var/lib/hysteria-auth
+      - hysteria-auth-logs:/var/log/hysteria-auth
+      - hysteria-auth-backups:/var/backups/hysteria-auth
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__DefaultConnection=Data Source=/var/lib/hysteria-auth/hysteria-auth.db
+      - Jwt__Secret=change-this-to-a-secure-random-key-at-least-32-chars
+
+  # 边缘节点 (需配合 Hysteria Server 使用)
+  hysteria-auth-agent:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.agent
+    container_name: hysteria-auth-agent
+    restart: always
+    network_mode: host
+    volumes:
+      - ./agent.json:/app/agent.json:ro
+      - hysteria-agent-logs:/var/log/hysteria-auth
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - hysteria-auth-master
+
+volumes:
+  hysteria-auth-data:
+  hysteria-auth-logs:
+  hysteria-agent-logs:
+  hysteria-auth-backups:
