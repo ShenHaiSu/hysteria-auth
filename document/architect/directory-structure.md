@@ -49,7 +49,7 @@ web-dev/
 │   │   └── styles/                 # 样式文件
 │   │       ├── public.css          # TailwindCSS 入口 + 全局基础样式
 │   │       ├── variables.css       # CSS 自定义属性 + @theme 扩展（来自 design-tokens 规范）
-│   │       ├── transition.css      # 路由过渡 / 组件过渡动画
+│   │       ├── transition.css      # 组件过渡动画 + 路由加载浮窗动画（路由过渡已禁用）
 │   │       └── scrollbar.css       # 自定义滚动条样式
 │   ├── components/                 # ★ 可复用组件
 │   │   ├── common/                 # 通用基础组件

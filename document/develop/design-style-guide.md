@@ -353,7 +353,7 @@
 | `--easing-default` | **标准缓动**，适用于大部分过渡 |
 | `--easing-decelerate` | 进场动画（元素出现） |
 | `--easing-accelerate` | 退场动画（元素消失） |
-| `--easing-emphasized` | 侧边栏折叠、路由过渡 |
+| `--easing-emphasized` | 侧边栏折叠 |
 
 ### 5.3 预设动效
 
@@ -365,28 +365,69 @@
 | **Slide Left** | `transition-transform duration-300` | 侧边栏折叠 |
 | **All** | `transition-all duration-200` | 下拉菜单、Popover |
 
-### 5.4 路由过渡
+### 5.4 路由过渡（已禁用 → 顶部加载浮窗替代）
+
+> **警告**：路由过渡动效（`<Transition>` 包裹 `<RouterView>` 配合 `mode="out-in"`）已禁用。存在已知框架内部 bug：在配合 `vue-router` 异步组件懒加载时，`mode="out-in"` 会导致离开组件卸载异常、内存泄漏及新页面渲染空白等问题。该 bug 在 Vue 3.x + vue-router 4.x 组合下稳定复现，暂无官方修复。
+
+**替代方案**：使用顶部小型浮窗（Top Loading Bar）提示用户路由正在跳转加载中，不阻挡页面交互，视觉轻量：
 
 ```vue
-<!-- App.vue 中的路由过渡 -->
-<RouterView v-slot="{ Component }">
-  <Transition name="page-fade" mode="out-in">
-    <component :is="Component" />
-  </Transition>
-</RouterView>
+<!-- App.vue 中的路由加载浮窗 -->
+<template>
+  <div class="app-shell">
+    <!-- 顶部路由加载浮窗：仅在路由跳转期间显示 -->
+    <Transition name="loading-bar-slide">
+      <div
+        v-if="appStore.routeLoading"
+        class="fixed top-0 left-0 right-0 z-[9999]
+               h-1 bg-[var(--brand-500)] shadow-[0_0_6px_var(--brand-500)]
+               before:absolute before:inset-0 before:animate-loading-bar
+               before:bg-[linear-gradient(90deg,transparent,var(--brand-200),transparent)]"
+        role="alert"
+        aria-label="页面加载中"
+      />
+    </Transition>
+
+    <RouterView />
+    <Toast />
+    <ConfirmDialog />
+  </div>
+</template>
 ```
 
 ```css
-/* transition.css — 页面淡入淡出 */
-.page-fade-enter-active,
-.page-fade-leave-active {
-  transition: opacity var(--duration-base) var(--easing-default);
+/* transition.css — 路由加载浮窗滑入/滑出 */
+.loading-bar-slide-enter-active {
+  transition: transform var(--duration-fast) var(--easing-decelerate);
 }
-.page-fade-enter-from,
-.page-fade-leave-to {
-  opacity: 0;
+.loading-bar-slide-leave-active {
+  transition: transform var(--duration-base) var(--easing-accelerate);
+}
+.loading-bar-slide-enter-from {
+  transform: translateY(-100%);
+}
+.loading-bar-slide-leave-to {
+  transform: translateY(-100%);
+}
+
+/* loading-bar 扫光动画 */
+@keyframes loading-bar-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-loading-bar {
+  animation: loading-bar-indeterminate 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 ```
+
+**控制逻辑**：在 [`router/guards/`](../../src/router/guards/) 的全局前置守卫（`beforeEach`）中设置 `appStore.routeLoading = true`，在全局后置钩子（`afterEach`）中设置 `appStore.routeLoading = false`。该状态由 [`app.store.ts`](../../src/stores/app.store.ts) 中的 `routeLoading` 字段管理。
+
+**设计要点**：
+- 浮窗高度仅 `4px`（`h-1`），不占据有效内容空间
+- 品牌色背景 + 白色扫光动画，视觉上清晰传达"正在加载"状态
+- 进场滑入 100ms（快速出现），退场滑出 200ms（避免过早消失导致的闪烁）
+- `z-index: 9999` 确保在所有内容之上
+- 不阻断用户操作（与全屏 Loading 不同）
 
 ---
 
@@ -565,6 +606,7 @@
 | 按钮操作进行中 | 按钮 loading 属性 | 禁用按钮 + 旋转图标 |
 | 图表数据加载 | 半透明遮罩 + Spinner | 保持容器尺寸不变 |
 | 全局操作（如登录） | 全屏 Loading | 阻止用户操作 |
+| 路由跳转中 | 顶部小型浮窗（Loading Bar） | 仅顶部 4px 彩色扫光条，不阻挡交互 |
 
 ### 8.2 空状态
 

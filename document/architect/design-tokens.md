@@ -244,21 +244,38 @@
 | **Slide Down** | `transition-[max-height] duration-300 ease-default` | 折叠面板、手风琴 |
 | **Slide Left** | `transition-transform duration-300 ease-emphasized` | 侧边栏折叠 |
 | **Background Color** | `transition-colors duration-100 ease-default` | hover 状态、菜单项 |
-| **Page Transition** | `<Transition name="page-fade" mode="out-in">` | 路由切换 |
+| **Page Transition** | ~~`<Transition name="page-fade" mode="out-in">`~~ → 已禁用 | 路由切换（框架 bug，改用顶部加载浮窗） |
 
-### 6.4 路由过渡动画
+### 6.4 路由过渡动画（已禁用）
+
+> **已禁用**：路由级别 `<Transition name="page-fade" mode="out-in">` 因框架内部 bug（vue-router 异步组件 + `mode="out-in"` 导致组件卸载异常）已移除。详见 [`design-style-guide.md §5.4`](../develop/design-style-guide.md#54-路由过渡已禁用--顶部加载浮窗替代)。
+
+**替代方案 — 顶部加载浮窗**：
+
+在 `transition.css` 中保留以下动画定义，供路由加载浮窗使用：
 
 ```css
 /* src/assets/styles/transition.css */
 
-/* 页面切换：淡入淡出 */
-.page-fade-enter-active,
-.page-fade-leave-active {
-  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+/* 路由加载浮窗：滑入/滑出 */
+.loading-bar-slide-enter-active {
+  transition: transform 100ms cubic-bezier(0.0, 0, 0.2, 1);
 }
-.page-fade-enter-from,
-.page-fade-leave-to {
-  opacity: 0;
+.loading-bar-slide-leave-active {
+  transition: transform 200ms cubic-bezier(0.4, 0, 1, 1);
+}
+.loading-bar-slide-enter-from,
+.loading-bar-slide-leave-to {
+  transform: translateY(-100%);
+}
+
+/* loading-bar 扫光动画 */
+@keyframes loading-bar-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-loading-bar {
+  animation: loading-bar-indeterminate 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* 列表进入：逐项滑入 (配合 TransitionGroup) */

@@ -141,7 +141,7 @@
 | **主题** | PrimeVue darkModeSelector + TailwindCSS dark class + CSS 变量 | 亮色/暗色双主题，详见 [design-tokens.md](design-tokens.md) |
 | **设计令牌** | CSS 自定义属性 + TailwindCSS @theme 扩展 | 全站色彩/间距/动效/字体统一管理 |
 | **错误处理** | axios 响应拦截器 + PrimeVue Toast | 统一错误提示，按 error.code 差异化处理 |
-| **加载状态** | appStore.globalLoading + PrimeVue ProgressBar | 全局加载指示器 |
+| **加载状态** | appStore.globalLoading + PrimeVue ProgressBar + 顶部路由加载浮窗 | 全局加载指示器 + 路由跳转提示（顶部 4px 扫光条） |
 | **表单校验** | 自定义 validators + PrimeVue Form 集成 | 前端参数校验 |
 | **图表可视化** | ECharts + BaseChart 封装 + useECharts | 节点监控、流量趋势 |
 | **表格导出导入** | xlsx + useExportExcel + export-xlsx 工具 | Excel 数据导出，批量用户导入 |

@@ -84,7 +84,7 @@
 ### 0.7 CSS 变量与设计令牌
 
 - [ ] `src/assets/styles/variables.css` — 全部 CSS 自定义属性（品牌色/亮暗色主题/排版/圆角/动效）+ TailwindCSS `@theme` 扩展
-- [ ] `src/assets/styles/transition.css` — 路由过渡动画 + 组件过渡动画
+- [ ] `src/assets/styles/transition.css` — 组件过渡动画 + 路由加载浮窗动画（路由过渡 `<Transition mode="out-in">` 已禁用，框架 bug）
 - [ ] `src/assets/styles/scrollbar.css` — 自定义滚动条样式
 - [ ] 更新 `src/assets/styles/public.css` — 确保 `variables.css` 在 TailwindCSS 之前引入
 
@@ -92,7 +92,7 @@
 
 ### 0.8 应用入口改造
 
-- [ ] 重写 `src/App.vue` — `<RouterView />` + `<Toast />` + `<ConfirmDialog />`
+- [ ] 重写 `src/App.vue` — 路由加载浮窗 + `<RouterView />` + `<Toast />` + `<ConfirmDialog />`
 - [ ] 重写 `src/main.ts` — 完整插件注册链：
 
 ```
