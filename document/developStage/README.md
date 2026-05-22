@@ -69,10 +69,11 @@ Phase 0 ──────► Phase 1 ──────► Phase 2 ────
 
 1. **每个 Phase 的验证清单必须 100% 通过才能进入下一阶段**，不允许跳过验证
 2. **所有阶段的代码必须通过 `bun run type-check`**，0 错误容忍
-3. **Git 提交规范**：每个 Phase 完成后打 tag（如 `phase-0-done`），每个任务完成后提交
-4. **Mock 数据策略**：如果后端 API 尚未就绪，在 `src/api/` 层使用 MSW (Mock Service Worker) 或 axios mock adapter 进行开发
-5. **代码审查**：每个 Phase 的核心代码（Store、API 层、路由守卫）需经过审查再进入下一阶段
-6. **不要跨阶段开发**：例如不要在 Phase 2 中提前实现 Phase 5 的图表功能
+3. **移动端与桌面端双端适配**：从 Phase 1 开始，每个 Phase 交付的页面和组件必须同时在移动端（375px 视口）和桌面端（1920px 视口）下验证通过。布局框架（Phase 1）建立响应式基础后，后续所有阶段必须继承并遵循。具体要求见 [设计样式规范 §9](../develop/design-style-guide.md#9-响应式设计规范)
+4. **Git 提交规范**：每个 Phase 完成后打 tag（如 `phase-0-done`），每个任务完成后提交
+5. **Mock 数据策略**：如果后端 API 尚未就绪，在 `src/api/` 层使用 MSW (Mock Service Worker) 或 axios mock adapter 进行开发
+6. **代码审查**：每个 Phase 的核心代码（Store、API 层、路由守卫）需经过审查再进入下一阶段
+7. **不要跨阶段开发**：例如不要在 Phase 2 中提前实现 Phase 5 的图表功能
 
 ### 全局编码规范
 
