@@ -6,6 +6,7 @@ import nodes from './nodes.json'
 import admins from './admins.json'
 import audit from './audit.json'
 import validation from './validation.json'
+import errors from './errors.json'
 
 export default {
   common,
@@ -16,4 +17,5 @@ export default {
   admins,
   audit,
   validation,
+  errors,
 }

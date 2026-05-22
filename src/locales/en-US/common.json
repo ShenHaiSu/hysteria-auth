@@ -27,7 +27,8 @@
     "provisioned": "Provisioned",
     "all": "All",
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "loading": "Loading..."
   },
   "unit": {
     "bytes": "B",

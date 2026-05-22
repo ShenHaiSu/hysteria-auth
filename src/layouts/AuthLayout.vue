@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// Auth layout placeholder — Phase 1
+// Auth 布局 — 居中卡片式，用于 /login 等认证相关页面
 </script>
 
 <template>
-  <div class="min-h-screen bg-[var(--bg-primary)]">
+  <div class="min-h-screen bg-[var(--bg-primary)] transition-colors duration-200">
     <RouterView />
   </div>
 </template>

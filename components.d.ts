@@ -11,8 +11,18 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AppBreadcrumb: typeof import('./src/components/common/AppBreadcrumb.vue')['default']
+    AppEmpty: typeof import('./src/components/common/AppEmpty.vue')['default']
+    AppError: typeof import('./src/components/common/AppError.vue')['default']
+    AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
+    AppHeader: typeof import('./src/components/layout/AppHeader.vue')['default']
+    AppLoading: typeof import('./src/components/common/AppLoading.vue')['default']
+    AppSidebar: typeof import('./src/components/layout/AppSidebar.vue')['default']
     Button: typeof import('primevue/button')['default']
     ConfirmDialog: typeof import('primevue/confirmdialog')['default']
+    Drawer: typeof import('primevue/drawer')['default']
+    InputText: typeof import('primevue/inputtext')['default']
+    Password: typeof import('primevue/password')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Toast: typeof import('primevue/toast')['default']

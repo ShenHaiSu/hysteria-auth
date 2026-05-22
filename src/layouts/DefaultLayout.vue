@@ -1,20 +1,23 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAppStore } from '@/stores/app.store'
 import { routes as allRoutes } from '@/router/routes'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
+import AppBreadcrumb from '@/components/common/AppBreadcrumb.vue'
+import type { AdminRole } from '@/types/common.types'
 
 const route = useRoute()
-const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
-const isSidebarCollapsed = computed(() => appStore.sidebarCollapsed)
-
-const menuItems = computed(() => {
+// 移动端菜单项（与 AppSidebar 逻辑一致）
+const mobileMenuItems = computed(() => {
   const defaultLayout = allRoutes.find((r) => r.path === '/')
-  const role = authStore.role
+  const role: AdminRole | null = authStore.role
   return (
     defaultLayout?.children?.filter(
       (r) => !r.meta?.hidden && (!r.meta?.roles || (role && r.meta.roles.includes(role))),
@@ -22,76 +25,85 @@ const menuItems = computed(() => {
   )
 })
 
-function isActive(item: (typeof menuItems.value)[number]) {
-  return route.path.startsWith(`/${item.path}`)
+function isMobileItemActive(path: string) {
+  return route.path.startsWith(`/${path}`)
 }
+
+function onMobileNav(name: string | symbol | undefined) {
+  if (name) {
+    appStore.closeMobileMenu()
+  }
+}
+
+// 路由变化时关闭移动菜单
+watch(
+  () => route.fullPath,
+  () => {
+    if (appStore.mobileMenuVisible) {
+      appStore.closeMobileMenu()
+    }
+  },
+)
 </script>
 
 <template>
-  <div class="flex h-screen bg-[var(--bg-primary)]">
-    <!-- Phase 1 — 完整侧边栏 + 顶部栏实现 -->
-    <aside
-      class="hidden lg:block w-60 bg-[var(--sidebar-bg)] transition-width duration-300"
-      :class="{ 'w-16': isSidebarCollapsed }"
+  <div class="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
+    <!-- 桌面端：侧边栏 (≥1024px) -->
+    <AppSidebar />
+
+    <!-- 移动端：覆盖式抽屉菜单 -->
+    <Drawer
+      v-model:visible="appStore.mobileMenuVisible"
+      position="left"
+      class="lg:hidden !w-60"
+      :pt="{
+        content: { class: 'p-0 bg-[var(--sidebar-bg)]' },
+        header: {
+          class:
+            'bg-[var(--sidebar-bg)] text-[var(--sidebar-text-active)] border-b border-[var(--sidebar-border)]',
+        },
+      }"
     >
-      <div class="flex items-center h-14 px-4">
-        <span
-          class="text-[var(--sidebar-text-active)] text-lg font-semibold"
-          v-show="!isSidebarCollapsed"
-        >
-          Hysteria Auth
-        </span>
-      </div>
+      <template #header>
+        <div class="flex items-center gap-2">
+          <i class="pi pi-bolt text-xl text-brand-400" />
+          <span class="text-lg font-semibold">Hysteria Auth</span>
+        </div>
+      </template>
+
       <nav class="mt-2">
         <router-link
-          v-for="item in menuItems"
+          v-for="item in mobileMenuItems"
           :key="item.name"
           :to="{ name: item.name }"
-          class="flex items-center gap-3 px-4 py-3 text-[var(--sidebar-text)] hover:bg-[var(--sidebar-bg-hover)] transition-colors duration-100 rounded-md mx-2"
+          class="flex items-center gap-3 px-4 py-3 mx-2 mb-1 text-[var(--sidebar-text)] hover:bg-[var(--sidebar-bg-hover)] transition-colors duration-100 rounded-md"
           :class="{
-            'bg-[var(--sidebar-bg-active)] text-[var(--sidebar-text-active)]': isActive(item),
+            'bg-[var(--sidebar-bg-active)] text-[var(--sidebar-text-active)]':
+              item.path && isMobileItemActive(item.path),
           }"
+          @click="onMobileNav(item.name)"
         >
-          <i :class="item.meta?.icon" class="text-lg" />
-          <span v-show="!isSidebarCollapsed" class="text-sm font-medium">{{
-            item.meta?.title
-          }}</span>
+          <i :class="item.meta?.icon" class="text-lg shrink-0" />
+          <span class="text-sm font-medium">{{ item.meta?.title }}</span>
         </router-link>
       </nav>
-    </aside>
+    </Drawer>
 
-    <main class="flex-1 flex flex-col overflow-auto">
-      <header
-        class="h-14 bg-[var(--bg-elevated)] border-b border-[var(--border-light)] flex items-center justify-between px-4 lg:px-6"
-      >
-        <div class="flex items-center gap-3">
-          <Button
-            icon="pi pi-bars"
-            severity="secondary"
-            text
-            @click="appStore.toggleSidebar()"
-            class="lg:inline-flex"
-          />
-          <span class="text-lg font-semibold text-[var(--text-primary)]">
-            {{ route.meta?.title }}
-          </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-[var(--text-secondary)]">
-            {{ authStore.adminInfo?.username ?? 'Loading...' }}
-          </span>
-        </div>
-      </header>
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-auto">
+      <AppHeader />
 
-      <div class="flex-1 overflow-auto">
+      <!-- 面包屑 -->
+      <div class="px-4 lg:px-6 pt-3">
+        <AppBreadcrumb />
+      </div>
+
+      <!-- 内容区 -->
+      <div class="flex-1 overflow-auto p-4 lg:p-6">
         <RouterView />
       </div>
 
-      <footer
-        class="h-10 border-t border-[var(--border-light)] flex items-center justify-center text-xs text-[var(--text-muted)]"
-      >
-        Hysteria Auth &copy; 2026
-      </footer>
+      <AppFooter />
     </main>
   </div>
 </template>
