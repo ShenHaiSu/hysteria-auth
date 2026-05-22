@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using HysteriaAuth.Master.Config;
 using HysteriaAuth.Master.Data;
 using HysteriaAuth.Master.Middleware;
@@ -15,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ============================
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection(AdminSettings.SectionName));
+builder.Services.Configure<SpaSettings>(builder.Configuration.GetSection(SpaSettings.SectionName));
 
 // ============================
 // 数据库
@@ -121,6 +123,63 @@ app.UseJwtAuth();                   // 3. JWT 认证（/api/v1/admin/*, /api/v1/
 
 app.UseCors("AdminCors");           // 4. CORS
 
-app.MapControllers();               // 5. 路由到控制器
+// ============================
+// 5. SPA 静态文件托管（条件启用）
+// ============================
+var spaSettings = app.Services.GetRequiredService<
+    Microsoft.Extensions.Options.IOptions<SpaSettings>>().Value;
+
+string? spaAbsolutePath = null;
+if (spaSettings.Enabled)
+{
+    var contentRoot = app.Environment.ContentRootPath;
+    var rawPath = spaSettings.StaticFilesPath;
+    spaAbsolutePath = Path.IsPathRooted(rawPath)
+        ? rawPath
+        : Path.GetFullPath(Path.Combine(contentRoot, rawPath));
+
+    if (Directory.Exists(spaAbsolutePath))
+    {
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(spaAbsolutePath),
+            OnPrepareResponse = ctx =>
+            {
+                // 对带 hash 的静态资源设置长缓存
+                var ext = Path.GetExtension(ctx.File.Name);
+                if (ext is ".js" or ".css" or ".woff" or ".woff2"
+                    or ".ttf" or ".svg" or ".png" or ".ico")
+                {
+                    ctx.Context.Response.Headers.CacheControl =
+                        $"public, max-age={spaSettings.CacheMaxAgeSeconds}";
+                }
+            }
+        });
+
+        app.Logger.LogInformation(
+            "SPA static files enabled: {Path} (resolved from '{RawPath}')",
+            spaAbsolutePath, rawPath);
+    }
+    else
+    {
+        app.Logger.LogWarning(
+            "SPA static files path not found: {Path} (resolved from '{RawPath}'). " +
+            "Static file serving is disabled. Run 'npm run build' and place dist/* into this directory.",
+            spaAbsolutePath, rawPath);
+    }
+}
+
+app.MapControllers();               // 6. API 路由（必须在 MapFallbackToFile 之前）
+
+// ============================
+// 7. SPA 兜底路由（必须在 MapControllers 之后）
+// ============================
+if (spaSettings.Enabled && spaAbsolutePath != null && Directory.Exists(spaAbsolutePath))
+{
+    app.MapFallbackToFile(spaSettings.FallbackFile, new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(spaAbsolutePath)
+    });
+}
 
 app.Run();

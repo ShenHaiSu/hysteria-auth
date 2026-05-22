@@ -60,6 +60,10 @@ coveragereport/
 [Pp]ublish/
 [Pp]ublish[Mm]odules/
 
+## SPA Frontend Build Artifacts (except .gitkeep)
+wwwroot/*
+!wwwroot/.gitkeep
+
 ## Backup Files
 *.bak
 *.swp

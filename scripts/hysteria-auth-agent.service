@@ -8,7 +8,7 @@ Type=notify
 User=root
 Group=root
 WorkingDirectory=/opt/hysteria-auth/agent
-ExecStart=/usr/bin/dotnet /opt/hysteria-auth/agent/HysteriaAuth.Agent.dll
+ExecStart=/opt/hysteria-auth/agent/HysteriaAuth.Agent
 Restart=always
 RestartSec=5
 Environment=ASPNETCORE_ENVIRONMENT=Production

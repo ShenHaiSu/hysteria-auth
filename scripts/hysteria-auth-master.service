@@ -7,7 +7,7 @@ Type=notify
 User=www-data
 Group=www-data
 WorkingDirectory=/opt/hysteria-auth/master
-ExecStart=/usr/bin/dotnet /opt/hysteria-auth/master/HysteriaAuth.Master.dll
+ExecStart=/opt/hysteria-auth/master/HysteriaAuth.Master
 Restart=always
 RestartSec=5
 Environment=ASPNETCORE_ENVIRONMENT=Production

@@ -1,6 +1,6 @@
 # Hysteria 认证后端 — 分阶段开发落地指南
 
-> **版本**: v1.0 | **日期**: 2026-05-21 | **来源**: [`document/architect/`](../architect/README.md) + [`document/develop/backend-development-spec.md`](../develop/backend-development-spec.md)
+> **版本**: v1.1 | **日期**: 2026-05-22 | **来源**: [`document/architect/`](../architect/README.md) + [`document/develop/backend-development-spec.md`](../develop/backend-development-spec.md)
 
 ---
 
@@ -14,6 +14,7 @@
 | 3 | [`03-phase3-traffic-statistics.md`](03-phase3-traffic-statistics.md) | **Phase 3: 流量统计** | 1-2 周 | 流量采集、汇总扣减、在线用户管理、会话生命周期、并发控制与事务 |
 | 4 | [`04-phase4-refinement.md`](04-phase4-refinement.md) | **Phase 4: 完善功能** | 1 周 | 认证缓存、日志审计、异常降级、速率限制、CORS、数据备份 |
 | 5 | [`05-phase5-testing-deployment.md`](05-phase5-testing-deployment.md) | **Phase 5: 测试与部署** | 1 周 | 单元测试、集成测试、E2E 测试、部署脚本、文档完善 |
+| 6 | [`06-phase6-spa-integration-deployment.md`](06-phase6-spa-integration-deployment.md) | **Phase 6: SPA 集成与部署现代化** | 1 周 | SPA 静态文件托管、.NET 10.0 升级、自包含部署、交叉编译、Docker 多阶段构建 |
 
 ---
 
@@ -22,7 +23,14 @@
 ```
 Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 ──→ Phase 5
  核心基础    节点管理    流量统计    完善功能    测试部署
+               │                         │
+               └──────────┬──────────────┘
+                          ↓
+                      Phase 6 (可与 Phase 4/5 并行)
+                   SPA 前端集成与部署现代化
 ```
+
+> **注**: Phase 6（SPA 集成与部署现代化）仅依赖 Phase 1（`Program.cs` 管道就绪），可与 Phase 4/5 并行执行。
 
 每个后续阶段启动前，**必须**对前一阶段的关键产物进行审查和验证（详见各阶段文档的「阶段启动前置检查」章节）。
 
@@ -66,9 +74,11 @@ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 ──→ Phase 5
 
 | 角色 | 推荐阅读顺序 |
 |------|-------------|
-| **开发负责人** | 00 → 01 → 02 → 03 → 04 → 05（全部） |
+| **开发负责人** | 00 → 01 → 02 → 03 → 04 → 05 → 06（全部） |
 | **后端开发 Phase 1** | 00 → 01 |
 | **后端开发 Phase 2** | 00 → 01（前置知识）→ 02 |
 | **后端开发 Phase 3** | 00 → 01, 02（前置知识）→ 03 |
 | **后端开发 Phase 4** | 00 → 01-03（前置知识）→ 04 |
-| **测试/DevOps** | 00 → 05（同时参阅 01-04 理解功能） |
+| **后端开发 Phase 6** | 00 → 01（前置知识）→ 06 |
+| **前端开发** | 00 → 06（重点关注 SPA 托管配置）+ [`spa-integration.md`](../architect/spa-integration.md) §8 |
+| **测试/DevOps** | 00 → 05（同时参阅 01-04 理解功能）→ 06（部署脚本） |
