@@ -1,0 +1,6 @@
+@HysteriaAuth.Master_HostAddress = http://localhost:5262
+
+GET {{HysteriaAuth.Master_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

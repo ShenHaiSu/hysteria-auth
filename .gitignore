@@ -1,0 +1,74 @@
+## .NET Build Artifacts
+[Bb]in/
+[Oo]bj/
+
+## NuGet
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/repositories.config
+*.nuget.props
+*.nuget.targets
+nuget.config
+
+## Visual Studio / VS Code / Rider
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## SQLite Database (runtime data, not part of source)
+*.db
+*.db-shm
+*.db-wal
+
+## Entity Framework Core Migrations (snapshots/designer files auto-generated)
+# 注意：Migrations 文件应提交到版本控制中，不在此忽略
+
+## Logs
+*.log
+logs/
+Logs/
+
+## OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Tt]humbs.db
+
+## Environment / Configuration (may contain secrets)
+appsettings.*.local.json
+appsettings.Development.json
+secrets.json
+
+## Coverage / Test Results
+TestResults/
+[Tt]est[Rr]esult*/
+.coverage
+*.coverage
+*.coveragexml
+coveragereport/
+
+## Publish Output
+[Pp]ublish/
+[Pp]ublish[Mm]odules/
+
+## Backup Files
+*.bak
+*.swp
+*~.nib
+*.orig
+
+## Windows image file caches
+*.cab
+*.msi
+*.msm
+*.msp
+*.tmp

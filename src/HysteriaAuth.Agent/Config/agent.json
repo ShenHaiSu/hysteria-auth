@@ -1,0 +1,45 @@
+{
+    "NodeId": "edge-node-01",
+    "NodeName": "Edge Node",
+    "MasterServerUrl": "https://master.example.com",
+    "NodeSecret": "change-me-to-a-secure-random-256-bit-key",
+    "AgentVersion": "1.0.0",
+    "Init": {
+        "RegistrationRetryMax": 5,
+        "RegistrationRetryInitialSeconds": 2,
+        "RegistrationRetryMaxSeconds": 60
+    },
+    "AuthProxy": {
+        "ListenAddress": "127.0.0.1",
+        "ListenPort": 8080
+    },
+    "TrafficStats": {
+        "ListenAddress": "127.0.0.1",
+        "ListenPort": 9999,
+        "Secret": "your_traffic_stats_secret",
+        "CollectIntervalSeconds": 30
+    },
+    "Monitor": {
+        "IntervalSeconds": 10,
+        "NetworkInterfaces": ["eth0"]
+    },
+    "Reporter": {
+        "IntervalSeconds": 30,
+        "RetryCount": 3,
+        "RetryDelaySeconds": 5
+    },
+    "Cache": {
+        "Enabled": true,
+        "MaxSize": 1000,
+        "ExpirationMinutes": 5
+    },
+    "HealthCheck": {
+        "Enabled": true,
+        "ListenAddress": "127.0.0.1",
+        "ListenPort": 8081
+    },
+    "Logging": {
+        "LogLevel": "Information",
+        "File": "/var/log/hysteria-auth/agent.log"
+    }
+}
