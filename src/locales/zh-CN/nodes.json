@@ -27,7 +27,9 @@
     "basicInfo": "基本信息",
     "statusHistory": "状态历史",
     "secretInfo": "密钥信息",
-    "secretVersion": "密钥版本"
+    "secretVersion": "密钥版本",
+    "onlineUsers": "在线用户",
+    "noStatusHistory": "暂无状态历史数据"
   },
   "status": {
     "cpu": "CPU 使用率",
@@ -47,7 +49,20 @@
   "toast": {
     "registerSuccess": "节点预注册成功",
     "rotateSecretSuccess": "密钥轮换成功",
-    "kickSuccess": "用户已下线",
-    "deleteConfirm": "确定要删除该节点吗？"
+    "rotateSecretConfirm": "确定要轮换该节点的密钥吗？新旧密钥将在过渡期内共存。",
+    "kickUserConfirm": "确定要将该用户踢下线吗？该操作仅断开当前连接，客户端可能会自动重连。建议同时禁用该用户账号。",
+    "kickUserSuccess": "用户已下线",
+    "deleteConfirm": "确定要删除该节点吗？",
+    "copySuccess": "已复制到剪贴板",
+    "copyFailed": "复制失败"
+  },
+  "register": {
+    "successTitle": "预注册成功",
+    "tokenWarning": "请妥善保存以下信息。预注册令牌为一次性使用，关闭后将无法再次查看。",
+    "provisionToken": "预注册令牌",
+    "startupCommand": "启动命令",
+    "masterServerUrl": "主服务器地址",
+    "expiresAt": "令牌有效期",
+    "copy": "复制"
   }
 }

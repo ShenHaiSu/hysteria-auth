@@ -27,7 +27,9 @@
     "basicInfo": "Basic Info",
     "statusHistory": "Status History",
     "secretInfo": "Secret Info",
-    "secretVersion": "Secret Version"
+    "secretVersion": "Secret Version",
+    "onlineUsers": "Online Users",
+    "noStatusHistory": "No status history data"
   },
   "status": {
     "cpu": "CPU Usage",
@@ -45,9 +47,22 @@
     }
   },
   "toast": {
-    "registerSuccess": "Node pre-registered",
-    "rotateSecretSuccess": "Secret rotated",
-    "kickSuccess": "User kicked offline",
-    "deleteConfirm": "Are you sure you want to delete this node?"
+    "registerSuccess": "Node pre-registered successfully",
+    "rotateSecretSuccess": "Secret rotated successfully",
+    "rotateSecretConfirm": "Are you sure you want to rotate this node's secret? Old and new secrets will coexist during the transition period.",
+    "kickUserConfirm": "Are you sure you want to kick this user offline? This only disconnects the current connection, and the client may auto-reconnect. Consider disabling the user account as well.",
+    "kickUserSuccess": "User kicked offline",
+    "deleteConfirm": "Are you sure you want to delete this node?",
+    "copySuccess": "Copied to clipboard",
+    "copyFailed": "Copy failed"
+  },
+  "register": {
+    "successTitle": "Pre-registration Successful",
+    "tokenWarning": "Please save the following information securely. The provision token is single-use and cannot be viewed again after closing this dialog.",
+    "provisionToken": "Provision Token",
+    "startupCommand": "Startup Command",
+    "masterServerUrl": "Master Server URL",
+    "expiresAt": "Token Expiry",
+    "copy": "Copy"
   }
 }
