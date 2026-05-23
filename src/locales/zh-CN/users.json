@@ -51,6 +51,7 @@
     "updateSuccess": "用户更新成功",
     "deleteSuccess": "用户删除成功",
     "deleteConfirm": "确定要删除该用户吗？此操作不可恢复。",
+    "resetConfirm": "确定要重置该用户的流量吗？此操作不可恢复。",
     "resetTrafficSuccess": "流量重置成功",
     "kickSuccess": "用户已下线",
     "deleteFailed": "用户删除失败",

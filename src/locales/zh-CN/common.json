@@ -4,6 +4,7 @@
     "cancel": "取消",
     "delete": "删除",
     "edit": "编辑",
+    "view": "查看",
     "create": "创建",
     "search": "搜索",
     "reset": "重置",
@@ -28,7 +29,9 @@
     "all": "全部",
     "enabled": "已启用",
     "disabled": "已禁用",
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "optional": "可选",
+    "unlimited": "不限"
   },
   "unit": {
     "bytes": "B",

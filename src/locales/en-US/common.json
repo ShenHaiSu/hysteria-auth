@@ -4,6 +4,7 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "view": "View",
     "create": "Create",
     "search": "Search",
     "reset": "Reset",
@@ -28,7 +29,9 @@
     "all": "All",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "optional": "Optional",
+    "unlimited": "Unlimited"
   },
   "unit": {
     "bytes": "B",

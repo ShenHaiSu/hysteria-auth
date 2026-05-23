@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { userApi } from '@/api/modules/users'
 import type { UserDto, UserFilters, UserTrafficStats } from '@/types/user.types'
+import type { CreateUserRequest, UpdateUserRequest } from '@/types/user.types'
 
 export const useUsersStore = defineStore('users', () => {
   const items = ref<UserDto[]>([])
@@ -13,6 +14,7 @@ export const useUsersStore = defineStore('users', () => {
   const searchQuery = ref('')
   const currentUser = ref<UserDto | null>(null)
   const trafficStats = ref<UserTrafficStats | null>(null)
+  const isSubmitting = ref(false)
 
   const hasMore = computed(() => page.value * pageSize.value < total.value)
 
@@ -47,6 +49,35 @@ export const useUsersStore = defineStore('users', () => {
     trafficStats.value = res.data
   }
 
+  async function createUser(data: CreateUserRequest) {
+    isSubmitting.value = true
+    try {
+      const res = await userApi.create(data)
+      return res.data
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
+  async function updateUser(id: number, data: UpdateUserRequest) {
+    isSubmitting.value = true
+    try {
+      const res = await userApi.update(id, data)
+      return res.data
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
+  async function deleteUser(id: number) {
+    await userApi.delete(id)
+  }
+
+  async function resetTraffic(id: number) {
+    const res = await userApi.resetTraffic(id)
+    return res.data
+  }
+
   function resetFilters() {
     filters.value = {}
     searchQuery.value = ''
@@ -70,6 +101,7 @@ export const useUsersStore = defineStore('users', () => {
     page,
     pageSize,
     isLoading,
+    isSubmitting,
     filters,
     searchQuery,
     currentUser,
@@ -78,6 +110,10 @@ export const useUsersStore = defineStore('users', () => {
     fetchUsers,
     fetchUserDetail,
     fetchTrafficStats,
+    createUser,
+    updateUser,
+    deleteUser,
+    resetTraffic,
     resetFilters,
     setPage,
     setSearch,
