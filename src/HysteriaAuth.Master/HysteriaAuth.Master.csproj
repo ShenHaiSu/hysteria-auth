@@ -21,4 +21,16 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
   </ItemGroup>
 
+  <!-- 保留 OpenApi 程序集，防止被 PublishTrimmed 裁剪掉 -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <!-- 保留 EF Core 程序集，防止被 PublishTrimmed 裁剪掉 -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore" />
+    <TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.Design" />
+  </ItemGroup>
+
 </Project>

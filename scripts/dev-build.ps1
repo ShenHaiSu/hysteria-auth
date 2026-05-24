@@ -34,7 +34,7 @@ $publishArgs = @(
     "-c", $Configuration,
     "-r", "win-x64",
     "--self-contained", "true",
-    "/p:PublishTrimmed=true",
+    "/p:PublishTrimmed=false",
     "/p:PublishSingleFile=true"
 )
 
