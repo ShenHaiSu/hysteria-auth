@@ -11,13 +11,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppBreadcrumb: typeof import('./src/components/common/AppBreadcrumb.vue')['default']
     AppEmpty: typeof import('./src/components/common/AppEmpty.vue')['default']
     AppError: typeof import('./src/components/common/AppError.vue')['default']
-    AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
-    AppHeader: typeof import('./src/components/layout/AppHeader.vue')['default']
     AppLoading: typeof import('./src/components/common/AppLoading.vue')['default']
-    AppSidebar: typeof import('./src/components/layout/AppSidebar.vue')['default']
     AppStatusBadge: typeof import('./src/components/common/AppStatusBadge.vue')['default']
     AppTrafficText: typeof import('./src/components/common/AppTrafficText.vue')['default']
     Button: typeof import('primevue/button')['default']
@@ -31,11 +27,9 @@ declare module 'vue' {
     InputIcon: typeof import('primevue/inputicon')['default']
     InputNumber: typeof import('primevue/inputnumber')['default']
     InputText: typeof import('primevue/inputtext')['default']
-    KickUserModal: typeof import('./src/components/modals/KickUserModal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SelectButton: typeof import('primevue/selectbutton')['default']
-    StatCard: typeof import('./src/components/common/StatCard.vue')['default']
     Textarea: typeof import('primevue/textarea')['default']
     Toast: typeof import('primevue/toast')['default']
     ToggleSwitch: typeof import('primevue/toggleswitch')['default']
