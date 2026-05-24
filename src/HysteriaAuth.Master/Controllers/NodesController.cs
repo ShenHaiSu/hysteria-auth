@@ -31,7 +31,9 @@ public class NodesController : ControllerBase
     [HttpPost("admin/nodes/pre-register")]
     public async Task<IActionResult> PreRegisterNode([FromBody] PreRegisterNodeRequest request)
     {
-        var result = await _nodeService.PreRegisterNodeAsync(request);
+        var adminId = (long)HttpContext.Items["AdminId"]!;
+        var clientIp = HttpContext.Items["ClientIp"]?.ToString() ?? "unknown";
+        var result = await _nodeService.PreRegisterNodeAsync(request, adminId, clientIp);
         return Created(string.Empty, result);
     }
 
@@ -142,7 +144,9 @@ public class NodesController : ControllerBase
     [HttpPost("admin/nodes/{nodeId}/rotate-secret")]
     public async Task<IActionResult> RotateSecret(string nodeId)
     {
-        var result = await _nodeService.RotateSecretAsync(nodeId);
+        var adminId = (long)HttpContext.Items["AdminId"]!;
+        var clientIp = HttpContext.Items["ClientIp"]?.ToString() ?? "unknown";
+        var result = await _nodeService.RotateSecretAsync(nodeId, adminId, clientIp);
         return Ok(result);
     }
 }

@@ -49,6 +49,7 @@ builder.Services.AddScoped<INodeRepository, NodeRepository>();
 builder.Services.AddScoped<INodeStatusRepository, NodeStatusRepository>();
 builder.Services.AddScoped<ITrafficRepository, TrafficRepository>();  // Phase 3
 builder.Services.AddScoped<ISessionRepository, SessionRepository>();  // Phase 3
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 // ============================
 // AES 加密服务（节点密钥加密存储）
@@ -67,6 +68,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NodeService>();
 builder.Services.AddScoped<TrafficService>();    // Phase 3
 builder.Services.AddScoped<KickService>();      // Phase 3
+builder.Services.AddScoped<AuditService>();
 
 // ============================
 // 后台服务（节点离线检测 + 数据保留策略）
@@ -126,6 +128,7 @@ app.UseGlobalExceptionHandler();    // 1. 全局异常处理（最外层）
 app.UseCors("AdminCors");           // 2. CORS（必须在认证中间件之前，否则 OPTIONS 预检会被拦截）
 app.UseNodeAuth();                  // 3. 节点密钥认证（/api/v1/auth/*, /api/v1/nodes/*）
 app.UseJwtAuth();                   // 4. JWT 认证（/api/v1/admin/*, /api/v1/users/*）
+app.UseAuditContext();              // 5. 审计上下文中间件（注入 ClientIp）
 
 // ============================
 // 5. SPA 静态文件托管（条件启用）

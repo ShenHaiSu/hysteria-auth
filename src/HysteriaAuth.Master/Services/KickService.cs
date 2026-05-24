@@ -16,6 +16,7 @@ public class KickService
     private readonly IUserRepository _userRepo;
     private readonly INodeRepository _nodeRepo;
     private readonly ILogger<KickService> _logger;
+    private readonly AuditService _auditService;
 
     // Agent 监听 AuthProxy 的端口（/kick-user 端点注册在同一端口上）
     private const int AgentPort = 8080;
@@ -24,12 +25,14 @@ public class KickService
         IHttpClientFactory httpClientFactory,
         IUserRepository userRepo,
         INodeRepository nodeRepo,
-        ILogger<KickService> logger)
+        ILogger<KickService> logger,
+        AuditService auditService)
     {
         _httpClientFactory = httpClientFactory;
         _userRepo = userRepo;
         _nodeRepo = nodeRepo;
         _logger = logger;
+        _auditService = auditService;
     }
 
     /// <summary>
@@ -91,12 +94,26 @@ public class KickService
     /// <summary>
     /// 管理员主动踢人（通过 API 调用）。
     /// </summary>
-    public async Task AdminKickUserAsync(KickUserRequest request)
+    public async Task AdminKickUserAsync(KickUserRequest request, long adminId, string clientIp)
     {
         var user = await _userRepo.GetByUsernameAsync(request.Username);
         if (user == null)
             throw new NotFoundException("用户不存在");
 
         await KickUserAsync(request.Username, request.NodeId);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "kick_user",
+            targetType: "user",
+            targetId: request.Username,
+            detail: new
+            {
+                nodeId = request.NodeId,
+                username = request.Username
+            },
+            clientIp: clientIp
+        );
     }
 }

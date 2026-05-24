@@ -23,6 +23,7 @@ public class NodeService
     private readonly KickService _kickService;
     private readonly ILogger<NodeService> _logger;
     private readonly string _masterServerUrl;
+    private readonly AuditService _auditService;
 
     public NodeService(
         INodeRepository nodeRepo,
@@ -33,7 +34,8 @@ public class NodeService
         TrafficService trafficService,
         KickService kickService,
         IConfiguration configuration,
-        ILogger<NodeService> logger)
+        ILogger<NodeService> logger,
+        AuditService auditService)
     {
         _nodeRepo = nodeRepo;
         _nodeStatusRepo = nodeStatusRepo;
@@ -44,13 +46,14 @@ public class NodeService
         _kickService = kickService;
         _logger = logger;
         _masterServerUrl = configuration.GetValue<string>("MasterServerUrl") ?? "https://master.example.com";
+        _auditService = auditService;
     }
 
     // ============================
     // 3.1 节点预注册（管理员侧）
     // ============================
 
-    public async Task<PreRegisterNodeResponse> PreRegisterNodeAsync(PreRegisterNodeRequest request)
+    public async Task<PreRegisterNodeResponse> PreRegisterNodeAsync(PreRegisterNodeRequest request, long adminId, string clientIp)
     {
         var nodeId = Guid.NewGuid().ToString("N")[..12]; // 12 位 hex
         var provisionToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)); // 128-bit
@@ -71,6 +74,22 @@ public class NodeService
         await _nodeRepo.AddAsync(node);
 
         _logger.LogInformation("管理员预注册节点: {NodeId}, 名称: {Name}", nodeId, request.Name);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "create",
+            targetType: "node",
+            targetId: nodeId,
+            detail: new
+            {
+                name = request.Name,
+                port = request.Port,
+                location = request.Location,
+                trafficStatsPort = request.TrafficStatsPort
+            },
+            clientIp: clientIp
+        );
 
         return new PreRegisterNodeResponse
         {
@@ -416,7 +435,7 @@ public class NodeService
     // 3.9 节点密钥轮换
     // ============================
 
-    public async Task<RotateSecretResponse> RotateSecretAsync(string nodeId)
+    public async Task<RotateSecretResponse> RotateSecretAsync(string nodeId, long adminId, string clientIp)
     {
         var node = await _nodeRepo.GetByIdAsync(nodeId);
         if (node == null)
@@ -428,12 +447,26 @@ public class NodeService
         // 多版本密钥存储：旧密钥保留在数据库中（通过 SecretVersion 区分）
         // Phase 2 简化实现：直接替换密钥，递增版本号
         // 完整的零停机轮换需要额外的密钥历史表，后续迭代实现
+        var oldVersion = node.SecretVersion;
         node.SecretKey = _aes.Encrypt(newSecretPlain);
         node.SecretVersion += 1;
 
         await _nodeRepo.UpdateAsync(node);
 
         _logger.LogInformation("节点密钥轮换完成: {NodeId}, 新版本: {Version}", nodeId, node.SecretVersion);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "rotate_secret",
+            targetType: "node",
+            targetId: nodeId,
+            detail: new
+            {
+                secretVersion = new { from = oldVersion, to = node.SecretVersion }
+            },
+            clientIp: clientIp
+        );
 
         return new RotateSecretResponse
         {
