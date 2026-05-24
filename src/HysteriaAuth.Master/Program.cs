@@ -35,6 +35,11 @@ builder.Services.AddControllers()
     });
 
 // ============================
+// HTTP 客户端工厂（用于 KickService）
+// ============================
+builder.Services.AddHttpClient();
+
+// ============================
 // Repository 层注册
 // ============================
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -118,10 +123,9 @@ using (var scope = app.Services.CreateScope())
 // 中间件管道（顺序敏感）
 // ============================
 app.UseGlobalExceptionHandler();    // 1. 全局异常处理（最外层）
-app.UseNodeAuth();                  // 2. 节点密钥认证（/api/v1/auth/*, /api/v1/nodes/*）
-app.UseJwtAuth();                   // 3. JWT 认证（/api/v1/admin/*, /api/v1/users/*）
-
-app.UseCors("AdminCors");           // 4. CORS
+app.UseCors("AdminCors");           // 2. CORS（必须在认证中间件之前，否则 OPTIONS 预检会被拦截）
+app.UseNodeAuth();                  // 3. 节点密钥认证（/api/v1/auth/*, /api/v1/nodes/*）
+app.UseJwtAuth();                   // 4. JWT 认证（/api/v1/admin/*, /api/v1/users/*）
 
 // ============================
 // 5. SPA 静态文件托管（条件启用）
