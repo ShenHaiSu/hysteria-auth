@@ -1,4 +1,5 @@
 import '@/assets/styles/public.css'
+import '@/assets/styles/primevue.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
