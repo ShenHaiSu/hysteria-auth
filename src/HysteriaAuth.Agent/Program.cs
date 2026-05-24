@@ -29,11 +29,13 @@ if (!initSuccess)
 
 var agentConfig = initializer.Config;
 builder.Services.AddSingleton(agentConfig);
+builder.Services.AddSingleton(initializer);  // Phase 7: StatusReporter 依赖 Initializer 进行配置同步
 
 // ============================
 // 2. 注册服务
 // ============================
 builder.Services.AddSingleton(agentConfig);
+builder.Services.AddSingleton(initializer);
 builder.Services.AddSingleton<SystemMonitor>();
 builder.Services.AddSingleton<AuthProxy>();
 builder.Services.AddHostedService<StatusReporter>();   // 心跳上报后台服务（同时作为单例供 TrafficCollector 注入）
