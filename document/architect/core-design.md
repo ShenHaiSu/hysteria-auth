@@ -600,7 +600,7 @@ export default http
 | `auth.ts` | `/api/v1/admin/login` | POST login |
 | `dashboard.ts` | `/api/v1/admin/dashboard` | GET dashboard |
 | `users.ts` | `/api/v1/users` | POST 创建, GET 列表, GET 详情, PUT 更新, DELETE 删除, POST 重置流量, GET 流量统计 |
-| `nodes.ts` | `/api/v1/nodes` + `/api/v1/admin/nodes` | GET 列表, GET 详情, GET 状态历史, POST 预注册, POST 轮换密钥, POST 踢用户 |
+| `nodes.ts` | `/api/v1/nodes` + `/api/v1/admin/nodes` | GET 列表, GET 详情, GET 状态历史, POST 预注册, POST 轮换密钥, POST 踢用户, **PUT 更新节点配置 (Phase 7)** |
 | `admins.ts` | `/api/v1/admin/admins` | POST 创建, GET 列表, PUT 更新 |
 | `audit-logs.ts` | `/api/v1/admin/audit-logs` | GET 列表 |
 
@@ -651,7 +651,24 @@ export const userApi = {
 }
 ```
 
-### 3.4 数据适配器
+### 3.4 Phase 7 新增 API — 更新节点配置
+
+```typescript
+// src/api/modules/nodes.ts (Phase 7 追加)
+
+import type { UpdateNodeConfigRequest } from '@/types/node.types'
+
+export const nodeApi = {
+  // ... 已有方法
+
+  /** Phase 7: 更新节点 Hysteria 2 配置 (所有字段可选, null=不修改) */
+  updateConfig(id: string, data: UpdateNodeConfigRequest) {
+    return http.put<NodeDto>(`/admin/nodes/${id}/config`, data)
+  },
+}
+```
+
+### 3.5 数据适配器
 
 处理 API 原始数据与前端使用格式的转换：
 
@@ -668,7 +685,7 @@ export function adaptUserDto(raw: RawUserDto): UserDto {
 }
 ```
 
-### 3.5 分页类型
+### 3.6 分页类型
 
 ```typescript
 // src/api/types.ts
@@ -1050,6 +1067,12 @@ export interface TrafficDataPoint {
 
 export type ProvisionStatus = 'pending' | 'provisioned'
 
+// Phase 7 新增：混淆类型、拥塞控制算法、伪装类型、DNS 解析器类型
+export type ObfsType = 'salamander'
+export type CongestionControl = 'bbr' | 'cubic' | 'brutal'
+export type MasqueradeType = 'file' | 'proxy' | 'string' | 'reply'
+export type ResolverType = 'system' | 'udp' | 'tcp' | 'tls'
+
 export interface NodeDto {
   id: string
   name: string
@@ -1061,11 +1084,53 @@ export interface NodeDto {
   location: string | null
   trafficStatsPort?: number
   provisionStatus: ProvisionStatus
+  // ═══ Phase 7 新增: 监听与端口跳跃 ═══
+  listenAddress?: string | null          // 默认 "0.0.0.0"
+  listenPort?: number | null             // 默认 6789
+  enablePortHopping?: boolean            // 默认 true
+  portHopRangeStart?: number | null      // 默认 61000
+  portHopRangeEnd?: number | null        // 默认 63000
+  // ═══ Phase 7 新增: 混淆与拥塞控制 ═══
+  obfsType?: ObfsType | null
+  obfsPassword?: string | null           // 服务端 AES-256-GCM 加密存储，返回脱敏值
+  congestionControl?: CongestionControl | null
+  brutalTxBandwidth?: number | null      // Brutal 发送带宽 (bps)
+  // ═══ Phase 7 新增: 带宽与速度测试 ═══
+  bandwidthUp?: string | null            // 如 "100 mbps"
+  bandwidthDown?: string | null
+  ignoreClientBandwidth?: boolean | null
+  enableSpeedTest?: boolean | null
+  speedTestPingInterval?: number | null  // Ping 间隔 (秒)
+  // ═══ Phase 7 新增: UDP 与协议嗅探 ═══
+  udpIdleTimeout?: number | null         // 默认 60
+  sniffEnabled?: boolean | null
+  sniffTimeout?: number | null
+  sniffRespectHttps?: boolean | null
+  // ═══ Phase 7 新增: 伪装 ═══
+  masqueradeType?: MasqueradeType | null
+  masqueradeFile?: string | null         // type=file
+  masqueradeProxyUrl?: string | null     // type=proxy
+  masqueradeStringContent?: string | null // type=string
+  masqueradeStringHeaders?: string | null // type=string
+  masqueradeStringStatusCode?: number | null // type=string
+  // ═══ Phase 7 新增: DNS ═══
+  resolverType?: ResolverType | null
+  resolverTcpAddr?: string | null
+  resolverUdpAddr?: string | null
+  resolverTlsAddr?: string | null
+  // ═══ Phase 7 新增: 配置版本与运营管理 ═══
+  configVersion?: number                 // 每次 PUT 后自增
+  configUpdatedAt?: string | null        // ISO 8601
+  serverCost?: number | null             // 月付金额
+  billingCycle?: 'monthly' | 'quarterly' | 'yearly' | null
+  expirationDate?: string | null         // ISO 8601
+  domainName?: string | null             // 关联域名, 写入 YAML realm
+  remark?: string | null                 // 备注信息
 }
 
 export interface NodeDetail extends NodeDto {
   secretVersion: number
-  trafficStatsSecret?: string
+  trafficStatsSecret?: string            // Phase 7: 脱敏为 "***encrypted***"
 }
 
 export interface NodeStatusRecord {
@@ -1088,6 +1153,10 @@ export interface PreRegisterNodeRequest {
   location?: string
   port?: number
   trafficStatsPort?: number
+  // Phase 7 新增
+  listenPort?: number                    // 默认 6789
+  domainName?: string                    // 写入 YAML realm
+  remark?: string                        // 备注信息
 }
 
 export interface PreRegisterNodeResponse {
@@ -1095,6 +1164,58 @@ export interface PreRegisterNodeResponse {
   masterServerUrl: string
   expiresAt: string
   startupCommand: string
+}
+
+// ═══ Phase 7 全新类型 ═══
+
+/** PUT /api/v1/admin/nodes/{nodeId}/config 请求体 — 所有字段可选, null=不修改 */
+export interface UpdateNodeConfigRequest {
+  // 监听
+  listenAddress?: string | null
+  listenPort?: number | null
+  enablePortHopping?: boolean | null
+  portHopRangeStart?: number | null
+  portHopRangeEnd?: number | null
+  // 混淆
+  obfsType?: ObfsType | null
+  obfsPassword?: string | null
+  // 拥塞控制
+  congestionControl?: CongestionControl | null
+  brutalTxBandwidth?: number | null
+  // QUIC
+  quicMaxIdleTimeout?: number | null
+  quicMaxUdpPayloadSize?: number | null
+  // 带宽
+  bandwidthUp?: string | null
+  bandwidthDown?: string | null
+  ignoreClientBandwidth?: boolean | null
+  // 速度测试
+  enableSpeedTest?: boolean | null
+  speedTestPingInterval?: number | null
+  // UDP
+  udpIdleTimeout?: number | null
+  // 协议嗅探
+  sniffEnabled?: boolean | null
+  sniffTimeout?: number | null
+  sniffRespectHttps?: boolean | null
+  // 伪装
+  masqueradeType?: MasqueradeType | null
+  masqueradeFile?: string | null
+  masqueradeProxyUrl?: string | null
+  masqueradeStringContent?: string | null
+  masqueradeStringHeaders?: string | null
+  masqueradeStringStatusCode?: number | null
+  // DNS
+  resolverType?: ResolverType | null
+  resolverTcpAddr?: string | null
+  resolverUdpAddr?: string | null
+  resolverTlsAddr?: string | null
+  // 运营管理
+  serverCost?: number | null
+  billingCycle?: string | null
+  expirationDate?: string | null
+  domainName?: string | null
+  remark?: string | null
 }
 ```
 

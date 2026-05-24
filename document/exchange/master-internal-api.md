@@ -170,9 +170,10 @@ Hysteria Client          Hysteria Server         Edge Agent              Master
 
 ### 3.1 `POST /api/v1/nodes/register-with-token` — 令牌注册（推荐）
 
-> **调用方**: Edge Agent 的 [`Initializer`](src/HysteriaAuth.Agent/Services/Initializer.cs)
+> **调用方**: Edge Agent 的 [`Initializer`](../../src/HysteriaAuth.Agent/Services/Initializer.cs)
 > **认证**: 无需认证（公开端点，通过一次性令牌保证安全）
 > **触发时机**: Edge Agent 首次启动或令牌变更时
+> **Phase 7 更新**: 响应新增 `configVersion` 和 `configYaml` 字段，注册时即下发完整 Hysteria 2 YAML 配置。
 
 ```
 POST /api/v1/nodes/register-with-token
@@ -206,6 +207,8 @@ Content-Type: application/json
     "nodeId": "edge-node-01",
     "nodeSecret": "a1b2c3d4e5f6...",
     "trafficStatsSecret": "f6e5d4c3b2a1...",
+    "configVersion": 1,
+    "configYaml": "# 自动生成于 2025-05-24T10:00:00Z | 节点: 东京节点 | 配置版本: 1\n\nlisten: 0.0.0.0:6789,0.0.0.0:61000-63000\n\nobfs:\n  type: salamander\n  salamander:\n    password: \"...\"\n\nquic:\n  maxIdleTimeout: 30s\n\nbandwidth:\n  congestion:\n    algorithm: bbr\n\nudpIdleTimeout: 60s\n\nauth:\n  type: http\n  http:\n    url: https://master.example.com/api/v1/auth?nodeId=edge-node-01\n    secret: \"a1b2c3d4e5f6...\"\n\nresolver:\n  type: system\n\ntrafficStats:\n  listen: 127.0.0.1:9999\n  secret: \"f6e5d4c3b2a1...\"\n",
     "config": {
         "authProxyPort": 8080,
         "healthCheckPort": 8081,
@@ -221,6 +224,8 @@ Content-Type: application/json
 | `nodeId` | string | 节点唯一标识（UUID） |
 | `nodeSecret` | string | 节点通信密钥（256-bit 随机生成），**后续所有 API 调用需通过 `X-Node-Secret` 头传递** |
 | `trafficStatsSecret` | string | Hysteria trafficStats API 密钥，Edge Agent 用于调用 Hysteria 的 `/traffic` 和 `/online` 端点 |
+| `configVersion` | int | **Phase 7 新增**。当前配置版本号（初始值为 `1`），Edge Agent 需缓存此值，用于后续心跳对比检测配置变更 |
+| `configYaml` | string / null | **Phase 7 新增**。完整的 Hysteria 2 服务端 YAML 配置。Edge Agent 直接写入 `/etc/hysteria/config.yaml` 并重载服务 |
 | `config.authProxyPort` | int | 认证代理监听端口（Hysteria `auth.http.url` 指向此端口） |
 | `config.healthCheckPort` | int | 健康检查端口 |
 | `config.trafficStatsPort` | int | Hysteria trafficStats API 端口 |
@@ -228,6 +233,7 @@ Content-Type: application/json
 | `config.heartbeatIntervalSeconds` | int | 心跳上报间隔（秒） |
 
 > **重要**: 令牌为**一次性使用**。注册成功后 Master 将令牌清零，`provisionStatus` 设为 `provisioned`。重复使用同一令牌返回 `403`。
+> **Edge Agent 处理**：注册成功后 Edge Agent 应将 `configYaml` 写入 Hysteria 2 配置文件，缓存 `configVersion`，并根据 `enablePortHopping` 字段应用 iptables 端口跳跃规则。
 
 ---
 
@@ -272,8 +278,9 @@ X-Node-Secret: {node_secret}
 
 ### 3.3 `GET /api/v1/nodes/{nodeId}/config` — 获取节点配置
 
-> **调用方**: Edge Agent（启动时或心跳前同步配置）
+> **调用方**: Edge Agent（启动时或心跳检测到配置变更后拉取）
 > **认证**: `X-Node-Secret` 请求头
+> **Phase 7 更新**: 响应新增 `configVersion`、`configYaml` 字段，返回完整 Hysteria 2 YAML 配置。
 
 ```
 GET /api/v1/nodes/edge-node-01/config
@@ -287,6 +294,8 @@ X-Node-Secret: {node_secret}
     "nodeId": "edge-node-01",
     "nodeSecret": "当前有效的节点密钥",
     "isActive": true,
+    "configVersion": 3,
+    "configYaml": "# 自动生成于 2025-05-24T10:30:00Z | 节点: 东京节点 | 配置版本: 3\n\nlisten: 0.0.0.0:6789,0.0.0.0:61000-63000\n\nrealm: hysteria-tokyo.example.com\n\nobfs:\n  type: salamander\n  salamander:\n    password: \"...\"\n\nquic:\n  maxIdleTimeout: 30s\n\nbandwidth:\n  up: 100 mbps\n  down: 200 mbps\n  congestion:\n    algorithm: bbr\n\nudpIdleTimeout: 60s\n\nauth:\n  type: http\n  http:\n    url: https://master.example.com/api/v1/auth?nodeId=edge-node-01\n    secret: \"...\"\n\nresolver:\n  type: system\n\ntrafficStats:\n  listen: 127.0.0.1:9999\n  secret: \"...\"\n",
     "config": {
         "authProxyPort": 8080,
         "healthCheckPort": 8081,
@@ -297,7 +306,20 @@ X-Node-Secret: {node_secret}
 }
 ```
 
-> **用途**: Edge Agent 可通过此接口定期同步配置，确保本地配置与 Master 一致。例如密钥轮换后，新密钥通过此接口下发。
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `nodeId` | string | 节点唯一标识 |
+| `nodeSecret` | string | 当前有效的节点通信密钥（明文） |
+| `isActive` | bool | 节点是否激活。`false` 时 Edge Agent 应暂停认证服务 |
+| `configVersion` | int | **Phase 7 新增**。当前配置版本号，Edge Agent 用于本地版本对比 |
+| `configYaml` | string / null | **Phase 7 新增**。完整的 Hysteria 2 服务端 YAML 配置字符串 |
+| `config.authProxyPort` | int | 认证代理监听端口 |
+| `config.healthCheckPort` | int | 健康检查端口 |
+| `config.trafficStatsPort` | int | Hysteria trafficStats API 端口 |
+| `config.collectIntervalSeconds` | int | 流量采集间隔（秒） |
+| `config.heartbeatIntervalSeconds` | int | 心跳上报间隔（秒） |
+
+> **配置同步流程 (Phase 7)**：Edge Agent 每次心跳时收到 `configVersion`，若高于本地缓存的版本，则调用此接口拉取完整的 `configYaml`，写入 `/etc/hysteria/config.yaml` 并重载 Hysteria 2 服务。配置变更由管理员通过 [`PUT /api/v1/admin/nodes/{nodeId}/config`](master-panel-api.md#56-put-apiv1adminnodesnodeidconfig--更新节点配置-phase-7) 触发。
 
 ---
 
@@ -372,9 +394,15 @@ X-Node-Secret: {node_secret}
 
 ```json
 {
-    "received": true
+    "received": true,
+    "configVersion": 3
 }
 ```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `received` | bool | 固定为 `true`，表示心跳已成功处理 |
+| `configVersion` | int | **Phase 7 新增**。当前 Master 上的配置版本号。Edge Agent 应对比本地缓存的版本，若不同则触发配置重同步 |
 
 **失败情况：**
 
@@ -383,6 +411,19 @@ X-Node-Secret: {node_secret}
 | `401` | 未提供 `X-Node-Secret` |
 | `403` | 密钥无效（`node_secret_invalid`） |
 | `404` | 节点不存在 |
+
+**Phase 7 配置变更检测逻辑：**
+
+```
+Edge Agent 心跳 → Master 返回 { received: true, configVersion: N }
+                                        │
+                    本地版本 < N ────── Yes ──→ GET /api/v1/nodes/{id}/config
+                        │                           │
+                        No                           ▼
+                        │                    写入 configYaml 到 /etc/hysteria/config.yaml
+                        ▼                    重载 Hysteria 2 服务
+                   无需操作                   更新本地缓存 configVersion = N
+```
 
 **后端处理逻辑：**
 
@@ -395,6 +436,7 @@ X-Node-Secret: {node_secret}
    - 插入 `TrafficRecords`（幂等：唯一约束防重复计入）
    - 累加 `Users.UsedTrafficBytes`
 5. 更新 `Sessions` 表（基于 `onlineUsers`）
+6. **Phase 7**: 返回当前节点的 `ConfigVersion` 供 Edge Agent 对比
 
 ---
 

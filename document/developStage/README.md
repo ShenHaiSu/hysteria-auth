@@ -2,7 +2,7 @@
 
 > **文档版本**：v2.0  
 > **最后更新**：2026-05-22  
-> **关联文档**：[架构设计总览](../architect/README.md) · [核心模块设计](../architect/core-design.md) · [设计令牌规范](../architect/design-tokens.md) · [面板 API](../exchange/master-panel-api.md)
+> **关联文档**：[架构设计总览](../architect/README.md) · [核心模块设计](../architect/core-design.md) · [设计令牌规范](../architect/design-tokens.md) · [面板 API](../exchange/master-panel-api.md) · [Phase 7 增量 API](../exchange/phase-7-incremental-api.md)
 
 ---
 
@@ -16,16 +16,17 @@
 - [Phase 4：仪表盘与管理功能](./phase-4-dashboard-admin.md)
 - [Phase 5：图表可视化与数据导出](./phase-5-charts-export.md)
 - [Phase 6：国际化完善与最终交付](./phase-6-i18n-delivery.md)
+- [Phase 7：Hysteria 2 配置自动管理](./phase-7-hysteria2-config.md)
 
 ---
 
 ## 阶段总览
 
 ```
-Phase 0         Phase 1          Phase 2          Phase 3          Phase 4           Phase 5          Phase 6
-基础设施 ───► 认证+布局 ───► 用户管理 ───► 节点管理 ───► 仪表盘+管理 ───► 图表+导出 ───► i18n+交付
+Phase 0         Phase 1          Phase 2          Phase 3          Phase 4           Phase 5          Phase 6           Phase 7
+基础设施 ───► 认证+布局 ───► 用户管理 ───► 节点管理 ───► 仪表盘+管理 ───► 图表+导出 ───► i18n+交付 ───► Hysteria 2 配置
 
-  ~2天           ~3天            ~3天            ~2天            ~3天             ~3天            ~2天
+  ~2天           ~3天            ~3天            ~2天            ~3天             ~3天            ~2天             ~2天
 ```
 
 | 阶段 | 名称 | 核心交付物 | 详细文档 |
@@ -37,6 +38,7 @@ Phase 0         Phase 1          Phase 2          Phase 3          Phase 4      
 | Phase 4 | 仪表盘与管理功能 | 仪表盘概览、管理员管理（仅 super_admin）、审计日志 | [→](./phase-4-dashboard-admin.md) |
 | Phase 5 | 图表可视化与数据导出 | ECharts 图表（流量趋势/CPU/内存/带宽）、Excel 导出、Excel 批量导入用户 | [→](./phase-5-charts-export.md) |
 | Phase 6 | 国际化完善与最终交付 | 完整中英文语言包、UI 细节打磨、错误处理完善、构建优化 | [→](./phase-6-i18n-delivery.md) |
+| Phase 7 | Hysteria 2 配置自动管理 | 节点配置编辑表单（监听/混淆/拥塞控制/伪装/DNS/运营管理）、配置版本管理、节点列表/详情扩展字段展示 | [→](./phase-7-hysteria2-config.md) |
 
 ---
 
@@ -49,7 +51,7 @@ Phase 0 ──────► Phase 1 ──────► Phase 2 ────
                    └───────────┬───────────────────┘
                                │
                                ▼
-                           Phase 4 ──────► Phase 5 ──────► Phase 6
+                           Phase 4 ──────► Phase 5 ──────► Phase 6 ──────► Phase 7
 ```
 
 ### 依赖说明
@@ -62,6 +64,7 @@ Phase 0 ──────► Phase 1 ──────► Phase 2 ────
 | **Phase 2/3 → Phase 4** | 🟠 中依赖 | 仪表盘需要用户和节点数据，管理员管理和审计日志相对独立 |
 | **Phase 4 → Phase 5** | 🟠 中依赖 | 图表需要仪表盘、节点详情、用户详情的页面骨架已就绪 |
 | **Phase 5 → Phase 6** | 🟡 弱依赖 | 国际化可并行推进，但建议在功能稳定后再统一提取文案 |
+| **Phase 6 → Phase 7** | 🟠 中依赖 | Phase 7 依赖节点管理模块（Phase 3）已就绪和国际化框架（Phase 6）完成。在节点详情页新增配置编辑表单，在列表页扩展字段展示 |
 
 ---
 

@@ -125,6 +125,7 @@
 | **仪表盘** | `GET /api/v1/admin/dashboard` | `/dashboard` | 全部 |
 | **用户管理** | `CRUD /api/v1/users/*` | `/users` | 全部 |
 | **节点管理** | `/api/v1/nodes/*` + `/api/v1/admin/nodes/*` | `/nodes` | 全部 |
+| **节点 Hysteria 2 配置 (Phase 7)** | `PUT /api/v1/admin/nodes/{nodeId}/config` | `/nodes/{id}` (内联) | admin+ |
 | **在线管理** | `POST /api/v1/admin/kick-user` | `/users` (内联) | admin+ |
 | **管理员管理** | `CRUD /api/v1/admin/admins` | `/admins` | super_admin |
 | **审计日志** | `GET /api/v1/admin/audit-logs` | `/audit-logs` | admin+ |

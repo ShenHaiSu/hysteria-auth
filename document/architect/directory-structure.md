@@ -147,10 +147,11 @@ web-dev/
 │       │   └── UserFormDialog.vue  # 用户创建/编辑对话框
 │       ├── nodes/                  # 节点管理模块
 │       │   ├── NodeListView.vue    # 节点列表页
-│       │   ├── NodeDetailView.vue  # 节点详情页（含状态历史图表）
+│       │   ├── NodeDetailView.vue  # 节点详情页（含状态历史图表、配置编辑）
 │       │   ├── NodeRegisterDialog.vue # 预注册节点对话框
 │       │   └── components/         # 节点管理独占组件
-│       │       └── KickUserModal.vue # 踢用户确认弹窗
+│       │       ├── KickUserModal.vue # 踢用户确认弹窗
+│       │       └── NodeConfigForm.vue # Phase 7: Hysteria 2 配置编辑表单
 │       ├── admins/                 # 管理员管理模块
 │       │   ├── AdminListView.vue   # 管理员列表页
 │       │   └── AdminFormDialog.vue # 管理员创建/编辑对话框
