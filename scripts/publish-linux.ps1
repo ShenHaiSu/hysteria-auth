@@ -3,7 +3,7 @@
     Windows → Linux-x64 交叉编译打包脚本
 .DESCRIPTION
     在 Windows 开发机上编译出 Linux-x64 自包含可执行程序，合并前端 SPA 构建产物，打包为 .tar.gz
-    Phase 6: SPA 集成与部署现代化
+    使用 PublishTrimmed + PublishSingleFile + PublishReadyToRun 减少输出 DLL 数量
 #>
 param(
     [string]$FrontendDistPath = "..\hysteria-auth-web\dist",
@@ -18,31 +18,51 @@ $ProjectRoot = Resolve-Path "$ScriptDir\.."
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host " Hysteria Auth - Linux Cross-Compile" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  Configuration : $Configuration" -ForegroundColor Gray
+Write-Host "  Runtime       : linux-x64" -ForegroundColor Gray
+Write-Host "  PublishMode   : SingleFile + Trimmed + ReadyToRun" -ForegroundColor Gray
+Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Step 1: Publish for linux-x64
 Write-Host "[1/3] Publishing for linux-x64..." -ForegroundColor Yellow
+Write-Host "  -> Master: HysteriaAuth.Master" -ForegroundColor Gray
+Write-Host "  -> Agent : HysteriaAuth.Agent" -ForegroundColor Gray
 Push-Location $ProjectRoot
 
-dotnet publish src/HysteriaAuth.Master -c $Configuration -r linux-x64 --self-contained true -o "$OutputDir"
+$publishArgs = @(
+    "-c", $Configuration,
+    "-r", "linux-x64",
+    "--self-contained", "true",
+    "/p:PublishTrimmed=true",
+    "/p:PublishSingleFile=true",
+    "/p:PublishReadyToRun=true"
+)
+
+dotnet publish src/HysteriaAuth.Master @publishArgs -o "$OutputDir"
 if ($LASTEXITCODE -ne 0) { throw "Master publish failed" }
 
-dotnet publish src/HysteriaAuth.Agent -c $Configuration -r linux-x64 --self-contained true -o "$OutputDir\agent"
+dotnet publish src/HysteriaAuth.Agent @publishArgs -o "$OutputDir\agent"
 if ($LASTEXITCODE -ne 0) { throw "Agent publish failed" }
 
 Write-Host "  -> Linux-x64 publish OK" -ForegroundColor Green
 
 # Step 2: Copy frontend dist
 Write-Host "[2/3] Copying frontend SPA dist..." -ForegroundColor Yellow
-$frontendAbs = Resolve-Path $FrontendDistPath -ErrorAction SilentlyContinue
-if ($frontendAbs) {
-    $spaTarget = "$OutputDir\wwwroot"
-    if (Test-Path $spaTarget) { Remove-Item -Recurse -Force $spaTarget }
-    Copy-Item -Recurse $frontendAbs $spaTarget
-    Write-Host "  -> Frontend copied to wwwroot/" -ForegroundColor Green
+if ([string]::IsNullOrEmpty($FrontendDistPath)) {
+    Write-Host "  -> Frontend dist path is empty, skipping." -ForegroundColor Yellow
 }
 else {
-    Write-Host "  -> Frontend dist not found, skipping. SPA will be disabled." -ForegroundColor Yellow
+    $frontendAbs = Resolve-Path $FrontendDistPath -ErrorAction SilentlyContinue
+    if ($frontendAbs) {
+        $spaTarget = "$OutputDir\wwwroot"
+        if (Test-Path $spaTarget) { Remove-Item -Recurse -Force $spaTarget }
+        Copy-Item -Recurse $frontendAbs $spaTarget
+        Write-Host "  -> Frontend copied to wwwroot/" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  -> Frontend dist not found, skipping. SPA will be disabled." -ForegroundColor Yellow
+    }
 }
 
 # Step 3: Package for deployment
