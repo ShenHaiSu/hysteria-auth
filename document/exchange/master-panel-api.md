@@ -32,6 +32,7 @@
   - [5.3 获取节点详情](#53-get-apiv1nodesnodeid--获取节点详情)
   - [5.4 获取节点历史状态](#54-get-apiv1nodesnodeidstatus-history--获取节点历史状态)
   - [5.5 轮换节点密钥](#55-post-apiv1adminnodesnodeidrotate-secret--轮换节点密钥)
+  - [5.6 更新节点配置](#56-put-apiv1adminnodesnodeidconfig--更新节点配置-phase-7)
 - [6. 在线用户管理](#6-在线用户管理)
   - [6.1 踢用户下线](#61-post-apiv1adminkick-user--踢用户下线)
 - [7. 管理员管理（super_admin）](#7-管理员管理super_admin)
@@ -471,6 +472,7 @@ Authorization: Bearer {admin_token}
 
 > **认证**: 需要 JWT Token
 > 在主服务器上预注册一个边缘节点，生成**一次性预注册令牌**，供 Edge Agent 首次启动时使用。
+> **Phase 7 更新**: 预注册时可指定监听端口、域名、备注等可选字段。
 
 ```
 POST /api/v1/admin/nodes/pre-register
@@ -485,7 +487,10 @@ Authorization: Bearer {admin_token}
     "name": "东京节点",
     "location": "Tokyo, Japan",
     "port": 443,
-    "trafficStatsPort": 9999
+    "trafficStatsPort": 9999,
+    "listenPort": 6789,
+    "domainName": "hysteria-tokyo.example.com",
+    "remark": "日本东京线路"
 }
 ```
 
@@ -493,8 +498,11 @@ Authorization: Bearer {admin_token}
 |------|------|------|------|
 | `name` | string | ✅ | 节点名称 |
 | `location` | string | ❌ | 节点位置描述 |
-| `port` | int | ❌ | Hysteria 服务端口，默认 `443` |
+| `port` | int | ❌ | Hysteria 服务端口（历史兼容字段），默认 `443` |
 | `trafficStatsPort` | int | ❌ | Hysteria trafficStats API 端口，默认自动分配 |
+| `listenPort` | int | ❌ | **Phase 7 新增**。Hysteria 2 实际监听端口，默认 `6789` |
+| `domainName` | string | ❌ | **Phase 7 新增**。节点关联域名，将写入 Hysteria 2 YAML 的 `realm` 字段 |
+| `remark` | string | ❌ | **Phase 7 新增**。节点备注信息 |
 
 **成功响应 (HTTP 201)：**
 
@@ -510,17 +518,19 @@ Authorization: Bearer {admin_token}
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `provisionToken` | string | **一次性**预注册令牌，Edge Agent 首次注册后即失效 |
-| `masterServerUrl` | string | 主服务器地址（由 [`appsettings.json`](src/HysteriaAuth.Master/appsettings.json:5) 配置） |
-| `expiresAt` | string (ISO 8601) | 令牌过期时间 |
+| `masterServerUrl` | string | 主服务器地址（由 [`appsettings.json`](../../src/HysteriaAuth.Master/appsettings.json:5) 配置） |
+| `expiresAt` | string (ISO 8601) | 令牌过期时间（预注册后 7 天） |
 | `startupCommand` | string | 一键启动命令，可直接复制到边缘节点执行 |
 
 > **前端提示**：`startupCommand` 可直接展示给运维人员复制使用。令牌过期后需重新预注册。
+> **注意**：`port` 字段保留用于向后兼容，实际 Hysteria 2 配置文件使用 `listenPort`（若未指定则回退 `port`）。
 
 ---
 
 ### 5.2 `GET /api/v1/nodes` — 获取节点列表
 
 > **认证**: 需要 JWT Token
+> **Phase 7 更新**: 列表项扩展了配置、运营等字段。
 
 ```
 GET /api/v1/nodes?page=1&pageSize=20&isActive=true
@@ -553,32 +563,119 @@ Authorization: Bearer {admin_token}
             "lastHeartbeat": "2025-01-15T12:00:00Z",
             "location": "Tokyo, Japan",
             "trafficStatsPort": 9999,
-            "provisionStatus": "provisioned"
+            "provisionStatus": "provisioned",
+            "listenAddress": "0.0.0.0",
+            "listenPort": 6789,
+            "enablePortHopping": true,
+            "portHopRangeStart": 61000,
+            "portHopRangeEnd": 63000,
+            "obfsType": "salamander",
+            "congestionControl": "bbr",
+            "brutalTxBandwidth": null,
+            "bandwidthUp": "100 mbps",
+            "bandwidthDown": "200 mbps",
+            "ignoreClientBandwidth": false,
+            "enableSpeedTest": false,
+            "udpIdleTimeout": 60,
+            "sniffEnabled": false,
+            "masqueradeType": "file",
+            "masqueradeFile": "/var/www/html",
+            "resolverType": "system",
+            "configVersion": 3,
+            "configUpdatedAt": "2025-05-24T10:00:00Z",
+            "serverCost": 29.99,
+            "billingCycle": "monthly",
+            "expirationDate": "2026-06-01T00:00:00Z",
+            "domainName": "hysteria-tokyo.example.com",
+            "remark": "日本东京线路"
         }
     ]
 }
 ```
+
+**基础字段：**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `id` | string | 节点唯一标识 |
 | `name` | string | 节点名称 |
 | `ipAddress` | string | 节点 IP 地址 |
-| `port` | int | Hysteria 服务端口 |
+| `port` | int | Hysteria 服务端口（历史兼容字段，实际监听端口见 `listenPort`） |
 | `isActive` | bool | 是否激活（管理员可控制） |
 | `createdAt` | string (ISO 8601) | 创建时间 |
 | `lastHeartbeat` | string (ISO 8601) / null | 最后心跳时间。`null` = 从未上报 |
-| `location` | string | 节点位置描述 |
-| `trafficStatsPort` | int | Hysteria trafficStats API 端口 |
+| `location` | string / null | 节点位置描述 |
+| `trafficStatsPort` | int / null | Hysteria trafficStats API 端口 |
 | `provisionStatus` | string | 预注册状态：`pending`(待注册) / `provisioned`(已注册) |
 
+**Phase 7 扩展 — 监听与端口跳跃：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `listenAddress` | string / null | Hysteria 2 监听地址，默认 `"0.0.0.0"` |
+| `listenPort` | int / null | Hysteria 2 实际监听端口，默认 `6789` |
+| `enablePortHopping` | bool | 是否启用端口跳跃，默认 `true` |
+| `portHopRangeStart` | int / null | 端口跳跃范围起始，默认 `61000` |
+| `portHopRangeEnd` | int / null | 端口跳跃范围结束，默认 `63000` |
+
+**Phase 7 扩展 — 混淆与拥塞控制：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `obfsType` | string / null | 混淆类型：`salamander` |
+| `congestionControl` | string / null | 拥塞控制算法：`bbr`、`cubic`、`brutal` |
+| `brutalTxBandwidth` | long / null | Brutal 发送带宽（bps），仅 `congestionControl=brutal` 时有效 |
+
+**Phase 7 扩展 — 带宽与速度测试：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `bandwidthUp` | string / null | 上行带宽（如 `"100 mbps"`），`null` = 不限 |
+| `bandwidthDown` | string / null | 下行带宽（如 `"200 mbps"`），`null` = 不限 |
+| `ignoreClientBandwidth` | bool / null | 忽略客户端带宽设置 |
+| `enableSpeedTest` | bool / null | 是否启用速度测试 |
+
+**Phase 7 扩展 — UDP 与协议嗅探：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `udpIdleTimeout` | int / null | UDP 空闲超时（秒），默认 `60` |
+| `sniffEnabled` | bool / null | 是否启用协议嗅探 |
+
+**Phase 7 扩展 — 伪装：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `masqueradeType` | string / null | 伪装类型：`file`、`proxy`、`string`、`reply` |
+| `masqueradeFile` | string / null | 伪装文件路径（type=file 时） |
+
+**Phase 7 扩展 — DNS 解析器：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `resolverType` | string / null | 解析器类型：`system`、`udp`、`tcp`、`tls` |
+
+**Phase 7 扩展 — 配置版本与运营管理：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `configVersion` | int | 配置版本号，每次配置变更后自增 |
+| `configUpdatedAt` | string (ISO 8601) / null | 配置最后更新时间 |
+| `serverCost` | decimal / null | 服务器费用（月付金额） |
+| `billingCycle` | string / null | 续费周期：`monthly`、`quarterly`、`yearly` |
+| `expirationDate` | string (ISO 8601) / null | 服务器到期日期 |
+| `domainName` | string / null | 节点关联域名 |
+| `remark` | string / null | 节点备注信息 |
+
 > **判断节点在线**：`isActive == true` 且 `lastHeartbeat` 距当前 < 90 秒（可配）。
+> **配置版本机制**：管理员通过 [更新节点配置](#56-put-apiv1adminnodesnodeidconfig--更新节点配置-phase-7) 修改字段后 `configVersion` 自动递增，Edge Agent 下次心跳检测到版本变化后自动拉取新配置。
 
 ---
 
 ### 5.3 `GET /api/v1/nodes/{nodeId}` — 获取节点详情
 
 > **认证**: 需要 JWT Token
+> **Phase 7 更新**: 响应体扩展了所有 Hysteria 2 配置字段和运营管理字段。
 
 ```
 GET /api/v1/nodes/edge-node-01
@@ -600,11 +697,46 @@ Authorization: Bearer {admin_token}
     "trafficStatsPort": 9999,
     "provisionStatus": "provisioned",
     "secretVersion": 1,
-    "trafficStatsSecret": "encrypted_secret_value"
+    "trafficStatsSecret": "***encrypted***",
+    "listenAddress": "0.0.0.0",
+    "listenPort": 6789,
+    "enablePortHopping": true,
+    "portHopRangeStart": 61000,
+    "portHopRangeEnd": 63000,
+    "obfsType": "salamander",
+    "congestionControl": "bbr",
+    "brutalTxBandwidth": null,
+    "bandwidthUp": "100 mbps",
+    "bandwidthDown": "200 mbps",
+    "ignoreClientBandwidth": false,
+    "enableSpeedTest": false,
+    "udpIdleTimeout": 60,
+    "sniffEnabled": false,
+    "masqueradeType": "file",
+    "masqueradeFile": "/var/www/html",
+    "resolverType": "system",
+    "configVersion": 3,
+    "configUpdatedAt": "2025-05-24T10:00:00Z",
+    "serverCost": 29.99,
+    "billingCycle": "monthly",
+    "expirationDate": "2026-06-01T00:00:00Z",
+    "domainName": "hysteria-tokyo.example.com",
+    "remark": "日本东京线路"
 }
 ```
 
-> 除包含列表字段外，额外包含 `secretVersion`（密钥版本号）和 `trafficStatsSecret`（加密存储的密钥，仅供参考）。
+**基础字段（与列表相同）：** 参见 [§5.2 基础字段表](#52-get-apiv1nodes--获取节点列表)。
+
+**额外字段（仅详情接口）：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `secretVersion` | int | 密钥版本号 |
+| `trafficStatsSecret` | string | 加密存储的密钥。在响应中始终脱敏为 `"***encrypted***"` |
+
+**Phase 7 扩展字段：** 详情接口继承 `NodeDto`，所有 Hysteria 2 配置字段和运营管理字段与 [§5.2 列表接口](#52-get-apiv1nodes--获取节点列表) 完全一致。前端可使用同一套 `NodeDto` 类型处理列表和详情数据。
+
+> **安全注意**：`trafficStatsSecret` 和 `SecretKey` 在数据库中 AES-256-GCM 加密存储，API 响应中 `trafficStatsSecret` 脱敏显示为 `"***encrypted***"`，`SecretKey` 明文仅在令牌注册时返回一次。
 
 ---
 
@@ -683,6 +815,156 @@ Authorization: Bearer {admin_token}
     "newSecretVersion": 2
 }
 ```
+
+---
+
+### 5.6 `PUT /api/v1/admin/nodes/{nodeId}/config` — 更新节点配置 (Phase 7)
+
+> **认证**: 需要 JWT Token
+> **Phase 7 新增**。管理员通过此端点修改节点的 Hysteria 2 完整配置和运营管理字段。所有字段均为可选（`null` 表示不修改），更新后 `ConfigVersion` 自动递增，Edge Agent 下次心跳检测到版本变化后自动拉取新配置。
+
+```
+PUT /api/v1/admin/nodes/edge-node-01/config
+Content-Type: application/json
+Authorization: Bearer {admin_token}
+```
+
+**请求体（所有字段可选，仅传需要修改的字段）：**
+
+```json
+{
+    "listenAddress": "0.0.0.0",
+    "listenPort": 6789,
+    "enablePortHopping": false,
+    "portHopRangeStart": 61000,
+    "portHopRangeEnd": 63000,
+    "obfsType": "salamander",
+    "obfsPassword": "new-obfs-password",
+    "congestionControl": "bbr",
+    "brutalTxBandwidth": null,
+    "quicMaxIdleTimeout": 30,
+    "quicMaxUdpPayloadSize": 1350,
+    "bandwidthUp": "100 mbps",
+    "bandwidthDown": "200 mbps",
+    "ignoreClientBandwidth": false,
+    "enableSpeedTest": false,
+    "speedTestPingInterval": 60,
+    "udpIdleTimeout": 60,
+    "sniffEnabled": false,
+    "sniffTimeout": 5,
+    "sniffRespectHttps": false,
+    "masqueradeType": "file",
+    "masqueradeFile": "/var/www/html",
+    "masqueradeProxyUrl": null,
+    "masqueradeStringContent": null,
+    "masqueradeStringHeaders": null,
+    "masqueradeStringStatusCode": 200,
+    "resolverType": "system",
+    "resolverTcpAddr": null,
+    "resolverUdpAddr": null,
+    "resolverTlsAddr": null,
+    "serverCost": 29.99,
+    "billingCycle": "monthly",
+    "expirationDate": "2026-06-01T00:00:00Z",
+    "domainName": "hysteria-tokyo.example.com",
+    "remark": "日本东京线路 - 带宽已升级"
+}
+```
+
+**请求体字段分类：**
+
+| 分类 | 字段 | 类型 | 说明 |
+|------|------|------|------|
+| **监听** | `listenAddress` | string / null | 监听地址，默认 `"0.0.0.0"` |
+| | `listenPort` | int / null | 监听端口，默认 `6789` |
+| | `enablePortHopping` | bool / null | 启用端口跳跃。关闭后 YAML 仅生成单端口 `listen` |
+| | `portHopRangeStart` | int / null | 端口跳跃起始 |
+| | `portHopRangeEnd` | int / null | 端口跳跃结束 |
+| **混淆** | `obfsType` | string / null | 混淆类型：`salamander` |
+| | `obfsPassword` | string / null | 混淆密码（明文传入，服务端 AES 加密存储） |
+| **拥塞控制** | `congestionControl` | string / null | 算法：`bbr`、`cubic`、`brutal` |
+| | `brutalTxBandwidth` | long / null | Brutal 发送带宽（bps） |
+| **QUIC** | `quicMaxIdleTimeout` | int / null | QUIC 最大空闲超时（秒） |
+| | `quicMaxUdpPayloadSize` | int / null | QUIC 最大 UDP 载荷（字节） |
+| **带宽** | `bandwidthUp` | string / null | 上行带宽（如 `"100 mbps"`） |
+| | `bandwidthDown` | string / null | 下行带宽 |
+| | `ignoreClientBandwidth` | bool / null | 忽略客户端带宽设置 |
+| **速度测试** | `enableSpeedTest` | bool / null | 启用速度测试 |
+| | `speedTestPingInterval` | int / null | Ping 间隔（秒） |
+| **UDP** | `udpIdleTimeout` | int / null | UDP 空闲超时（秒） |
+| **协议嗅探** | `sniffEnabled` | bool / null | 启用协议嗅探 |
+| | `sniffTimeout` | int / null | 嗅探超时（秒） |
+| | `sniffRespectHttps` | bool / null | 遵从 HTTPS 语义 |
+| **伪装** | `masqueradeType` | string / null | 类型：`file`、`proxy`、`string`、`reply` |
+| | `masqueradeFile` | string / null | 伪装文件路径（type=file） |
+| | `masqueradeProxyUrl` | string / null | 伪装代理 URL（type=proxy） |
+| | `masqueradeStringContent` | string / null | 伪装字符串（type=string） |
+| | `masqueradeStringHeaders` | string / null | 伪装响应头 JSON（type=string） |
+| | `masqueradeStringStatusCode` | int / null | 伪装状态码（type=string） |
+| **DNS** | `resolverType` | string / null | 解析器类型：`system`、`udp`、`tcp`、`tls` |
+| | `resolverTcpAddr` | string / null | TCP 解析器地址 |
+| | `resolverUdpAddr` | string / null | UDP 解析器地址 |
+| | `resolverTlsAddr` | string / null | TLS 解析器地址 |
+| **运营管理** | `serverCost` | decimal / null | 服务器费用 |
+| | `billingCycle` | string / null | 续费周期：`monthly`、`quarterly`、`yearly` |
+| | `expirationDate` | string (ISO 8601) / null | 到期日期 |
+| | `domainName` | string / null | 关联域名 |
+| | `remark` | string / null | 备注信息 |
+
+**成功响应 (HTTP 200)：**
+
+返回更新后的完整 [`NodeDto`](#52-get-apiv1nodes--获取节点列表) 对象，其中 `configVersion` 已递增，`configUpdatedAt` 已更新为当前时间。
+
+```json
+{
+    "id": "edge-node-01",
+    "name": "东京节点",
+    "configVersion": 4,
+    "configUpdatedAt": "2025-05-24T10:30:00Z",
+    "enablePortHopping": false,
+    "remark": "日本东京线路 - 带宽已升级",
+    "... 其余所有字段 ..."
+}
+```
+
+**常见用法示例：**
+
+```json
+// 1. 仅关闭端口跳跃
+{ "enablePortHopping": false }
+
+// 2. 修改混淆密码
+{ "obfsPassword": "new-password-here" }
+
+// 3. 切换拥塞控制算法为 Brutal
+{ "congestionControl": "brutal", "brutalTxBandwidth": 104857600 }
+
+// 4. 更新运营信息
+{ "serverCost": 49.99, "billingCycle": "monthly", "remark": "升级到高性能实例" }
+```
+
+**变更传播流程：**
+
+```
+管理员面板 PUT /config
+        │
+        ▼
+Master: ConfigVersion++  (Node 表)
+        │
+        ▼
+Edge Agent 心跳  (POST /heartbeat)
+        │  ← 响应中带 ConfigVersion
+        │  检测到版本变化
+        ▼
+Edge Agent: GET /nodes/{id}/config
+        │  ← 响应中带 configYaml
+        ▼
+写入 /etc/hysteria/config.yaml → 重载 Hysteria 2 服务
+```
+
+> **审计日志**：每次配置变更自动写入审计日志（`action=update_config`），包含被修改的字段名列表。
+> **敏感字段加密**：`obfsPassword` 在服务端以 AES-256-GCM 加密存储，API 请求中传入明文（传输层由 HTTPS 保护）。
+> **前端表单建议**：建议按分类组织 Tab 页（监听/混淆/拥塞/带宽/伪装/DNS/运营），每个 Tab 内提供"重置为默认值"按钮。
 
 ---
 

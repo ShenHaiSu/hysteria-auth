@@ -11,36 +11,43 @@
 Edge Agent 是部署在每个边缘节点（VPS）上的轻量级进程，它承担三个角色：
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                    边缘节点 (VPS)                     │
-│                                                      │
-│  Hysteria Server                                     │
-│  (监听 :443 QUIC)                                    │
-│       │                                              │
-│       │ POST /auth (HTTP Auth)                       │
-│       ▼                                              │
-│  ┌─────────────┐     POST /api/v1/auth/hysteria      │
-│  │ Edge Agent  │ ──────────────────────────────────► │
-│  │             │     POST /api/v1/nodes/{id}/heartbeat│
-│  │ :8080 /auth │     GET  /api/v1/nodes/{id}/config   │
-│  │ :8080 /health│ ◄────────────────────────────────── │
-│  └─────────────┘                                     │
-│       │                                              │
-│       │ GET /traffic?clear=1 + GET /online           │
-│       ▼                                              │
-│  Hysteria trafficStats API                           │
-│  (127.0.0.1:9999)                                    │
-└──────────────────────────────────────────────────────┘
-                                      主服务器 (Master)
+┌──────────────────────────────────────────────────────────────┐
+│                    边缘节点 (VPS)                             │
+│                                                              │
+│  Hysteria Server (Hysteria 2)                                │
+│  (监听 :6789 QUIC，iptables 转发 61000-63000 → 6789)         │
+│       │                                                      │
+│       │ POST /auth (HTTP Auth)                               │
+│       ▼                                                      │
+│  ┌─────────────┐     POST /api/v1/auth/hysteria              │
+│  │ Edge Agent  │ ──────────────────────────────────────────► │
+│  │             │     POST /api/v1/nodes/{id}/heartbeat       │
+│  │ :8080 /auth │        ─ 响应含 configVersion (Phase 7)     │
+│  │ :8080 /health│    GET  /api/v1/nodes/{id}/config           │
+│  │ :8081 /kick │        ─ 响应含 configYaml (Phase 7)        │
+│  │             │◄───────────────────────────────────────────  │
+│  │ 本地配置管理 │                                            │
+│  │ ─────────── │                                            │
+│  │ configYaml  │ 写入 /etc/hysteria/config.yaml              │
+│  │ configVers. │ 缓存版本号，心跳时对比                      │
+│  │ iptables    │ 应用端口跳跃 DNAT 规则                      │
+│  └─────────────┘                                             │
+│       │                                                      │
+│       │ GET /traffic?clear=1 + GET /online                   │
+│       ▼                                                      │
+│  Hysteria trafficStats API                                   │
+│  (127.0.0.1:9999)                                            │
+└──────────────────────────────────────────────────────────────┘
+                                              主服务器 (Master)
 ```
 
-Edge Agent 暴露**两个本地 HTTP 端点**（仅监听 `127.0.0.1`）：
+Edge Agent 暴露**三个本地 HTTP 端点**（仅监听 `127.0.0.1`）：
 
 | 端点 | 调用方 | 用途 |
 |------|--------|------|
 | `POST /auth` | Hysteria Server | 客户端连接认证 |
 | `GET /health` | 监控系统 / Master 探活 | 健康检查 |
-| `POST /kick-user` | Master 的 [`KickService`](src/HysteriaAuth.Master/Services/KickService.cs) | 踢用户下线 |
+| `POST /kick-user` | Master 的 [`KickService`](../../src/HysteriaAuth.Master/Services/KickService.cs) | 踢用户下线 |
 
 ---
 
@@ -220,7 +227,7 @@ Base64编码: echo -n "username:password" | base64
 
 ```json
 {
-    "server": "edge-node-ip:443",
+    "server": "edge-node-ip:6789",
     "auth": "dXNlcm5hbWU6cGFzc3dvcmQ=",
     "socks5": {
         "listen": "127.0.0.1:1080"
@@ -228,11 +235,13 @@ Base64编码: echo -n "username:password" | base64
 }
 ```
 
+> **端口说明**：如果节点启用端口跳跃（默认 `true`），客户端可连接 `61000-63000` 范围内的**任一端口**，iptables 会自动 DNAT 转发到 `6789`。手动指定 `server` 时建议填写 `listenPort`（默认 `6789`）。
+
 ---
 
 ## 5. Edge Agent 配置参考
 
-Edge Agent 的完整配置文件位于 [`agent.json`](src/HysteriaAuth.Agent/Config/agent.json)，关键配置项：
+Edge Agent 的完整配置文件位于 [`agent.json`](../../src/HysteriaAuth.Agent/Config/agent.json)，关键配置项：
 
 | 配置段 | 关键字段 | 说明 |
 |--------|---------|------|
@@ -242,4 +251,37 @@ Edge Agent 的完整配置文件位于 [`agent.json`](src/HysteriaAuth.Agent/Con
 | `TrafficStats` | `CollectIntervalSeconds: 30` | 流量采集间隔 |
 | `Cache` | `ExpirationMinutes: 5` | 认证缓存过期时间 |
 
-> 前端无需关心这些配置，仅供参考。
+### 5.1 Phase 7: Hysteria 2 配置自动管理
+
+Edge Agent 启动后通过以下流程自动管理 Hysteria 2 服务端配置：
+
+**注册阶段（`Initializer`）：**
+
+1. 调用 [`POST /api/v1/nodes/register-with-token`](master-internal-api.md#31-post-apiv1nodesregister-with-token--令牌注册推荐) 完成节点注册
+2. 从响应中获取 `configYaml` 字段
+3. 将 `configYaml` 写入 `/etc/hysteria/config.yaml`
+4. 缓存 `configVersion` 到本地
+5. 如果节点配置了端口跳跃（`enablePortHopping=true`），应用 iptables DNAT 规则：
+   ```bash
+   iptables -t nat -A PREROUTING -i eth0 -p udp --dport 61000:63000 -j DNAT --to-destination :6789
+   ```
+6. 启动/重载 Hysteria 2 服务
+
+**心跳阶段（`StatusReporter`）：**
+
+1. 每次心跳 [`POST /api/v1/nodes/{id}/heartbeat`](master-internal-api.md#41-post-apiv1nodesnodeidheartbeat--节点心跳状态上报) 的响应包含 `configVersion`
+2. 对比本地缓存的版本号：
+   - **相同** → 无需操作
+   - **不同** → 触发配置重同步
+3. 配置重同步流程：
+   - 调用 [`GET /api/v1/nodes/{id}/config`](master-internal-api.md#33-get-apiv1nodesnodeidconfig--获取节点配置)
+   - 获取最新的 `configYaml`
+   - 写入 `/etc/hysteria/config.yaml`
+   - 重载 Hysteria 2 服务
+   - 更新本地缓存的 `configVersion`
+
+**配置变更触发来源：**
+
+管理员通过管理面板调用 [`PUT /api/v1/admin/nodes/{nodeId}/config`](master-panel-api.md#56-put-apiv1adminnodesnodeidconfig--更新节点配置-phase-7) 修改节点配置，Master 自动递增 `ConfigVersion`。Edge Agent 在下次心跳（最长 30 秒间隔）时检测到版本变化，自动拉取新配置。
+
+> 前端无需关心这些配置，仅供参考。此信息有助于理解节点配置变更的完整传播链路。
