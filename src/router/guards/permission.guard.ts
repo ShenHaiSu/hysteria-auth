@@ -1,17 +1,20 @@
-import type { NavigationGuard } from 'vue-router'
+import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 
-export const permissionGuard: NavigationGuard = (_to, _from, next) => {
+export const permissionGuard = (
+  to: RouteLocationNormalized,
+  _from: RouteLocationNormalized,
+): boolean | RouteLocationRaw => {
   const authStore = useAuthStore()
-  const requiredRoles = _to.meta.roles
+  const requiredRoles = to.meta.roles
 
   if (!requiredRoles || requiredRoles.length === 0) {
-    return next()
+    return true
   }
 
   if (authStore.role && !requiredRoles.includes(authStore.role)) {
-    return next({ name: 'Forbidden' })
+    return { name: 'Forbidden' }
   }
 
-  next()
+  return true
 }

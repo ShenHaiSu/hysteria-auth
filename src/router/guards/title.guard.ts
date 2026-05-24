@@ -1,6 +1,6 @@
-import type { NavigationGuard } from 'vue-router'
+import type { RouteLocationNormalized } from 'vue-router'
 
-export const titleGuard: NavigationGuard = (to, _from, next) => {
+export const titleGuard = (to: RouteLocationNormalized, _from: RouteLocationNormalized): true => {
   document.title = to.meta.title ? `${to.meta.title} - Hysteria Auth` : 'Hysteria Auth'
-  next()
+  return true
 }
