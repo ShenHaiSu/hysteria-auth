@@ -1,6 +1,7 @@
 using Xunit;
 using Moq;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using HysteriaAuth.Master.Middleware;
 using HysteriaAuth.Master.Models.DTOs;
 using HysteriaAuth.Master.Models.Entities;
@@ -12,12 +13,18 @@ namespace HysteriaAuth.Tests.Unit.Services;
 public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _userRepoMock;
+    private readonly Mock<IAuditLogRepository> _auditLogRepoMock;
+    private readonly Mock<ILogger<AuditService>> _loggerMock;
+    private readonly AuditService _auditService;
     private readonly UserService _sut;
 
     public UserServiceTests()
     {
         _userRepoMock = new Mock<IUserRepository>();
-        _sut = new UserService(_userRepoMock.Object);
+        _auditLogRepoMock = new Mock<IAuditLogRepository>();
+        _loggerMock = new Mock<ILogger<AuditService>>();
+        _auditService = new AuditService(_auditLogRepoMock.Object, _loggerMock.Object);
+        _sut = new UserService(_userRepoMock.Object, _auditService);
     }
 
     private static User CreateUser(long id = 1, string username = "testuser", long totalTraffic = 10L * 1024 * 1024 * 1024, long usedTraffic = 0)
@@ -58,7 +65,7 @@ public class UserServiceTests
             .ReturnsAsync((User u) => { u.Id = 1; return u; });
 
         // Act
-        var result = await _sut.CreateAsync(request);
+        var result = await _sut.CreateAsync(request, 1, "127.0.0.1");
 
         // Assert
         result.Id.Should().Be(1);
@@ -87,7 +94,7 @@ public class UserServiceTests
         _userRepoMock.Setup(r => r.CheckUsernameExistsAsync("existinguser")).ReturnsAsync(true);
 
         // Act
-        var act = () => _sut.CreateAsync(request);
+        var act = () => _sut.CreateAsync(request, 1, "127.0.0.1");
 
         // Assert
         var ex = await act.Should().ThrowAsync<ConflictException>();
@@ -184,7 +191,7 @@ public class UserServiceTests
         };
 
         // Act
-        var result = await _sut.UpdateAsync(1, request);
+        var result = await _sut.UpdateAsync(1, request, 1, "127.0.0.1");
 
         // Assert
         result.Email.Should().Be("updated@example.com");
@@ -208,7 +215,7 @@ public class UserServiceTests
         _userRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(user);
 
         // Act
-        await _sut.SoftDeleteAsync(1);
+        await _sut.SoftDeleteAsync(1, 1, "127.0.0.1");
 
         // Assert
         _userRepoMock.Verify(r => r.UpdateAsync(
@@ -223,7 +230,7 @@ public class UserServiceTests
         _userRepoMock.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((User?)null);
 
         // Act
-        var act = () => _sut.SoftDeleteAsync(999);
+        var act = () => _sut.SoftDeleteAsync(999, 1, "127.0.0.1");
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();
@@ -240,7 +247,7 @@ public class UserServiceTests
         _userRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(user);
 
         // Act
-        await _sut.ResetTrafficAsync(1);
+        await _sut.ResetTrafficAsync(1, 1, "127.0.0.1");
 
         // Assert
         _userRepoMock.Verify(r => r.UpdateAsync(
@@ -255,7 +262,7 @@ public class UserServiceTests
         _userRepoMock.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((User?)null);
 
         // Act
-        var act = () => _sut.ResetTrafficAsync(999);
+        var act = () => _sut.ResetTrafficAsync(999, 1, "127.0.0.1");
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();

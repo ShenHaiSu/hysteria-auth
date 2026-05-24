@@ -2,6 +2,7 @@ using Xunit;
 using Moq;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using HysteriaAuth.Master.Config;
 using HysteriaAuth.Master.Middleware;
 using HysteriaAuth.Master.Models.DTOs;
@@ -15,6 +16,9 @@ public class AdminServiceTests
 {
     private readonly Mock<IAdminRepository> _adminRepoMock;
     private readonly AdminSettings _adminSettings;
+    private readonly Mock<IAuditLogRepository> _auditLogRepoMock;
+    private readonly Mock<ILogger<AuditService>> _loggerMock;
+    private readonly AuditService _auditService;
     private readonly AdminService _sut;
 
     // We construct JwtService with real settings for the mock to see real behavior
@@ -40,12 +44,16 @@ public class AdminServiceTests
             LockoutDurationMinutes = 15,
             AuditLogRetentionDays = 365
         };
+        _auditLogRepoMock = new Mock<IAuditLogRepository>();
+        _loggerMock = new Mock<ILogger<AuditService>>();
+        _auditService = new AuditService(_auditLogRepoMock.Object, _loggerMock.Object);
 
         // Use real JwtService so GenerateToken/GetExpirationTime work correctly
         _sut = new AdminService(
             _adminRepoMock.Object,
             CreateRealJwtService(),
-            Options.Create(_adminSettings));
+            Options.Create(_adminSettings),
+            _auditService);
     }
 
     private static Admin CreateAdmin(long id = 1, string username = "admin", string role = "super_admin",
@@ -76,7 +84,7 @@ public class AdminServiceTests
 
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("admin")).ReturnsAsync(admin);
 
-        var result = await _sut.LoginAsync(request);
+        var result = await _sut.LoginAsync(request, "127.0.0.1");
 
         result.Token.Should().NotBeNullOrEmpty();
         result.Admin.Id.Should().Be(1);
@@ -100,7 +108,7 @@ public class AdminServiceTests
 
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("admin")).ReturnsAsync(admin);
 
-        var act = () => _sut.LoginAsync(request);
+        var act = () => _sut.LoginAsync(request, "127.0.0.1");
         var ex = await act.Should().ThrowAsync<ForbiddenException>();
         ex.Which.ErrorCode.Should().Be("invalid_credentials");
     }
@@ -116,7 +124,7 @@ public class AdminServiceTests
 
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("admin")).ReturnsAsync(admin);
 
-        var act = () => _sut.LoginAsync(request);
+        var act = () => _sut.LoginAsync(request, "127.0.0.1");
         await act.Should().ThrowAsync<ForbiddenException>();
 
         _adminRepoMock.Verify(r => r.UpdateAsync(
@@ -135,7 +143,7 @@ public class AdminServiceTests
 
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("admin")).ReturnsAsync(admin);
 
-        var act = () => _sut.LoginAsync(request);
+        var act = () => _sut.LoginAsync(request, "127.0.0.1");
         await act.Should().ThrowAsync<ForbiddenException>();
 
         _adminRepoMock.Verify(r => r.UpdateAsync(
@@ -158,7 +166,7 @@ public class AdminServiceTests
 
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("admin")).ReturnsAsync(admin);
 
-        var act = () => _sut.LoginAsync(request);
+        var act = () => _sut.LoginAsync(request, "127.0.0.1");
         var ex = await act.Should().ThrowAsync<ForbiddenException>();
         ex.Which.ErrorCode.Should().Be("account_locked");
     }
@@ -172,7 +180,7 @@ public class AdminServiceTests
 
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("admin")).ReturnsAsync(admin);
 
-        var result = await _sut.LoginAsync(request);
+        var result = await _sut.LoginAsync(request, "127.0.0.1");
         result.Token.Should().NotBeNullOrEmpty();
     }
 
@@ -188,7 +196,7 @@ public class AdminServiceTests
 
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("admin")).ReturnsAsync(admin);
 
-        await _sut.LoginAsync(request);
+        await _sut.LoginAsync(request, "127.0.0.1");
 
         _adminRepoMock.Verify(r => r.UpdateAsync(
             It.Is<Admin>(a => a.FailedLoginAttempts == 0 && a.LockedUntil == null)),
@@ -210,7 +218,7 @@ public class AdminServiceTests
         _adminRepoMock.Setup(r => r.AddAsync(It.IsAny<Admin>()))
             .ReturnsAsync((Admin a) => { a.Id = 2; return a; });
 
-        var result = await _sut.CreateAdminAsync(request);
+        var result = await _sut.CreateAdminAsync(request, 1, "127.0.0.1");
 
         result.Id.Should().Be(2);
         result.Username.Should().Be("new_admin");
@@ -227,7 +235,7 @@ public class AdminServiceTests
         var request = new CreateAdminRequest { Username = "existing_admin", Password = "pass123" };
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("existing_admin")).ReturnsAsync(CreateAdmin());
 
-        var act = () => _sut.CreateAdminAsync(request);
+        var act = () => _sut.CreateAdminAsync(request, 1, "127.0.0.1");
         var ex = await act.Should().ThrowAsync<ConflictException>();
         ex.Which.ErrorCode.Should().Be("conflict");
     }
@@ -241,7 +249,7 @@ public class AdminServiceTests
         _adminRepoMock.Setup(r => r.GetByUsernameAsync("no_such_admin")).ReturnsAsync((Admin?)null);
         var request = new LoginRequest { Username = "no_such_admin", Password = "pass" };
 
-        var act = () => _sut.LoginAsync(request);
+        var act = () => _sut.LoginAsync(request, "127.0.0.1");
         await act.Should().ThrowAsync<ForbiddenException>();
     }
 }

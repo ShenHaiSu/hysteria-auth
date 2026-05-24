@@ -35,11 +35,15 @@ public class AuthServiceTests
 
         var aes = new AesEncryptionService(Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
 
+        var auditLogRepoMock = new Mock<IAuditLogRepository>();
+        var auditLoggerMock = new Mock<ILogger<AuditService>>();
+        var auditService = new AuditService(auditLogRepoMock.Object, auditLoggerMock.Object);
+
         var nodeService = new NodeService(
             _nodeRepoMock.Object, Mock.Of<INodeStatusRepository>(),
             Mock.Of<ITrafficRepository>(), dbCtx, aes,
             null!, null!, config,
-            Mock.Of<ILogger<NodeService>>());
+            Mock.Of<ILogger<NodeService>>(), auditService);
 
         _sut = new AuthService(_userRepoMock.Object, _authLogRepoMock.Object, nodeService);
     }
