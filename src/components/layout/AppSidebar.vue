@@ -1,33 +1,3 @@
-<script setup lang="ts">
-import type { RouteRecordRaw } from 'vue-router'
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
-import { useAppStore } from '@/stores/app.store'
-import { routes as allRoutes } from '@/router/routes'
-
-const route = useRoute()
-const authStore = useAuthStore()
-const appStore = useAppStore()
-
-const isCollapsed = computed(() => appStore.sidebarCollapsed)
-
-const menuItems = computed(() => {
-  const defaultLayout = allRoutes.find((r) => r.path === '/')
-  const role = authStore.role
-  return (
-    defaultLayout?.children?.filter(
-      (r) => !r.meta?.hidden && (!r.meta?.roles || (role && r.meta.roles.includes(role))),
-    ) ?? []
-  )
-})
-
-function isActive(item: RouteRecordRaw) {
-  if (!item.path) return false
-  return route.path.startsWith(`/${item.path}`)
-}
-</script>
-
 <template>
   <aside
     class="hidden lg:flex lg:flex-col bg-[var(--sidebar-bg)] transition-all duration-300 overflow-hidden"
@@ -75,3 +45,33 @@ function isActive(item: RouteRecordRaw) {
     </div>
   </aside>
 </template>
+
+<script setup lang="ts">
+import type { RouteRecordRaw } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
+import { useAppStore } from '@/stores/app.store'
+import { routes as allRoutes } from '@/router/routes'
+
+const route = useRoute()
+const authStore = useAuthStore()
+const appStore = useAppStore()
+
+const isCollapsed = computed(() => appStore.sidebarCollapsed)
+
+const menuItems = computed(() => {
+  const defaultLayout = allRoutes.find((r) => r.path === '/')
+  const role = authStore.role
+  return (
+    defaultLayout?.children?.filter(
+      (r) => !r.meta?.hidden && (!r.meta?.roles || (role && r.meta.roles.includes(role))),
+    ) ?? []
+  )
+})
+
+function isActive(item: RouteRecordRaw) {
+  if (!item.path) return false
+  return route.path.startsWith(`/${item.path}`)
+}
+</script>

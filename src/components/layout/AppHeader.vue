@@ -1,57 +1,3 @@
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
-import { useAppStore } from '@/stores/app.store'
-import { useThemeStore } from '@/stores/theme.store'
-import { useToast } from '@/composables/useToast'
-import { useConfirm } from '@/composables/useConfirm'
-import { useI18n } from 'vue-i18n'
-import type { Locale } from '@/stores/app.store'
-
-const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
-const appStore = useAppStore()
-const themeStore = useThemeStore()
-const toast = useToast()
-const confirm = useConfirm()
-const { t, locale } = useI18n()
-
-const pageTitle = computed(() => (route.meta?.title as string) ?? '')
-
-const isDark = computed(() => themeStore.mode === 'dark')
-
-const currentLocaleLabel = computed(() => {
-  return locale.value === 'zh-CN' ? 'EN' : '中'
-})
-
-function toggleTheme() {
-  themeStore.toggleTheme()
-  toast.info(
-    themeStore.mode === 'dark' ? '已切换至暗色主题' : '已切换至亮色主题',
-    '',
-    1500,
-  )
-}
-
-function toggleLocale() {
-  const next: Locale = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
-  locale.value = next
-  appStore.setLocale(next)
-}
-
-async function handleLogout() {
-  const confirmed = await confirm.danger(
-    t('auth.logoutConfirm'),
-    t('auth.logoutConfirmTitle'),
-  )
-  if (confirmed) {
-    authStore.logout()
-  }
-}
-</script>
-
 <template>
   <header
     class="h-14 bg-[var(--bg-elevated)] border-b border-[var(--border-light)] flex items-center justify-between px-4 lg:px-6 shrink-0"
@@ -134,3 +80,50 @@ async function handleLogout() {
     </div>
   </header>
 </template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
+import { useAppStore } from '@/stores/app.store'
+import { useThemeStore } from '@/stores/theme.store'
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
+import { useI18n } from 'vue-i18n'
+import type { Locale } from '@/stores/app.store'
+
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const appStore = useAppStore()
+const themeStore = useThemeStore()
+const toast = useToast()
+const confirm = useConfirm()
+const { t, locale } = useI18n()
+
+const pageTitle = computed(() => (route.meta?.title as string) ?? '')
+
+const isDark = computed(() => themeStore.mode === 'dark')
+
+const currentLocaleLabel = computed(() => {
+  return locale.value === 'zh-CN' ? 'EN' : '中'
+})
+
+function toggleTheme() {
+  themeStore.toggleTheme()
+  toast.info(themeStore.mode === 'dark' ? '已切换至暗色主题' : '已切换至亮色主题', '', 1500)
+}
+
+function toggleLocale() {
+  const next: Locale = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
+  locale.value = next
+  appStore.setLocale(next)
+}
+
+async function handleLogout() {
+  const confirmed = await confirm.danger(t('auth.logoutConfirm'), t('auth.logoutConfirmTitle'))
+  if (confirmed) {
+    authStore.logout()
+  }
+}
+</script>

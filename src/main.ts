@@ -44,6 +44,10 @@ app.use(PrimeVue, {
     preset: Material,
     options: {
       darkModeSelector: '.dark',
+      cssLayer: {
+        name: 'primevue',
+        order: 'theme, base, primevue',
+      },
     },
   },
   ripple: true,
