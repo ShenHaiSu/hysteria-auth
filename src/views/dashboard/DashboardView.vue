@@ -73,7 +73,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard.store'
 import { formatFileSize } from '@/utils/format'
-import StatCard from '@/components/common/StatCard.vue'
+import StatCard from './components/StatCard.vue'
 import AppLoading from '@/components/common/AppLoading.vue'
 import AppError from '@/components/common/AppError.vue'
 
