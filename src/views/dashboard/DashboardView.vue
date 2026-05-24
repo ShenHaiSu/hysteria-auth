@@ -24,29 +24,63 @@
 
     <!-- 加载中骨架 -->
     <template v-else-if="dashboardStore.isLoading && !dashboardStore.overview">
-      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <div
-          v-for="i in 7"
+          v-for="i in 4"
           :key="i"
           class="bg-[var(--bg-elevated)] rounded-md border border-[var(--border-light)] shadow-md p-5"
         >
-          <div class="h-4 w-20 bg-[var(--bg-secondary)] rounded animate-pulse mb-2" />
-          <div class="h-6 w-16 bg-[var(--bg-secondary)] rounded animate-pulse" />
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-md bg-[var(--bg-secondary)] animate-pulse" />
+            <div class="flex-1">
+              <div class="h-4 w-20 bg-[var(--bg-secondary)] rounded animate-pulse mb-2" />
+              <div class="h-6 w-32 bg-[var(--bg-secondary)] rounded animate-pulse" />
+            </div>
+          </div>
         </div>
       </div>
     </template>
 
-    <!-- 统计卡片 -->
+    <!-- 信息卡片 -->
     <template v-else>
-      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-        <StatCard
-          v-for="card in statCards"
-          :key="card.key"
-          :icon="card.icon"
-          :label="card.label"
-          :value="card.value"
-          :icon-bg-class="card.iconBgClass"
-          :icon-color-class="card.iconColorClass"
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <!-- 用户概览 -->
+        <InfoCard
+          :icon="'pi pi-users'"
+          :title="t('dashboard.cards.userOverview')"
+          :value="userValue"
+          icon-bg-class="bg-brand-100"
+          icon-color-class="text-brand-500"
+          :loading="dashboardStore.isLoading"
+        />
+
+        <!-- 节点概览 -->
+        <InfoCard
+          :icon="'pi pi-server'"
+          :title="t('dashboard.cards.nodeOverview')"
+          :value="nodeValue"
+          icon-bg-class="bg-[var(--status-info-bg)]"
+          icon-color-class="text-[var(--status-info)]"
+          :loading="dashboardStore.isLoading"
+        />
+
+        <!-- 今日流量 -->
+        <InfoCard
+          :icon="'pi pi-arrow-down'"
+          :title="t('dashboard.cards.todayTrafficOverview')"
+          :value="todayTrafficValue"
+          icon-bg-class="bg-brand-100"
+          icon-color-class="text-brand-500"
+          :loading="dashboardStore.isLoading"
+        />
+
+        <!-- 本月流量 -->
+        <InfoCard
+          :icon="'pi pi-calendar'"
+          :title="t('dashboard.cards.monthTrafficOverview')"
+          :value="monthTrafficValue"
+          icon-bg-class="bg-[var(--status-info-bg)]"
+          icon-color-class="text-[var(--status-info)]"
           :loading="dashboardStore.isLoading"
         />
       </div>
@@ -58,11 +92,7 @@
         <h3 class="text-lg font-semibold text-[var(--text-primary)] mb-4">
           {{ t('dashboard.charts.trafficTrend') }}
         </h3>
-        <BaseChart
-          v-if="trafficChartOption"
-          :option="trafficChartOption"
-          :height="chartHeight"
-        />
+        <BaseChart v-if="trafficChartOption" :option="trafficChartOption" :height="chartHeight" />
         <div
           v-else
           class="flex flex-col items-center justify-center text-[var(--text-muted)]"
@@ -84,7 +114,7 @@ import { formatFileSize } from '@/utils/format'
 import { getChartColors } from '@/composables/useECharts'
 import { useThemeStore } from '@/stores/theme.store'
 import BaseChart from '@/components/common/BaseChart.vue'
-import StatCard from './components/StatCard.vue'
+import InfoCard from './components/InfoCard.vue'
 import AppLoading from '@/components/common/AppLoading.vue'
 import AppError from '@/components/common/AppError.vue'
 import type { EChartsOption } from 'echarts'
@@ -100,64 +130,34 @@ const errorMessage = ref('')
 /** 移动端图表高度更低 */
 const chartHeight = computed(() => '280px')
 
-const statCards = computed(() => [
-  {
-    key: 'totalUsers',
-    icon: 'pi pi-users',
-    label: t('dashboard.cards.totalUsers'),
-    value: dashboardStore.overview?.totalUsers?.toLocaleString('zh-CN') ?? '--',
-    iconBgClass: 'bg-brand-100',
-    iconColorClass: 'text-brand-500',
-  },
-  {
-    key: 'activeUsers',
-    icon: 'pi pi-user-check',
-    label: t('dashboard.cards.activeUsers'),
-    value: dashboardStore.overview?.activeUsers?.toLocaleString('zh-CN') ?? '--',
-    iconBgClass: 'bg-[var(--status-active-bg)]',
-    iconColorClass: 'text-[var(--status-active)]',
-  },
-  {
-    key: 'onlineUsers',
-    icon: 'pi pi-circle-fill',
-    label: t('dashboard.cards.onlineUsers'),
-    value: dashboardStore.overview?.onlineUsersNow?.toLocaleString('zh-CN') ?? '--',
-    iconBgClass: 'bg-[var(--status-active-bg)]',
-    iconColorClass: 'text-[var(--status-active)]',
-  },
-  {
-    key: 'totalNodes',
-    icon: 'pi pi-server',
-    label: t('dashboard.cards.totalNodes'),
-    value: dashboardStore.overview?.totalNodes?.toLocaleString('zh-CN') ?? '--',
-    iconBgClass: 'bg-[var(--status-info-bg)]',
-    iconColorClass: 'text-[var(--status-info)]',
-  },
-  {
-    key: 'activeNodes',
-    icon: 'pi pi-verified',
-    label: t('dashboard.cards.activeNodes'),
-    value: dashboardStore.overview?.activeNodes?.toLocaleString('zh-CN') ?? '--',
-    iconBgClass: 'bg-[var(--status-active-bg)]',
-    iconColorClass: 'text-[var(--status-active)]',
-  },
-  {
-    key: 'todayTraffic',
-    icon: 'pi pi-arrow-down',
-    label: t('dashboard.cards.todayTraffic'),
-    value: dashboardStore.overview ? formatFileSize(dashboardStore.totalTrafficToday) : '--',
-    iconBgClass: 'bg-brand-100',
-    iconColorClass: 'text-brand-500',
-  },
-  {
-    key: 'monthTraffic',
-    icon: 'pi pi-calendar',
-    label: t('dashboard.cards.monthTraffic'),
-    value: dashboardStore.overview ? formatFileSize(dashboardStore.totalTrafficThisMonth) : '--',
-    iconBgClass: 'bg-[var(--status-info-bg)]',
-    iconColorClass: 'text-[var(--status-info)]',
-  },
-])
+/** 用户概览卡片数据：总计 / 活跃 / 在线 */
+const userValue = computed(() => {
+  const overview = dashboardStore.overview
+  const total = overview?.totalUsers?.toLocaleString('zh-CN') ?? '--'
+  const active = overview?.activeUsers?.toLocaleString('zh-CN') ?? '--'
+  const online = overview?.onlineUsersNow?.toLocaleString('zh-CN') ?? '--'
+  return `总计 ${total} / 活跃 ${active} / 在线 ${online}`
+})
+
+/** 节点概览卡片数据：总计 / 活跃 */
+const nodeValue = computed(() => {
+  const overview = dashboardStore.overview
+  const total = overview?.totalNodes?.toLocaleString('zh-CN') ?? '--'
+  const active = overview?.activeNodes?.toLocaleString('zh-CN') ?? '--'
+  return `总计 ${total} / 活跃 ${active}`
+})
+
+/** 今日流量卡片数据 */
+const todayTrafficValue = computed(() => {
+  const overview = dashboardStore.overview
+  return overview ? formatFileSize(dashboardStore.totalTrafficToday) : '--'
+})
+
+/** 本月流量卡片数据 */
+const monthTrafficValue = computed(() => {
+  const overview = dashboardStore.overview
+  return overview ? formatFileSize(dashboardStore.totalTrafficThisMonth) : '--'
+})
 
 /** 流量趋势图表配置 */
 const trafficChartOption = computed<EChartsOption | null>(() => {
@@ -198,7 +198,10 @@ const trafficChartOption = computed<EChartsOption | null>(() => {
         areaStyle: {
           color: {
             type: 'linear' as const,
-            x: 0, y: 0, x2: 0, y2: 1,
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
             colorStops: [
               { offset: 0, color: colors.brand },
               { offset: 1, color: 'rgba(59, 130, 246, 0.05)' },
@@ -217,7 +220,10 @@ const trafficChartOption = computed<EChartsOption | null>(() => {
         areaStyle: {
           color: {
             type: 'linear' as const,
-            x: 0, y: 0, x2: 0, y2: 1,
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
             colorStops: [
               { offset: 0, color: colors.green },
               { offset: 1, color: 'rgba(34, 197, 94, 0.05)' },

@@ -7,7 +7,11 @@
     "totalNodes": "节点总数",
     "activeNodes": "活跃节点",
     "todayTraffic": "今日流量",
-    "monthTraffic": "本月流量"
+    "monthTraffic": "本月流量",
+    "userOverview": "用户概览",
+    "nodeOverview": "节点概览",
+    "todayTrafficOverview": "今日流量",
+    "monthTrafficOverview": "本月流量"
   },
   "charts": {
     "trafficTrend": "流量趋势",
