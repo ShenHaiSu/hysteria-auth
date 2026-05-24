@@ -12,7 +12,15 @@ public class NodeAuthMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<NodeAuthMiddleware> _logger;
 
-    private static readonly string[] ProtectedPaths = { "/api/v1/auth", "/api/v1/nodes" };
+    // 只保护 Edge Agent 专用路由，不保护管理员端点
+    private static readonly string[] ProtectedPaths =
+    {
+        "/api/v1/auth",
+        "/api/v1/nodes/register",           // 旧版注册（需要节点密钥）
+        "/api/v1/nodes/*/heartbeat",        // 心跳上报（需要节点密钥）
+        "/api/v1/nodes/*/config"            // 配置同步（需要节点密钥）
+    };
+    
     // 注册路径不需要密钥认证（/api/v1/nodes/register-with-token 是无认证的公开端点）
     private static readonly string[] ExcludedPaths = { "/api/v1/nodes/register-with-token" };
 
