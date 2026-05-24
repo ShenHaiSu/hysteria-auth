@@ -51,17 +51,25 @@
         />
       </div>
 
-      <!-- Phase 5 占位：流量趋势图表 -->
+      <!-- 流量趋势图表 -->
       <div
         class="bg-[var(--bg-elevated)] rounded-md border border-[var(--border-light)] shadow-md p-5"
       >
         <h3 class="text-lg font-semibold text-[var(--text-primary)] mb-4">
           {{ t('dashboard.charts.trafficTrend') }}
         </h3>
-        <div class="flex flex-col items-center justify-center py-12 text-[var(--text-muted)]">
-          <i class="pi pi-chart-line text-4xl mb-4" />
-          <p class="text-sm">{{ $t('dashboard.charts.trafficTrend') }}</p>
-          <p class="text-xs text-[var(--text-muted)] mt-1">Phase 5</p>
+        <BaseChart
+          v-if="trafficChartOption"
+          :option="trafficChartOption"
+          :height="chartHeight"
+        />
+        <div
+          v-else
+          class="flex flex-col items-center justify-center text-[var(--text-muted)]"
+          :style="{ minHeight: chartHeight }"
+        >
+          <i class="pi pi-inbox text-3xl mb-2" />
+          <p class="text-sm">{{ t('common.empty.title') }}</p>
         </div>
       </div>
     </template>
@@ -73,15 +81,24 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard.store'
 import { formatFileSize } from '@/utils/format'
+import { getChartColors } from '@/composables/useECharts'
+import { useThemeStore } from '@/stores/theme.store'
+import BaseChart from '@/components/common/BaseChart.vue'
 import StatCard from './components/StatCard.vue'
 import AppLoading from '@/components/common/AppLoading.vue'
 import AppError from '@/components/common/AppError.vue'
+import type { EChartsOption } from 'echarts'
+import type { TrafficTrendPoint } from '@/types/dashboard.types'
 
 const { t } = useI18n()
 const dashboardStore = useDashboardStore()
+const themeStore = useThemeStore()
 
 const hasError = ref(false)
 const errorMessage = ref('')
+
+/** 移动端图表高度更低 */
+const chartHeight = computed(() => '280px')
 
 const statCards = computed(() => [
   {
@@ -141,6 +158,85 @@ const statCards = computed(() => [
     iconColorClass: 'text-[var(--status-info)]',
   },
 ])
+
+/** 流量趋势图表配置 */
+const trafficChartOption = computed<EChartsOption | null>(() => {
+  const data = dashboardStore.overview?.trafficTrend
+  if (!data || data.length === 0) return null
+
+  const colors = getChartColors(themeStore.mode)
+  const dates = data.map((p: TrafficTrendPoint) => p.date)
+  const bytesInData = data.map((p: TrafficTrendPoint) => (p.bytesIn / (1024 * 1024)).toFixed(2))
+  const bytesOutData = data.map((p: TrafficTrendPoint) => (p.bytesOut / (1024 * 1024)).toFixed(2))
+
+  return {
+    tooltip: {
+      trigger: 'axis' as const,
+      valueFormatter: (value: unknown) => `${value} MB`,
+    },
+    legend: {
+      data: [t('dashboard.charts.bytesIn'), t('dashboard.charts.bytesOut')],
+      top: 0,
+    },
+    xAxis: {
+      type: 'category' as const,
+      data: dates,
+      axisLabel: { rotate: 30 },
+    },
+    yAxis: {
+      type: 'value' as const,
+      name: 'MB',
+      nameTextStyle: { color: colors.textSecondary, fontSize: 11 },
+    },
+    series: [
+      {
+        name: t('dashboard.charts.bytesIn'),
+        type: 'line' as const,
+        data: bytesInData,
+        smooth: true,
+        symbol: 'none',
+        areaStyle: {
+          color: {
+            type: 'linear' as const,
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: colors.brand },
+              { offset: 1, color: 'rgba(59, 130, 246, 0.05)' },
+            ],
+          },
+        },
+        lineStyle: { color: colors.brand, width: 2 },
+        itemStyle: { color: colors.brand },
+      },
+      {
+        name: t('dashboard.charts.bytesOut'),
+        type: 'line' as const,
+        data: bytesOutData,
+        smooth: true,
+        symbol: 'none',
+        areaStyle: {
+          color: {
+            type: 'linear' as const,
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: colors.green },
+              { offset: 1, color: 'rgba(34, 197, 94, 0.05)' },
+            ],
+          },
+        },
+        lineStyle: { color: colors.green, width: 2 },
+        itemStyle: { color: colors.green },
+      },
+    ],
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '15%',
+      containLabel: true,
+    },
+  }
+})
 
 async function loadData() {
   hasError.value = false

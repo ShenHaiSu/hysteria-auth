@@ -35,5 +35,9 @@ coverage
 # Vitest
 __screenshots__/
 
+# opencode
+.opencode/
+
 # Vite
 *.timestamp-*-*.mjs
+opencode.json

@@ -16,6 +16,7 @@ declare module 'vue' {
     AppLoading: typeof import('./src/components/common/AppLoading.vue')['default']
     AppStatusBadge: typeof import('./src/components/common/AppStatusBadge.vue')['default']
     AppTrafficText: typeof import('./src/components/common/AppTrafficText.vue')['default']
+    BaseChart: typeof import('./src/components/common/BaseChart.vue')['default']
     Button: typeof import('primevue/button')['default']
     Column: typeof import('primevue/column')['default']
     ConfirmDialog: typeof import('primevue/confirmdialog')['default']

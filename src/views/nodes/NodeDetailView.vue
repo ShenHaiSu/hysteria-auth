@@ -185,20 +185,43 @@
           </div>
         </div>
 
-        <!-- 图表占位 (Phase 5 补充) -->
+        <!-- CPU 使用率图表 -->
+        <BaseChart
+          v-if="cpuChartOption"
+          :option="cpuChartOption"
+          :height="chartHeight"
+        />
         <div
-          class="bg-[var(--bg-secondary)] rounded-md p-6 flex items-center justify-center text-sm text-[var(--text-muted)]"
-          style="min-height: 280px"
+          v-else-if="!nodesStore.statusHistoryLoading"
+          class="flex items-center justify-center text-sm text-[var(--text-muted)] bg-[var(--bg-secondary)] rounded-md"
+          :style="{ minHeight: chartHeight }"
         >
           <div class="text-center">
             <i class="pi pi-chart-bar text-3xl mb-2 block text-[var(--text-muted)]" />
-            <p>
-              {{ t('nodes.status.cpu') }} / {{ t('nodes.status.memory') }} /
-              {{ t('nodes.table.columns.name') }}
-            </p>
-            <p class="text-xs mt-1">(Phase 5 补充图表)</p>
+            <p>{{ t('nodes.detail.noStatusHistory') }}</p>
           </div>
         </div>
+
+        <!-- 内存使用率图表 -->
+        <BaseChart
+          v-if="memoryChartOption"
+          :option="memoryChartOption"
+          :height="chartHeight"
+        />
+
+        <!-- 网络速率图表 -->
+        <BaseChart
+          v-if="networkChartOption"
+          :option="networkChartOption"
+          :height="chartHeight"
+        />
+
+        <!-- 活跃连接数图表 -->
+        <BaseChart
+          v-if="connectionsChartOption"
+          :option="connectionsChartOption"
+          :height="chartHeight"
+        />
 
         <!-- 状态历史表格 -->
         <div v-if="nodesStore.statusHistory.length > 0">
@@ -283,8 +306,12 @@ import { useNodesStore, HEARTBEAT_TIMEOUT_MS } from '@/stores/nodes.store'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { usePermission } from '@/composables/usePermission'
+import { getChartColors } from '@/composables/useECharts'
+import { useThemeStore } from '@/stores/theme.store'
 import AppStatusBadge from '@/components/common/AppStatusBadge.vue'
+import BaseChart from '@/components/common/BaseChart.vue'
 import type { NodeDto, NodeStatusRecord } from '@/types/node.types'
+import type { EChartsOption } from 'echarts'
 
 const route = useRoute()
 const router = useRouter()
@@ -296,9 +323,139 @@ const { canEdit } = usePermission()
 
 const nodeId = computed(() => route.params.id as string)
 const node = computed(() => nodesStore.currentNode)
+const themeStore = useThemeStore()
 
 // 状态历史时间范围选择 (小时)
 const historyHours = ref<string>('24')
+
+/** 移动端图表高度 */
+const chartHeight = computed(() => '260px')
+
+/** 最新状态记录 */
+const latestStatus = computed<NodeStatusRecord | null>(() => {
+  if (nodesStore.statusHistory.length === 0) return null
+  return nodesStore.statusHistory[nodesStore.statusHistory.length - 1] ?? null
+})
+
+/** 状态历史记录中时间轴标签 */
+const statusTimeLabels = computed(() =>
+  nodesStore.statusHistory.map((r) => {
+    const d = new Date(r.reportedAt)
+    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+  }),
+)
+
+/** CPU 使用率图表 */
+const cpuChartOption = computed<EChartsOption | null>(() => {
+  if (nodesStore.statusHistory.length === 0) return null
+  const colors = getChartColors(themeStore.mode)
+  return {
+    legend: { data: [t('nodes.status.cpu')], top: 0 },
+    xAxis: { type: 'category' as const, data: statusTimeLabels.value },
+    yAxis: { type: 'value' as const, name: '%', max: 100 },
+    series: [{
+      name: t('nodes.status.cpu'),
+      type: 'line' as const,
+      data: nodesStore.statusHistory.map((r) => r.cpuUsagePercent),
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { color: colors.brand, width: 2 },
+      itemStyle: { color: colors.brand },
+      areaStyle: {
+        color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: colors.brand }, { offset: 1, color: 'rgba(59,130,246,0.05)' }] },
+      },
+    }],
+    grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
+  }
+})
+
+/** 内存使用率图表 */
+const memoryChartOption = computed<EChartsOption | null>(() => {
+  if (nodesStore.statusHistory.length === 0) return null
+  const colors = getChartColors(themeStore.mode)
+  return {
+    legend: { data: [t('nodes.status.memory')], top: 0 },
+    xAxis: { type: 'category' as const, data: statusTimeLabels.value },
+    yAxis: { type: 'value' as const, name: '%', max: 100 },
+    series: [{
+      name: t('nodes.status.memory'),
+      type: 'line' as const,
+      data: nodesStore.statusHistory.map((r) => r.memoryUsagePercent),
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { color: colors.amber, width: 2 },
+      itemStyle: { color: colors.amber },
+      areaStyle: {
+        color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: colors.amber }, { offset: 1, color: 'rgba(245,158,11,0.05)' }] },
+      },
+    }],
+    grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
+  }
+})
+
+/** 网络速率图表（双 Y 轴） */
+const networkChartOption = computed<EChartsOption | null>(() => {
+  if (nodesStore.statusHistory.length === 0) return null
+  const colors = getChartColors(themeStore.mode)
+  return {
+    legend: { data: [t('nodes.status.networkIn'), t('nodes.status.networkOut')], top: 0 },
+    xAxis: { type: 'category' as const, data: statusTimeLabels.value },
+    yAxis: [
+      { type: 'value' as const, name: 'Mbps' },
+      { type: 'value' as const, name: 'Mbps' },
+    ],
+    series: [
+      {
+        name: t('nodes.status.networkIn'),
+        type: 'line' as const,
+        yAxisIndex: 0,
+        data: nodesStore.statusHistory.map((r) => +r.networkInMbps.toFixed(2)),
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { color: colors.green, width: 2 },
+        itemStyle: { color: colors.green },
+      },
+      {
+        name: t('nodes.status.networkOut'),
+        type: 'line' as const,
+        yAxisIndex: 1,
+        data: nodesStore.statusHistory.map((r) => +r.networkOutMbps.toFixed(2)),
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { color: colors.brand, width: 2 },
+        itemStyle: { color: colors.brand },
+      },
+    ],
+    grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
+  }
+})
+
+/** 活跃连接数图表 */
+const connectionsChartOption = computed<EChartsOption | null>(() => {
+  if (nodesStore.statusHistory.length === 0) return null
+  const colors = getChartColors(themeStore.mode)
+  return {
+    legend: { data: [t('nodes.status.activeConnections')], top: 0 },
+    xAxis: { type: 'category' as const, data: statusTimeLabels.value },
+    yAxis: { type: 'value' as const, name: t('nodes.status.activeConnections'), minInterval: 1 },
+    series: [{
+      name: t('nodes.status.activeConnections'),
+      type: 'line' as const,
+      data: nodesStore.statusHistory.map((r) => r.activeConnections),
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { color: colors.purple, width: 2 },
+      itemStyle: { color: colors.purple },
+      areaStyle: {
+        color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: colors.purple }, { offset: 1, color: 'rgba(139,92,246,0.05)' }] },
+      },
+    }],
+    grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
+  }
+})
 
 // 加载
 onMounted(() => {
@@ -398,9 +555,4 @@ const historyPeriodOptions = computed(() => [
   { label: t('nodes.status.period.7d'), value: '168' },
 ])
 
-// 最新状态记录
-const latestStatus = computed<NodeStatusRecord | null>(() => {
-  if (nodesStore.statusHistory.length === 0) return null
-  return nodesStore.statusHistory[nodesStore.statusHistory.length - 1] ?? null
-})
 </script>

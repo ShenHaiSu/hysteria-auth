@@ -3,6 +3,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { auditLogApi } from '@/api/modules/audit-logs'
 import { useDebounce } from '@/composables/useDebounce'
+import { useExportExcel } from '@/composables/useExportExcel'
 import { formatDate } from '@/utils/format'
 import type { AuditLogEntry, AuditLogFilters } from '@/types/audit.types'
 import type { AuditAction, AuditTargetType } from '@/types/common.types'
@@ -17,6 +18,7 @@ import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 
 const { t } = useI18n()
+const { exportToExcel } = useExportExcel()
 
 const items = ref<AuditLogEntry[]>([])
 const total = ref(0)
@@ -144,6 +146,31 @@ watch([startDate, endDate], () => {
 onMounted(() => {
   fetchLogs()
 })
+
+/** 导出审计日志 */
+function handleExport() {
+  exportToExcel(
+    items.value.map((log) => ({
+      id: log.id,
+      adminUsername: log.adminUsername ?? '',
+      action: log.action,
+      targetType: log.targetType,
+      targetId: log.targetId ?? '',
+      detail: log.detail ?? '',
+      createdAt: log.createdAt,
+    })),
+    [
+      { header: 'ID', key: 'id' },
+      { header: t('audit.table.columns.adminUsername'), key: 'adminUsername' },
+      { header: t('audit.table.columns.action'), key: 'action' },
+      { header: t('audit.table.columns.targetType'), key: 'targetType' },
+      { header: t('audit.table.columns.targetId'), key: 'targetId' },
+      { header: t('audit.table.columns.detail'), key: 'detail' },
+      { header: t('audit.table.columns.createdAt'), key: 'createdAt' },
+    ],
+    t('audit.title'),
+  )
+}
 </script>
 
 <template>
@@ -153,13 +180,31 @@ onMounted(() => {
       <h1 class="text-2xl font-semibold text-[var(--text-primary)]">
         {{ t('audit.title') }}
       </h1>
-      <Button
-        icon="pi pi-refresh"
-        :label="t('common.actions.refresh')"
-        severity="secondary"
-        class="w-full sm:w-auto"
-        @click="fetchLogs"
-      />
+      <div class="flex items-center gap-2">
+        <Button
+          :label="t('common.actions.export')"
+          icon="pi pi-download"
+          severity="secondary"
+          class="hidden sm:flex"
+          @click="handleExport"
+        />
+        <Button
+          icon="pi pi-download"
+          severity="secondary"
+          text
+          rounded
+          :title="t('common.actions.export')"
+          class="sm:hidden"
+          @click="handleExport"
+        />
+        <Button
+          icon="pi pi-refresh"
+          :label="t('common.actions.refresh')"
+          severity="secondary"
+          class="w-full sm:w-auto"
+          @click="fetchLogs"
+        />
+      </div>
     </div>
 
     <!-- 筛选栏 -->

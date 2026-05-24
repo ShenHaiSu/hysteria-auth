@@ -5,12 +5,30 @@
       <h1 class="text-2xl font-semibold text-[var(--text-primary)]">
         {{ t('nodes.title') }}
       </h1>
-      <Button
-        v-permission="['super_admin', 'admin']"
-        :label="t('nodes.form.registerTitle')"
-        icon="pi pi-plus"
-        @click="openRegisterDialog"
-      />
+      <div class="flex items-center gap-2">
+        <Button
+          :label="t('common.actions.export')"
+          icon="pi pi-download"
+          severity="secondary"
+          class="hidden sm:flex"
+          @click="handleExport"
+        />
+        <Button
+          icon="pi pi-download"
+          severity="secondary"
+          text
+          rounded
+          :title="t('common.actions.export')"
+          class="sm:hidden"
+          @click="handleExport"
+        />
+        <Button
+          v-permission="['super_admin', 'admin']"
+          :label="t('nodes.form.registerTitle')"
+          icon="pi pi-plus"
+          @click="openRegisterDialog"
+        />
+      </div>
     </div>
 
     <!-- 搜索 + 筛选栏 -->
@@ -206,6 +224,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useDebounce } from '@/composables/useDebounce'
 import { usePermission } from '@/composables/usePermission'
+import { useExportExcel } from '@/composables/useExportExcel'
 import NodeRegisterDialog from './NodeRegisterDialog.vue'
 import AppStatusBadge from '@/components/common/AppStatusBadge.vue'
 import type { NodeDto } from '@/types/node.types'
@@ -221,6 +240,8 @@ const { canEdit } = usePermission()
 
 // 对话框控制
 const showRegisterDialog = ref(false)
+
+const { exportToExcel } = useExportExcel()
 
 // 搜索
 const searchInput = ref('')
@@ -334,4 +355,31 @@ const provisionFilterOptions = computed(() => [
   { label: t('common.status.pending'), value: 'pending' },
   { label: t('common.status.provisioned'), value: 'provisioned' },
 ])
+
+/** 导出当前节点列表 */
+function handleExport() {
+  exportToExcel(
+    nodesStore.items.map((n) => ({
+      name: n.name,
+      ipAddress: n.ipAddress ?? '',
+      port: n.port,
+      location: n.location ?? '',
+      isActive: isOnline(n) ? t('common.status.online') : t('common.status.offline'),
+      provisionStatus: n.provisionStatus,
+      lastHeartbeat: n.lastHeartbeat ?? '',
+      createdAt: n.createdAt,
+    })),
+    [
+      { header: t('nodes.table.columns.name'), key: 'name' },
+      { header: t('nodes.table.columns.ipAddress'), key: 'ipAddress' },
+      { header: t('nodes.table.columns.port'), key: 'port' },
+      { header: t('nodes.table.columns.location'), key: 'location' },
+      { header: t('nodes.table.columns.isActive'), key: 'isActive' },
+      { header: t('nodes.table.columns.provisionStatus'), key: 'provisionStatus' },
+      { header: t('nodes.table.columns.lastHeartbeat'), key: 'lastHeartbeat' },
+      { header: t('nodes.table.columns.createdAt'), key: 'createdAt' },
+    ],
+    t('nodes.title'),
+  )
+}
 </script>

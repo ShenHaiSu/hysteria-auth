@@ -6,10 +6,16 @@ import { useUsersStore } from '@/stores/users.store'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { usePermission } from '@/composables/usePermission'
+import { useExportExcel } from '@/composables/useExportExcel'
+import { getChartColors } from '@/composables/useECharts'
+import { useThemeStore } from '@/stores/theme.store'
 import AppStatusBadge from '@/components/common/AppStatusBadge.vue'
 import AppTrafficText from '@/components/common/AppTrafficText.vue'
+import BaseChart from '@/components/common/BaseChart.vue'
 import UserFormDialog from './UserFormDialog.vue'
 import type { Period } from '@/types/common.types'
+import type { TrafficDataPoint } from '@/types/user.types'
+import type { EChartsOption } from 'echarts'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,9 +27,76 @@ const { canEdit } = usePermission()
 
 const userId = computed(() => Number(route.params.id))
 const user = computed(() => usersStore.currentUser)
+const themeStore = useThemeStore()
+
+const { exportToExcel } = useExportExcel()
 
 const showEditDialog = ref(false)
 const selectedPeriod = ref<Period>('month')
+
+/** 移动端图表高度 */
+const chartHeight = computed(() => '260px')
+
+/** 流量趋势图表配置 */
+const trafficChartOption = computed<EChartsOption | null>(() => {
+  const stats = usersStore.trafficStats
+  if (!stats || !stats.dataPoints || stats.dataPoints.length === 0) return null
+
+  const colors = getChartColors(themeStore.mode)
+  const dates = stats.dataPoints.map((p: TrafficDataPoint) => p.date)
+  const inData = stats.dataPoints.map((p: TrafficDataPoint) => +(p.bytesIn / (1024 * 1024)).toFixed(2))
+  const outData = stats.dataPoints.map((p: TrafficDataPoint) => +(p.bytesOut / (1024 * 1024)).toFixed(2))
+
+  return {
+    tooltip: {
+      trigger: 'axis' as const,
+      valueFormatter: (value: unknown) => `${value} MB`,
+    },
+    legend: {
+      data: [t('dashboard.charts.bytesIn'), t('dashboard.charts.bytesOut')],
+      top: 0,
+    },
+    xAxis: {
+      type: 'category' as const,
+      data: dates,
+      axisLabel: { rotate: 30 },
+    },
+    yAxis: {
+      type: 'value' as const,
+      name: 'MB',
+      nameTextStyle: { color: colors.textSecondary, fontSize: 11 },
+    },
+    series: [
+      {
+        name: t('dashboard.charts.bytesIn'),
+        type: 'line' as const,
+        data: inData,
+        smooth: true,
+        symbol: 'none',
+        areaStyle: {
+          color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: colors.brand }, { offset: 1, color: 'rgba(59,130,246,0.05)' }] },
+        },
+        lineStyle: { color: colors.brand, width: 2 },
+        itemStyle: { color: colors.brand },
+      },
+      {
+        name: t('dashboard.charts.bytesOut'),
+        type: 'line' as const,
+        data: outData,
+        smooth: true,
+        symbol: 'none',
+        areaStyle: {
+          color: { type: 'linear' as const, x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: colors.green }, { offset: 1, color: 'rgba(34,197,94,0.05)' }] },
+        },
+        lineStyle: { color: colors.green, width: 2 },
+        itemStyle: { color: colors.green },
+      },
+    ],
+    grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
+  }
+})
 
 onMounted(() => {
   loadUser()
@@ -96,6 +169,26 @@ function formatDate(dateStr: string | null): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+/** 导出用户流量统计 */
+function handleExportTraffic() {
+  const stats = usersStore.trafficStats
+  if (!stats || !stats.dataPoints.length) return
+
+  exportToExcel(
+    stats.dataPoints.map((p: TrafficDataPoint) => ({
+      date: p.date,
+      bytesIn: +(p.bytesIn / (1024 * 1024)).toFixed(2),
+      bytesOut: +(p.bytesOut / (1024 * 1024)).toFixed(2),
+    })),
+    [
+      { header: t('audit.table.columns.createdAt'), key: 'date' },
+      { header: t('dashboard.charts.bytesIn') + ' (MB)', key: 'bytesIn' },
+      { header: t('dashboard.charts.bytesOut') + ' (MB)', key: 'bytesOut' },
+    ],
+    `${t('users.detail.trafficStats')}_${user.value?.username ?? ''}`,
+  )
 }
 </script>
 
@@ -211,8 +304,27 @@ function formatDate(dateStr: string | null): string {
           <h3 class="text-lg font-semibold text-[var(--text-primary)]">
             {{ t('users.detail.trafficStats') }}
           </h3>
-          <!-- 周期选择 -->
-          <SelectButton
+          <div class="flex items-center gap-2">
+            <Button
+              :label="t('common.actions.export')"
+              icon="pi pi-download"
+              severity="secondary"
+              size="small"
+              class="hidden sm:flex"
+              @click="handleExportTraffic"
+            />
+            <Button
+              icon="pi pi-download"
+              severity="secondary"
+              text
+              rounded
+              size="small"
+              :title="t('common.actions.export')"
+              class="sm:hidden"
+              @click="handleExportTraffic"
+            />
+            <!-- 周期选择 -->
+            <SelectButton
             v-model="selectedPeriod"
             :options="[
               { label: t('users.traffic.period.day'), value: 'day' },
@@ -253,12 +365,20 @@ function formatDate(dateStr: string | null): string {
           </div>
         </div>
 
-        <!-- 流量趋势占位 (Phase 5 补充图表) -->
-        <div class="bg-[var(--bg-secondary)] rounded-md p-6 flex items-center justify-center text-sm text-[var(--text-muted)]" style="min-height: 240px">
+        <!-- 流量趋势图表 -->
+        <BaseChart
+          v-if="trafficChartOption"
+          :option="trafficChartOption"
+          :height="chartHeight"
+        />
+        <div
+          v-else-if="usersStore.trafficStats && !usersStore.trafficStats.dataPoints.length"
+          class="flex items-center justify-center text-sm text-[var(--text-muted)] bg-[var(--bg-secondary)] rounded-md"
+          :style="{ minHeight: chartHeight }"
+        >
           <div class="text-center">
-            <i class="pi pi-chart-line text-3xl mb-2 block text-[var(--text-muted)]" />
-            <p>{{ t('users.detail.trafficTrend') }}</p>
-            <p class="text-xs mt-1">(Phase 5 补充图表)</p>
+            <i class="pi pi-inbox text-3xl mb-2 block text-[var(--text-muted)]" />
+            <p>{{ t('common.empty.title') }}</p>
           </div>
         </div>
       </div>

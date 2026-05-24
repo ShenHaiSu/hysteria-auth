@@ -7,7 +7,10 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useDebounce } from '@/composables/useDebounce'
 import { usePermission } from '@/composables/usePermission'
+import { useExportExcel } from '@/composables/useExportExcel'
+import { formatFileSize } from '@/utils/format'
 import UserFormDialog from './UserFormDialog.vue'
+import UserImportDialog from './UserImportDialog.vue'
 import AppStatusBadge from '@/components/common/AppStatusBadge.vue'
 import AppTrafficText from '@/components/common/AppTrafficText.vue'
 import type { UserDto } from '@/types/user.types'
@@ -23,6 +26,9 @@ const { canEdit } = usePermission()
 // 对话框控制
 const showFormDialog = ref(false)
 const editingUser = ref<UserDto | null>(null)
+const showImportDialog = ref(false)
+
+const { exportToExcel } = useExportExcel()
 
 // 搜索
 const searchInput = ref('')
@@ -128,6 +134,39 @@ function formatDate(dateStr: string | null): string {
     minute: '2-digit',
   })
 }
+
+/** 导出当前列表 */
+function handleExport() {
+  const data = usersStore.items.map((u) => ({
+    id: u.id,
+    username: u.username,
+    email: u.email ?? '',
+    isActive: u.isActive ? t('common.status.active') : t('common.status.inactive'),
+    totalTrafficBytes: u.totalTrafficBytes,
+    usedTrafficBytes: u.usedTrafficBytes,
+    createdAt: u.createdAt,
+    expiresAt: u.expiresAt ?? '',
+    allowedNodes: u.allowedNodes?.join(', ') ?? '',
+    remark: u.remark ?? '',
+  }))
+
+  exportToExcel(data, [
+    { header: 'ID', key: 'id' },
+    { header: t('users.table.columns.username'), key: 'username' },
+    { header: t('users.table.columns.email'), key: 'email' },
+    { header: t('users.table.columns.isActive'), key: 'isActive' },
+    { header: t('users.table.columns.totalTraffic'), key: 'totalTrafficBytes', format: (v) => formatFileSize(Number(v)) },
+    { header: t('users.table.columns.usedTraffic'), key: 'usedTrafficBytes', format: (v) => formatFileSize(Number(v)) },
+    { header: t('users.table.columns.createdAt'), key: 'createdAt' },
+    { header: t('users.table.columns.expiresAt'), key: 'expiresAt' },
+    { header: t('users.table.columns.allowedNodes'), key: 'allowedNodes' },
+    { header: t('users.table.columns.remark'), key: 'remark' },
+  ], t('users.title'))
+
+  if (usersStore.items.length === 0) {
+    toast.warning(t('common.empty.title'))
+  }
+}
 </script>
 
 <template>
@@ -137,12 +176,48 @@ function formatDate(dateStr: string | null): string {
       <h1 class="text-2xl font-semibold text-[var(--text-primary)]">
         {{ t('users.title') }}
       </h1>
-      <Button
-        v-permission="['super_admin', 'admin']"
-        :label="t('common.actions.create')"
-        icon="pi pi-plus"
-        @click="openCreateDialog"
-      />
+      <div class="flex items-center gap-2">
+        <Button
+          v-permission="['super_admin', 'admin']"
+          :label="t('common.actions.import')"
+          icon="pi pi-upload"
+          severity="secondary"
+          class="hidden sm:flex"
+          @click="showImportDialog = true"
+        />
+        <Button
+          v-permission="['super_admin', 'admin']"
+          icon="pi pi-upload"
+          severity="secondary"
+          text
+          rounded
+          :title="t('common.actions.import')"
+          class="sm:hidden"
+          @click="showImportDialog = true"
+        />
+        <Button
+          :label="t('common.actions.export')"
+          icon="pi pi-download"
+          severity="secondary"
+          class="hidden sm:flex"
+          @click="handleExport"
+        />
+        <Button
+          icon="pi pi-download"
+          severity="secondary"
+          text
+          rounded
+          :title="t('common.actions.export')"
+          class="sm:hidden"
+          @click="handleExport"
+        />
+        <Button
+          v-permission="['super_admin', 'admin']"
+          :label="t('common.actions.create')"
+          icon="pi pi-plus"
+          @click="openCreateDialog"
+        />
+      </div>
     </div>
 
     <!-- 搜索 + 筛选栏 -->
@@ -313,6 +388,12 @@ function formatDate(dateStr: string | null): string {
       v-model:visible="showFormDialog"
       :user="editingUser"
       @saved="onDialogSaved"
+    />
+
+    <!-- 批量导入对话框 -->
+    <UserImportDialog
+      v-model:visible="showImportDialog"
+      @imported="usersStore.fetchUsers()"
     />
   </div>
 </template>

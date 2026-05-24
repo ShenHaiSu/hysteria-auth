@@ -46,6 +46,34 @@
       "all": "All"
     }
   },
+  "import": {
+    "title": "Batch Import Users",
+    "uploadHint": "Upload an Excel file (.xlsx) with user data, or download the template first.",
+    "downloadTemplate": "Download Template",
+    "templatePrefix": "User Import Template",
+    "dropHint": "Drop file here, or click the button below to select",
+    "fileFormatHint": "Supports .xlsx / .xls formats",
+    "selectFile": "Select File",
+    "clearFile": "Clear File",
+    "parse": "Parse File",
+    "parseResult": "Parse Result",
+    "validCount": "Valid: {count}",
+    "invalidCount": "Invalid: {count}",
+    "previewHint": "{total} valid records ready for import. Please review before confirming.",
+    "startImport": "Start Import",
+    "importing": "Importing... {current}/{total}",
+    "resultTitle": "Import Complete",
+    "resultDetail": "Success: {success}, Failed: {failed}",
+    "invalidRows": "The following rows are invalid:",
+    "status": "Status",
+    "errors": {
+      "missingUsername": "Missing username",
+      "missingPassword": "Missing password",
+      "invalidTraffic": "Invalid traffic quota format",
+      "allInvalid": "All data is invalid, please check file content",
+      "parseFailed": "Failed to parse file"
+    }
+  },
   "toast": {
     "createSuccess": "User created",
     "updateSuccess": "User updated",
