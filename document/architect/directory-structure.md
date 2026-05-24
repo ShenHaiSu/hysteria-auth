@@ -51,30 +51,13 @@ web-dev/
 │   │       ├── variables.css       # CSS 自定义属性 + @theme 扩展（来自 design-tokens 规范）
 │   │       ├── transition.css      # 组件过渡动画 + 路由加载浮窗动画（路由过渡已禁用）
 │   │       └── scrollbar.css       # 自定义滚动条样式
-│   ├── components/                 # ★ 可复用组件
-│   │   ├── common/                 # 通用基础组件
-│   │   │   ├── AppBreadcrumb.vue   # 面包屑导航
-│   │   │   ├── AppEmpty.vue        # 空状态占位
-│   │   │   ├── AppError.vue        # 错误状态占位
-│   │   │   ├── AppLoading.vue      # 加载状态占位
-│   │   │   ├── AppStatusBadge.vue  # 状态标签（激活/禁用/在线/离线）
-│   │   │   └── AppTrafficText.vue  # 流量格式化展示（自动单位换算）
-│   │   ├── layout/                 # 布局组件
-│   │   │   ├── AppLayout.vue       # 主布局（sidebar + header + content）
-│   │   │   ├── AppSidebar.vue      # 侧边导航栏
-│   │   │   ├── AppHeader.vue       # 顶部栏（用户信息、主题切换、语言切换）
-│   │   │   └── AppFooter.vue       # 底部栏
-│   │   ├── charts/                 # 图表组件 (基于 ECharts)
-│   │   │   ├── BaseChart.vue       # ECharts 基础封装组件（init / update / resize 生命周期管理）
-│   │   │   ├── LineChart.vue       # 折线图（节点 CPU/内存/带宽趋势）
-│   │   │   ├── AreaChart.vue       # 面积图（流量趋势）
-│   │   │   └── StatCard.vue        # 仪表盘统计卡片
-│   │   ├── forms/                  # 表单组件
-│   │   │   ├── FormField.vue       # 通用表单字段容器（label + 校验信息）
-│   │   │   └── NodeSelector.vue    # 节点多选选择器
-│   │   └── modals/                 # 模态框组件
-│   │       ├── ConfirmModal.vue    # 通用确认对话框
-│   │       └── KickUserModal.vue   # 踢用户确认框
+│   ├── components/                 # ★ 全局共享组件（被 2+ 视图/布局使用）
+│   │   └── common/                 # 通用基础组件
+│   │       ├── AppEmpty.vue        # 空状态占位
+│   │       ├── AppError.vue        # 错误状态占位
+│   │       ├── AppLoading.vue      # 加载状态占位
+│   │       ├── AppStatusBadge.vue  # 状态标签（激活/禁用/在线/离线）
+│   │       └── AppTrafficText.vue  # 流量格式化展示（自动单位换算）
 │   ├── composables/                # ★ 组合式函数（可复用逻辑）
 │   │   ├── useAuth.ts              # 认证逻辑（login/logout/token）
 │   │   ├── useTheme.ts             # 主题切换（亮色/暗色）
@@ -91,7 +74,13 @@ web-dev/
 │   │   └── permission.ts           # v-permission 角色权限指令
 │   ├── layouts/                    # 布局模板
 │   │   ├── DefaultLayout.vue       # 默认管理布局（含侧边栏）
-│   │   └── AuthLayout.vue          # 认证页布局（居中卡片）
+│   │   ├── AuthLayout.vue          # 认证页布局（居中卡片）
+│   │   └── DefaultLayout/
+│   │       └── components/         # DefaultLayout 独占布局组件
+│   │           ├── AppSidebar.vue  # 侧边导航栏
+│   │           ├── AppHeader.vue   # 顶部栏
+│   │           ├── AppFooter.vue   # 底部栏
+│   │           └── AppBreadcrumb.vue # 面包屑导航
 │   ├── locales/                    # ★ 国际化语言包
 │   │   ├── index.ts                # vue-i18n 实例创建 + 配置
 │   │   ├── zh-CN/                  # 简体中文
@@ -149,7 +138,9 @@ web-dev/
 │       ├── auth/                   # 认证模块
 │       │   └── LoginView.vue       # 登录页
 │       ├── dashboard/              # 仪表盘模块
-│       │   └── DashboardView.vue   # 系统概览页
+│       │   ├── DashboardView.vue   # 系统概览页
+│       │   └── components/         # 仪表盘独占组件
+│       │       └── StatCard.vue    # 统计卡片
 │       ├── users/                  # 用户管理模块
 │       │   ├── UserListView.vue    # 用户列表页
 │       │   ├── UserDetailView.vue  # 用户详情页（含流量统计图表）
@@ -157,7 +148,9 @@ web-dev/
 │       ├── nodes/                  # 节点管理模块
 │       │   ├── NodeListView.vue    # 节点列表页
 │       │   ├── NodeDetailView.vue  # 节点详情页（含状态历史图表）
-│       │   └── NodeRegisterDialog.vue # 预注册节点对话框
+│       │   ├── NodeRegisterDialog.vue # 预注册节点对话框
+│       │   └── components/         # 节点管理独占组件
+│       │       └── KickUserModal.vue # 踢用户确认弹窗
 │       ├── admins/                 # 管理员管理模块
 │       │   ├── AdminListView.vue   # 管理员列表页
 │       │   └── AdminFormDialog.vue # 管理员创建/编辑对话框
@@ -247,17 +240,21 @@ web-dev/
 - 对话框组件命名：`{Module}{Action}Dialog.vue`
 - 使用 `<script setup lang="ts">` 语法
 
-### 2.5 `src/components/` — 组件层
+### 2.5 `src/components/` — 全局共享组件层
 
-**职责**：复用 UI 组件，按类型分目录。
+**职责**：存放被 **2 个及以上** 布局/视图共享的 UI 组件。仅被单一消费者使用的组件归置到消费者同级的 `components/` 子目录（就近归置原则）。
 
 | 子目录 | 职责 | 复用范围 |
 |--------|------|---------|
-| `common/` | 通用基础组件（状态占位、格式化展示） | 全局 |
-| `layout/` | 布局结构组件 | App.vue 级别 |
-| `charts/` | 图表封装组件（基于 ECharts） | 仪表盘、节点/用户详情 |
-| `forms/` | 表单相关组件 | 用户/节点/管理员创建编辑 |
-| `modals/` | 模态框组件 | 全局 |
+| `common/` | 通用基础组件（状态占位、格式化展示、状态标签） | 全局 |
+
+**各模块独占组件的位置**：
+
+| 消费者 | 独占组件位置 | 当前包含组件 |
+|--------|------------|------------|
+| `DefaultLayout` | `src/layouts/DefaultLayout/components/` | `AppSidebar`, `AppHeader`, `AppFooter`, `AppBreadcrumb` |
+| `DashboardView` | `src/views/dashboard/components/` | `StatCard` |
+| `Nodes` 模块 | `src/views/nodes/components/` | `KickUserModal` |
 
 ### 2.6 `src/router/` — 路由配置层
 

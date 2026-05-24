@@ -1114,13 +1114,13 @@ export type Severity = 'success' | 'info' | 'warn' | 'error'
 ### 8.1 技术选型
 
 - **库**：`echarts` ^5.5.x
-- **封装方式**：通过 [`BaseChart.vue`](../../src/components/charts/BaseChart.vue) 封装 ECharts 实例生命周期
+- **封装方式**：图表组件按就近归置原则，放置在使用图表的 views 模块的 `components/` 子目录下（如 `src/views/dashboard/components/`、`src/views/nodes/components/`）
 - **辅助 composable**：[`useECharts.ts`](../../src/composables/useECharts.ts) 管理 init / setOption / resize / dispose
 
 ### 8.2 BaseChart 组件
 
 ```vue
-<!-- src/components/charts/BaseChart.vue -->
+<!-- 图表组件应就近归置到使用图表的模块: src/views/{module}/components/BaseChart.vue -->
 
 <template>
   <div ref="chartRef" :style="{ width: '100%', height: height }" />
@@ -1224,14 +1224,14 @@ export function useECharts() {
 
 ### 8.4 图表使用场景
 
-| 场景 | 图表类型 | 封装组件 | 数据来源 |
+| 场景 | 图表类型 | 封装组件（就近归置） | 数据来源 |
 |------|---------|---------|---------|
-| 仪表盘 - 今日/本月流量趋势 | 面积图 | [`AreaChart.vue`](../../src/components/charts/AreaChart.vue) | `GET /api/v1/admin/dashboard` |
-| 节点详情 - CPU 使用率 | 折线图 | [`LineChart.vue`](../../src/components/charts/LineChart.vue) | `GET /api/v1/nodes/{id}/status-history` |
-| 节点详情 - 内存使用率 | 折线图 | [`LineChart.vue`](../../src/components/charts/LineChart.vue) | 同上 |
-| 节点详情 - 网络速率 | 双 Y 轴折线图 | [`LineChart.vue`](../../src/components/charts/LineChart.vue) | 同上 |
-| 节点详情 - 活跃连接数 | 折线图 | [`LineChart.vue`](../../src/components/charts/LineChart.vue) | 同上 |
-| 用户详情 - 流量趋势 | 面积图 | [`AreaChart.vue`](../../src/components/charts/AreaChart.vue) | `GET /api/v1/users/{id}/traffic-stats` |
+| 仪表盘 - 今日/本月流量趋势 | 面积图 | `AreaChart.vue`（→ `src/views/dashboard/components/`） | `GET /api/v1/admin/dashboard` |
+| 节点详情 - CPU 使用率 | 折线图 | `LineChart.vue`（→ `src/views/nodes/components/`） | `GET /api/v1/nodes/{id}/status-history` |
+| 节点详情 - 内存使用率 | 折线图 | `LineChart.vue`（→ `src/views/nodes/components/`） | 同上 |
+| 节点详情 - 网络速率 | 双 Y 轴折线图 | `LineChart.vue`（→ `src/views/nodes/components/`） | 同上 |
+| 节点详情 - 活跃连接数 | 折线图 | `LineChart.vue`（→ `src/views/nodes/components/`） | 同上 |
+| 用户详情 - 流量趋势 | 面积图 | `AreaChart.vue`（→ `src/views/users/components/`） | `GET /api/v1/users/{id}/traffic-stats` |
 
 ### 8.5 暗色主题适配
 

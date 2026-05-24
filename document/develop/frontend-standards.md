@@ -34,6 +34,8 @@
 >
 > **规则 0.2** — 所有文件内的模块导入必须使用 `@/` 别名，禁止使用相对路径 `../../../`。
 >
+> **例外**：就近归置的组件可使用相对路径导入（见规则 0.9）。
+>
 > **规则 0.3** — 所有用户可见文案必须通过 `vue-i18n` 的 `$t()` 或 `t()` 函数输出，禁止硬编码中文/英文。
 >
 > **规则 0.4** — 所有颜色值、间距值、动效参数必须引用 [`design-tokens.md`](../architect/design-tokens.md) 中定义的设计令牌，禁止在组件中硬编码。
@@ -50,6 +52,13 @@
 >   - 表格在移动端必须提供横向滚动或卡片替代方案
 >   - 弹窗/对话框在移动端必须占满视口宽度或接近全屏
 >   - 图表在移动端必须降低复杂度（减少数据点、简化图例）以适配窄屏
+>
+> **规则 0.9** — 组件就近归置（Colocation）原则。仅被单一布局或单一视图使用的组件，必须迁移到消费者所在目录的 `components/` 子目录下，不得留在全局 `src/components/`。具体规则：
+>   - 仅被一个 Layout 使用的组件 → 归置到 `src/layouts/{LayoutName}/components/`
+>   - 仅被一个 View 使用的组件 → 归置到 `src/views/{module}/components/`
+>   - 被 2 个及以上视图/布局共享的组件 → 保留在 `src/components/common/`
+>   - 归置后导入路径使用相对路径（如 `./DefaultLayout/components/AppSidebar.vue`）
+>   - 详细迁移方法参见 [`component-colocation-migration.md`](../module/component-colocation-migration.md)
 
 ---
 
@@ -142,15 +151,14 @@ src/
 │   └── adapters/  ← 数据适配器
 ├── assets/        ← 静态资源
 │   └── styles/    ← 全局样式
-├── components/    ← 可复用组件
-│   ├── common/    ← 通用基础组件
-│   ├── layout/    ← 布局组件
-│   ├── charts/    ← 图表组件
-│   ├── forms/     ← 表单组件
-│   └── modals/    ← 模态框组件
+├── components/    ← 全局共享组件（被 2+ 视图/布局使用）
+│   └── common/    ← 通用基础组件
 ├── composables/   ← 组合式函数
 ├── directives/    ← 自定义指令
-├── layouts/       ← 布局模板
+├── layouts/       ← 布局模板 + 独占组件
+│   ├── DefaultLayout.vue
+│   └── DefaultLayout/
+│       └── components/  ← DefaultLayout 独占组件
 ├── locales/       ← 国际化语言包
 │   ├── zh-CN/
 │   └── en-US/
@@ -161,7 +169,11 @@ src/
 ├── types/         ← TypeScript 类型定义
 ├── utils/         ← 工具函数
 └── views/         ← 页面视图
+    └── {module}/
+        └── components/  ← 该模块视图独占组件
 ```
+
+> **组件就近归置规则**：`src/components/` 仅保留被 **2 个及以上** 布局/视图共享的组件。仅被单一消费者使用的组件必须归置到消费者同级的 `components/` 子目录。详见 §0 规则 0.9。
 
 ### 2.2 文件大小限制
 
@@ -825,6 +837,8 @@ refactor(api): 统一错误处理逻辑到拦截器
 | 12 | 跨阶段开发 | 破坏开发节奏 | 在 Phase 2 中实现 Phase 5 的图表功能 |
 | 13 | 开发仅桌面端可用的界面 | 违反多端适配要求 | 表格操作仅在宽屏下可用，移动端无法访问等效功能 |
 | 14 | 在移动端隐藏核心功能 | 违反多端适配要求 | 使用 `hidden sm:block` 隐藏用户管理入口或关键操作按钮 |
+| 15 | 将仅单一消费者使用的组件放入 `src/components/` | 违反就近归置原则 | `StatCard.vue` 仅被 `DashboardView` 使用却放在 `src/components/common/` |
+| 16 | 在 `src/components/` 下创建 `layout/`、`charts/`、`forms/`、`modals/` 子目录 | 违反就近归置原则 | 这些目录下的组件应就近归置到消费者处 |
 
 ---
 
@@ -836,7 +850,7 @@ refactor(api): 统一错误处理逻辑到拦截器
 - [ ] 无 ESLint 警告
 - [ ] 所有文案已国际化（`$t()` 包裹）
 - [ ] 无硬编码颜色/间距/动效值
-- [ ] 所有 import 使用 `@/` 别名
+- [ ] 所有 import 使用 `@/` 别名（就近归置组件可使用相对路径）
 - [ ] 所有 API 请求有完整类型
 - [ ] 页面组件使用路由懒加载
 - [ ] 无 `any` 类型
@@ -844,7 +858,7 @@ refactor(api): 统一错误处理逻辑到拦截器
 - [ ] 无注释掉的代码
 - [ ] Props 和 Emits 有 TypeScript 类型
 - [ ] 命名符合规范
-- [ ] 文件放在正确的目录
+- [ ] 文件放在正确的目录（单一消费者组件已就近归置，未放入 `src/components/`）
 - [ ] 新功能有对应的语言包 key（中英文）
 - [ ] 移动端（375px 视口）和桌面端（1920px 视口）两端的布局和功能均正常
 
