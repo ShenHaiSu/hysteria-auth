@@ -11,6 +11,7 @@ namespace HysteriaAuth.Master.Services;
 /// <summary>
 /// 节点管理服务 — 负责节点的预注册、注册、配置同步、心跳处理、密钥轮换等全部业务逻辑。
 /// Phase 3: 心跳处理扩展为包含完整的流量扣减、幂等检查、会话管理、超额踢人。
+/// Phase 7: 新增 ConfigGeneratorService 注入，支持完整 Hysteria 2 YAML 配置生成与更新。
 /// </summary>
 public class NodeService
 {
@@ -21,6 +22,7 @@ public class NodeService
     private readonly AesEncryptionService _aes;
     private readonly TrafficService _trafficService;
     private readonly KickService _kickService;
+    private readonly ConfigGeneratorService _configGenerator;
     private readonly ILogger<NodeService> _logger;
     private readonly string _masterServerUrl;
     private readonly AuditService _auditService;
@@ -33,6 +35,7 @@ public class NodeService
         AesEncryptionService aes,
         TrafficService trafficService,
         KickService kickService,
+        ConfigGeneratorService configGenerator,
         IConfiguration configuration,
         ILogger<NodeService> logger,
         AuditService auditService)
@@ -44,6 +47,7 @@ public class NodeService
         _aes = aes;
         _trafficService = trafficService;
         _kickService = kickService;
+        _configGenerator = configGenerator;
         _logger = logger;
         _masterServerUrl = configuration.GetValue<string>("MasterServerUrl") ?? "https://master.example.com";
         _auditService = auditService;
@@ -68,7 +72,11 @@ public class NodeService
             ProvisionToken = provisionToken,
             ProvisionStatus = "pending",
             IsActive = false, // 注册完成后才激活
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            // Phase 7 新字段初始化
+            ListenPort = request.ListenPort ?? 6789,
+            DomainName = request.DomainName,
+            Remark = request.Remark
         };
 
         await _nodeRepo.AddAsync(node);
@@ -86,7 +94,10 @@ public class NodeService
                 name = request.Name,
                 port = request.Port,
                 location = request.Location,
-                trafficStatsPort = request.TrafficStatsPort
+                trafficStatsPort = request.TrafficStatsPort,
+                listenPort = request.ListenPort,
+                domainName = request.DomainName,
+                remark = request.Remark
             },
             clientIp: clientIp
         );
@@ -137,11 +148,16 @@ public class NodeService
 
         _logger.LogInformation("节点令牌注册成功: {NodeId}", node.Id);
 
+        // Phase 7: 生成完整 Hysteria 2 YAML 配置
+        var configYaml = _configGenerator.GenerateYaml(node);
+
         return new RegisterWithTokenResponse
         {
             NodeId = node.Id,
             NodeSecret = nodeSecretPlain, // 返回明文（仅此一次）
             TrafficStatsSecret = trafficStatsSecretPlain,
+            ConfigVersion = node.ConfigVersion,
+            ConfigYaml = configYaml,
             Config = new NodeConfigInfo
             {
                 AuthProxyPort = 8080,
@@ -208,11 +224,16 @@ public class NodeService
         if (node == null)
             throw new NotFoundException("节点不存在");
 
+        // Phase 7: 生成完整 Hysteria 2 YAML 配置
+        var configYaml = _configGenerator.GenerateYaml(node);
+
         return new NodeConfigResponse
         {
             NodeId = node.Id,
             NodeSecret = _aes.Decrypt(node.SecretKey),
             IsActive = node.IsActive,
+            ConfigVersion = node.ConfigVersion,
+            ConfigYaml = configYaml,
             Config = new NodeConfigInfo
             {
                 AuthProxyPort = 8080,
@@ -260,7 +281,32 @@ public class NodeService
             TrafficStatsPort = node.TrafficStatsPort,
             ProvisionStatus = node.ProvisionStatus,
             SecretVersion = node.SecretVersion,
-            TrafficStatsSecret = node.TrafficStatsSecret != null ? "***encrypted***" : null
+            TrafficStatsSecret = node.TrafficStatsSecret != null ? "***encrypted***" : null,
+            // Phase 7 新字段
+            ListenAddress = node.ListenAddress,
+            ListenPort = node.ListenPort,
+            EnablePortHopping = node.EnablePortHopping,
+            PortHopRangeStart = node.PortHopRangeStart,
+            PortHopRangeEnd = node.PortHopRangeEnd,
+            ObfsType = node.ObfsType,
+            CongestionControl = node.CongestionControl,
+            BrutalTxBandwidth = node.BrutalTxBandwidth,
+            BandwidthUp = node.BandwidthUp,
+            BandwidthDown = node.BandwidthDown,
+            IgnoreClientBandwidth = node.IgnoreClientBandwidth,
+            EnableSpeedTest = node.EnableSpeedTest,
+            UdpIdleTimeout = node.UdpIdleTimeout,
+            SniffEnabled = node.SniffEnabled,
+            MasqueradeType = node.MasqueradeType,
+            MasqueradeFile = node.MasqueradeFile,
+            ResolverType = node.ResolverType,
+            ConfigVersion = node.ConfigVersion,
+            ConfigUpdatedAt = node.ConfigUpdatedAt,
+            ServerCost = node.ServerCost,
+            BillingCycle = node.BillingCycle,
+            ExpirationDate = node.ExpirationDate,
+            DomainName = node.DomainName,
+            Remark = node.Remark
         };
     }
 
@@ -432,6 +478,79 @@ public class NodeService
     }
 
     // ============================
+    // Phase 7: 管理员更新节点配置
+    // ============================
+
+    /// <summary>
+    /// 管理员更新节点配置。仅更新请求中提供的非 null 字段。
+    /// 更新后递增 ConfigVersion，写入审计日志。
+    /// </summary>
+    public async Task<NodeDto> UpdateNodeConfigAsync(
+        string nodeId, UpdateNodeConfigRequest request, long adminId, string clientIp)
+    {
+        var node = await _nodeRepo.GetByIdAsync(nodeId);
+        if (node == null)
+            throw new NotFoundException("节点不存在");
+
+        // 逐一判断非 null 才赋值
+        if (request.ListenAddress != null) node.ListenAddress = request.ListenAddress;
+        if (request.ListenPort.HasValue) node.ListenPort = request.ListenPort;
+        if (request.EnablePortHopping.HasValue) node.EnablePortHopping = request.EnablePortHopping.Value;
+        if (request.PortHopRangeStart.HasValue) node.PortHopRangeStart = request.PortHopRangeStart;
+        if (request.PortHopRangeEnd.HasValue) node.PortHopRangeEnd = request.PortHopRangeEnd;
+        if (request.ObfsType != null) node.ObfsType = request.ObfsType;
+        if (request.ObfsPassword != null) node.ObfsPassword = _aes.Encrypt(request.ObfsPassword);
+        if (request.CongestionControl != null) node.CongestionControl = request.CongestionControl;
+        if (request.BrutalTxBandwidth.HasValue) node.BrutalTxBandwidth = request.BrutalTxBandwidth;
+        if (request.QuicMaxIdleTimeout.HasValue) node.QuicMaxIdleTimeout = request.QuicMaxIdleTimeout;
+        if (request.QuicMaxUdpPayloadSize.HasValue) node.QuicMaxUdpPayloadSize = request.QuicMaxUdpPayloadSize;
+        if (request.BandwidthUp != null) node.BandwidthUp = request.BandwidthUp;
+        if (request.BandwidthDown != null) node.BandwidthDown = request.BandwidthDown;
+        if (request.IgnoreClientBandwidth.HasValue) node.IgnoreClientBandwidth = request.IgnoreClientBandwidth;
+        if (request.EnableSpeedTest.HasValue) node.EnableSpeedTest = request.EnableSpeedTest;
+        if (request.SpeedTestPingInterval.HasValue) node.SpeedTestPingInterval = request.SpeedTestPingInterval;
+        if (request.UdpIdleTimeout.HasValue) node.UdpIdleTimeout = request.UdpIdleTimeout;
+        if (request.SniffEnabled.HasValue) node.SniffEnabled = request.SniffEnabled;
+        if (request.SniffTimeout.HasValue) node.SniffTimeout = request.SniffTimeout;
+        if (request.SniffRespectHttps.HasValue) node.SniffRespectHttps = request.SniffRespectHttps;
+        if (request.MasqueradeType != null) node.MasqueradeType = request.MasqueradeType;
+        if (request.MasqueradeFile != null) node.MasqueradeFile = request.MasqueradeFile;
+        if (request.MasqueradeProxyUrl != null) node.MasqueradeProxyUrl = request.MasqueradeProxyUrl;
+        if (request.MasqueradeStringContent != null) node.MasqueradeStringContent = request.MasqueradeStringContent;
+        if (request.MasqueradeStringHeaders != null) node.MasqueradeStringHeaders = request.MasqueradeStringHeaders;
+        if (request.MasqueradeStringStatusCode.HasValue) node.MasqueradeStringStatusCode = request.MasqueradeStringStatusCode;
+        if (request.ResolverType != null) node.ResolverType = request.ResolverType;
+        if (request.ResolverTcpAddr != null) node.ResolverTcpAddr = request.ResolverTcpAddr;
+        if (request.ResolverUdpAddr != null) node.ResolverUdpAddr = request.ResolverUdpAddr;
+        if (request.ResolverTlsAddr != null) node.ResolverTlsAddr = request.ResolverTlsAddr;
+        if (request.ServerCost.HasValue) node.ServerCost = request.ServerCost;
+        if (request.BillingCycle != null) node.BillingCycle = request.BillingCycle;
+        if (request.ExpirationDate.HasValue) node.ExpirationDate = request.ExpirationDate;
+        if (request.DomainName != null) node.DomainName = request.DomainName;
+        if (request.Remark != null) node.Remark = request.Remark;
+
+        // 递增配置版本
+        node.ConfigVersion++;
+        node.ConfigUpdatedAt = DateTime.UtcNow;
+
+        await _nodeRepo.UpdateAsync(node);
+
+        _logger.LogInformation("管理员更新节点配置: {NodeId}, 配置版本: {Version}", nodeId, node.ConfigVersion);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "update_config",
+            targetType: "node",
+            targetId: nodeId,
+            detail: new { configVersion = node.ConfigVersion, updatedFields = GetUpdatedFieldNames(request) },
+            clientIp: clientIp
+        );
+
+        return MapToDto(node);
+    }
+
+    // ============================
     // 3.9 节点密钥轮换
     // ============================
 
@@ -487,6 +606,15 @@ public class NodeService
     }
 
     /// <summary>
+    /// Phase 7: 获取节点当前配置版本号（用于心跳响应）。
+    /// </summary>
+    public async Task<int> GetNodeConfigVersionAsync(string nodeId)
+    {
+        var node = await _nodeRepo.GetByIdAsync(nodeId);
+        return node?.ConfigVersion ?? 1;
+    }
+
+    /// <summary>
     /// 验证节点密钥（用于 NodeAuthMiddleware）。返回匹配的 Node，否则返回 null。
     /// 支持多版本密钥验证 — 检查数据库中存储的当前密钥和之前版本。
     /// </summary>
@@ -530,7 +658,51 @@ public class NodeService
             LastHeartbeat = node.LastHeartbeat,
             Location = node.Location,
             TrafficStatsPort = node.TrafficStatsPort,
-            ProvisionStatus = node.ProvisionStatus
+            ProvisionStatus = node.ProvisionStatus,
+            // Phase 7 新字段
+            ListenAddress = node.ListenAddress,
+            ListenPort = node.ListenPort,
+            EnablePortHopping = node.EnablePortHopping,
+            PortHopRangeStart = node.PortHopRangeStart,
+            PortHopRangeEnd = node.PortHopRangeEnd,
+            ObfsType = node.ObfsType,
+            CongestionControl = node.CongestionControl,
+            BrutalTxBandwidth = node.BrutalTxBandwidth,
+            BandwidthUp = node.BandwidthUp,
+            BandwidthDown = node.BandwidthDown,
+            IgnoreClientBandwidth = node.IgnoreClientBandwidth,
+            EnableSpeedTest = node.EnableSpeedTest,
+            UdpIdleTimeout = node.UdpIdleTimeout,
+            SniffEnabled = node.SniffEnabled,
+            MasqueradeType = node.MasqueradeType,
+            MasqueradeFile = node.MasqueradeFile,
+            ResolverType = node.ResolverType,
+            ConfigVersion = node.ConfigVersion,
+            ConfigUpdatedAt = node.ConfigUpdatedAt,
+            ServerCost = node.ServerCost,
+            BillingCycle = node.BillingCycle,
+            ExpirationDate = node.ExpirationDate,
+            DomainName = node.DomainName,
+            Remark = node.Remark
         };
+    }
+
+    /// <summary>
+    /// 提取请求中非 null 的字段名列表（用于审计日志）。
+    /// </summary>
+    private static List<string> GetUpdatedFieldNames(UpdateNodeConfigRequest request)
+    {
+        var fields = new List<string>();
+        if (request.ListenAddress != null) fields.Add(nameof(request.ListenAddress));
+        if (request.ListenPort.HasValue) fields.Add(nameof(request.ListenPort));
+        if (request.EnablePortHopping.HasValue) fields.Add(nameof(request.EnablePortHopping));
+        if (request.ObfsType != null) fields.Add(nameof(request.ObfsType));
+        if (request.ObfsPassword != null) fields.Add(nameof(request.ObfsPassword));
+        if (request.CongestionControl != null) fields.Add(nameof(request.CongestionControl));
+        if (request.BandwidthUp != null) fields.Add(nameof(request.BandwidthUp));
+        if (request.BandwidthDown != null) fields.Add(nameof(request.BandwidthDown));
+        if (request.DomainName != null) fields.Add(nameof(request.DomainName));
+        if (request.Remark != null) fields.Add(nameof(request.Remark));
+        return fields;
     }
 }

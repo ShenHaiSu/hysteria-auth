@@ -69,6 +69,7 @@ builder.Services.AddScoped<NodeService>();
 builder.Services.AddScoped<TrafficService>();    // Phase 3
 builder.Services.AddScoped<KickService>();      // Phase 3
 builder.Services.AddScoped<AuditService>();
+builder.Services.AddScoped<ConfigGeneratorService>();  // Phase 7: Hysteria 2 YAML 配置生成器
 
 // ============================
 // 后台服务（节点离线检测 + 数据保留策略）
@@ -102,7 +103,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated();
+    dbContext.Database.Migrate();  // 使用 Migration 以确保应用所有数据库变更（如 ExpandNodeTable）
 
     // 种子数据：创建默认 super_admin 账号
     var adminSettings = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AdminSettings>>().Value;

@@ -5,8 +5,8 @@ using HysteriaAuth.Master.Services;
 namespace HysteriaAuth.Master.Controllers;
 
 /// <summary>
-/// 节点管理控制器 — Phase 2/3。
-/// 提供节点预注册、注册（令牌+旧版）、配置同步、列表/详情/历史状态、心跳上报、密钥轮换。
+/// 节点管理控制器 — Phase 2/3/7。
+/// 提供节点预注册、注册（令牌+旧版）、配置同步、列表/详情/历史状态、心跳上报、密钥轮换、配置更新。
 /// </summary>
 [ApiController]
 [Route("api/v1")]
@@ -67,6 +67,7 @@ public class NodesController : ControllerBase
 
     /// <summary>
     /// 获取节点最新配置（Edge Agent 启动时或心跳前同步使用）。
+    /// Phase 7: 返回完整 Hysteria 2 YAML 配置。
     /// </summary>
     [HttpGet("nodes/{nodeId}/config")]
     public async Task<IActionResult> GetNodeConfig(string nodeId)
@@ -119,7 +120,8 @@ public class NodesController : ControllerBase
     // ============================
 
     /// <summary>
-    /// 边缘节点心跳/状态上报（含系统状态，Phase 2 不含流量数据）。
+    /// 边缘节点心跳/状态上报（含系统状态、流量数据）。
+    /// Phase 7: 响应中返回 configVersion 供 Edge Agent 检测配置变更。
     /// </summary>
     [HttpPost("nodes/{nodeId}/heartbeat")]
     public async Task<IActionResult> PostHeartbeat(string nodeId, [FromBody] HeartbeatRequest request)
@@ -131,7 +133,34 @@ public class NodesController : ControllerBase
         }
 
         await _nodeService.ProcessHeartbeatAsync(request);
-        return Ok(new { received = true });
+
+        // Phase 7: 返回 configVersion 供 Edge Agent 检测配置变更
+        var configVersion = await _nodeService.GetNodeConfigVersionAsync(nodeId);
+
+        return Ok(new HeartbeatResponse
+        {
+            Received = true,
+            ConfigVersion = configVersion
+        });
+    }
+
+    // ============================
+    // Phase 7: 管理员更新节点配置
+    // ============================
+
+    /// <summary>
+    /// 管理员更新节点配置（含 Hysteria 2 完整配置项和运营字段）。
+    /// 更新后配置版本号自动递增，Edge Agent 下次心跳/配置同步时拉取新配置。
+    /// </summary>
+    [HttpPut("admin/nodes/{nodeId}/config")]
+    public async Task<IActionResult> UpdateNodeConfig(
+        string nodeId,
+        [FromBody] UpdateNodeConfigRequest request)
+    {
+        var adminId = (long)HttpContext.Items["AdminId"]!;
+        var clientIp = HttpContext.Items["ClientIp"]?.ToString() ?? "unknown";
+        var result = await _nodeService.UpdateNodeConfigAsync(nodeId, request, adminId, clientIp);
+        return Ok(result);
     }
 
     // ============================
