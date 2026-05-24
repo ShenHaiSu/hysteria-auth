@@ -14,5 +14,7 @@
   "username": "Username can only contain letters, numbers and underscores",
   "trafficBytes": "Enter a valid traffic value (0 for unlimited, or positive integer)",
   "port": "Port must be between 1-65535",
-  "ipAddress": "Please enter a valid IP address"
+  "ipAddress": "Please enter a valid IP address",
+  "portRange": "Port must be between 1-65535",
+  "portHopRange": "Port hop start must be less than end"
 }

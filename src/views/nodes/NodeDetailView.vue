@@ -19,6 +19,24 @@
 
       <div v-if="canEdit" class="flex items-center gap-2">
         <Button
+          :label="t('nodes.config.editButton')"
+          icon="pi pi-cog"
+          severity="secondary"
+          size="small"
+          class="hidden sm:flex"
+          @click="showConfigForm = true"
+        />
+        <Button
+          icon="pi pi-cog"
+          severity="secondary"
+          text
+          rounded
+          size="small"
+          :title="t('nodes.config.editButton')"
+          class="sm:hidden"
+          @click="showConfigForm = true"
+        />
+        <Button
           :label="t('nodes.toast.rotateSecretConfirm')"
           icon="pi pi-sync"
           severity="secondary"
@@ -80,9 +98,30 @@
 
           <div>
             <span class="text-xs text-[var(--text-muted)] uppercase tracking-wide">{{
+              t('nodes.config.fields.listenPort.label')
+            }}</span>
+            <p class="text-sm text-[var(--text-primary)]">{{ node.listenPort ?? '-' }}</p>
+          </div>
+
+          <div>
+            <span class="text-xs text-[var(--text-muted)] uppercase tracking-wide">{{
               t('nodes.table.columns.location')
             }}</span>
             <p class="text-sm text-[var(--text-primary)]">{{ node.location ?? '-' }}</p>
+          </div>
+
+          <div>
+            <span class="text-xs text-[var(--text-muted)] uppercase tracking-wide">{{
+              t('nodes.config.fields.domainName.label')
+            }}</span>
+            <p class="text-sm text-[var(--text-primary)]">{{ node.domainName ?? '-' }}</p>
+          </div>
+
+          <div>
+            <span class="text-xs text-[var(--text-muted)] uppercase tracking-wide">{{
+              t('nodes.config.fields.remark.label')
+            }}</span>
+            <p class="text-sm text-[var(--text-primary)]">{{ node.remark ?? '-' }}</p>
           </div>
 
           <div>
@@ -131,6 +170,31 @@
               >
               <p class="text-sm text-[var(--text-primary)] font-mono font-medium break-all">
                 {{ node.trafficStatsSecret }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 配置版本信息 (仅 admin 可见) -->
+        <div v-if="canEdit" class="mt-4 pt-4 border-t border-[var(--border-light)]">
+          <h4 class="text-sm font-semibold text-[var(--text-primary)] mb-3">
+            {{ t('nodes.config.title') }}
+          </h4>
+          <div class="space-y-2">
+            <div>
+              <span class="text-xs text-[var(--text-muted)]">{{
+                t('nodes.config.fields.configVersion.label')
+              }}</span>
+              <p class="text-sm text-[var(--text-primary)] font-mono">
+                {{ node.configVersion ?? '-' }}
+              </p>
+            </div>
+            <div>
+              <span class="text-xs text-[var(--text-muted)]">{{
+                t('nodes.config.fields.configUpdatedAt.label')
+              }}</span>
+              <p class="text-sm text-[var(--text-primary)]">
+                {{ node.configUpdatedAt ? formatDate(node.configUpdatedAt) : '-' }}
               </p>
             </div>
           </div>
@@ -295,6 +359,15 @@
 
     <!-- 错误状态 -->
     <AppError v-else-if="!nodesStore.isLoading && !node" @retry="loadNode" />
+
+    <!-- 配置编辑对话框 -->
+    <NodeConfigForm
+      v-if="node"
+      v-model:visible="showConfigForm"
+      :node-id="node.id"
+      :current-config="node"
+      @config-updated="onConfigUpdated"
+    />
   </div>
 </template>
 
@@ -310,6 +383,7 @@ import { getChartColors } from '@/composables/useECharts'
 import { useThemeStore } from '@/stores/theme.store'
 import AppStatusBadge from '@/components/common/AppStatusBadge.vue'
 import BaseChart from '@/components/common/BaseChart.vue'
+import NodeConfigForm from './components/NodeConfigForm.vue'
 import type { NodeDto, NodeStatusRecord } from '@/types/node.types'
 import type { EChartsOption } from 'echarts'
 
@@ -324,6 +398,9 @@ const { canEdit } = usePermission()
 const nodeId = computed(() => route.params.id as string)
 const node = computed(() => nodesStore.currentNode)
 const themeStore = useThemeStore()
+
+// 配置编辑对话框可见性
+const showConfigForm = ref(false)
 
 // 状态历史时间范围选择 (小时)
 const historyHours = ref<string>('24')
@@ -474,19 +551,23 @@ async function loadNode() {
 async function loadStatusHistory() {
   // 根据选择的小时数计算起始时间
   const hours = Number(historyHours.value)
-  const endDate = new Date().toISOString()
-  const startDate = new Date(Date.now() - hours * 3_600_000).toISOString()
   await nodesStore.fetchStatusHistory(nodeId.value, {
     page: 1,
     pageSize: 200,
-    startDate,
-    endDate,
+    startDate: new Date(Date.now() - hours * 3_600_000).toISOString(),
+    endDate: new Date().toISOString(),
   })
 }
 
 watch(historyHours, () => {
   loadStatusHistory()
 })
+
+// 配置更新成功回调
+function onConfigUpdated() {
+  showConfigForm.value = false
+  toast.success(t('nodes.toast.updateConfigSuccess'))
+}
 
 // 判断在线状态
 function isOnline(n: NodeDto | null): boolean {

@@ -6,6 +6,7 @@ import type {
   NodeStatusRecord,
   PreRegisterNodeRequest,
   PreRegisterNodeResponse,
+  UpdateNodeConfigRequest,
 } from '@/types/node.types'
 
 export const nodeApi = {
@@ -34,5 +35,10 @@ export const nodeApi = {
 
   kickUser(nodeId: string, userId: number) {
     return http.post<{ message: string }>(`/admin/nodes/${nodeId}/kick-user`, { userId })
+  },
+
+  /** Phase 7: 更新节点 Hysteria 2 配置 (所有字段可选, null=不修改) */
+  updateConfig(id: string, data: UpdateNodeConfigRequest) {
+    return http.put<NodeDto>(`/admin/nodes/${id}/config`, data)
   },
 }

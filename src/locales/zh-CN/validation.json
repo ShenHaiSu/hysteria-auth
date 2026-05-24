@@ -14,5 +14,7 @@
   "username": "用户名只能包含字母、数字和下划线",
   "trafficBytes": "请输入有效的流量值（0 或不限，或正整数）",
   "port": "端口号范围为 1-65535",
-  "ipAddress": "请输入有效的 IP 地址"
+  "ipAddress": "请输入有效的 IP 地址",
+  "portRange": "端口号范围为 1-65535",
+  "portHopRange": "端口跳跃起始必须小于结束"
 }

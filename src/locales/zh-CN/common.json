@@ -17,7 +17,10 @@
     "yes": "是",
     "no": "否",
     "close": "关闭",
-    "submit": "提交"
+    "submit": "提交",
+    "none": "无",
+    "keepUnchanged": "留空则不修改",
+    "unlimited": "不限"
   },
   "status": {
     "active": "激活",
@@ -30,8 +33,7 @@
     "enabled": "已启用",
     "disabled": "已禁用",
     "loading": "加载中...",
-    "optional": "可选",
-    "unlimited": "不限"
+    "optional": "可选"
   },
   "unit": {
     "bytes": "B",

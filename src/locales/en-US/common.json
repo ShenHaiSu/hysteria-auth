@@ -17,7 +17,10 @@
     "yes": "Yes",
     "no": "No",
     "close": "Close",
-    "submit": "Submit"
+    "submit": "Submit",
+    "none": "None",
+    "keepUnchanged": "Leave empty to keep unchanged",
+    "unlimited": "Unlimited"
   },
   "status": {
     "active": "Active",
@@ -30,8 +33,7 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "loading": "Loading...",
-    "optional": "Optional",
-    "unlimited": "Unlimited"
+    "optional": "Optional"
   },
   "unit": {
     "bytes": "B",

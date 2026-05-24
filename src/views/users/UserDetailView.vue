@@ -325,18 +325,18 @@ function handleExportTraffic() {
             />
             <!-- 周期选择 -->
             <SelectButton
-            v-model="selectedPeriod"
-            :options="[
-              { label: t('users.traffic.period.day'), value: 'day' },
-              { label: t('users.traffic.period.week'), value: 'week' },
-              { label: t('users.traffic.period.month'), value: 'month' },
-              { label: t('users.traffic.period.all'), value: 'all' },
-            ]"
-            option-label="label"
-            option-value="value"
-            size="small"
-          />
-        </div>
+              v-model="selectedPeriod"
+              :options="[
+                { label: t('users.traffic.period.day'), value: 'day' },
+                { label: t('users.traffic.period.week'), value: 'week' },
+                { label: t('users.traffic.period.month'), value: 'month' },
+                { label: t('users.traffic.period.all'), value: 'all' },
+              ]"
+              option-label="label"
+              option-value="value"
+              size="small"
+            />
+          </div>
 
         <!-- 流量概览 -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">

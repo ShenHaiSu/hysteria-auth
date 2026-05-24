@@ -158,6 +158,46 @@
           </template>
         </Column>
 
+        <!-- 配置版本 (默认隐藏) -->
+        <Column
+          field="configVersion"
+          :header="t('nodes.table.columns.configVersion')"
+          style="width: 90px"
+          class="text-center"
+          :hidden="true"
+        >
+          <template #body="{ data }: { data: NodeDto }">
+            <span class="text-sm text-[var(--text-primary)]">{{
+              data.configVersion ?? '-'
+            }}</span>
+          </template>
+        </Column>
+
+        <!-- 监听端口 (默认隐藏) -->
+        <Column
+          field="listenPort"
+          :header="t('nodes.table.columns.listenPort')"
+          style="width: 90px"
+          class="text-center"
+          :hidden="true"
+        >
+          <template #body="{ data }: { data: NodeDto }">
+            <span class="text-sm text-[var(--text-primary)]">{{ data.listenPort ?? '-' }}</span>
+          </template>
+        </Column>
+
+        <!-- 域名 (默认隐藏) -->
+        <Column
+          field="domainName"
+          :header="t('nodes.table.columns.domainName')"
+          style="min-width: 120px"
+          :hidden="true"
+        >
+          <template #body="{ data }: { data: NodeDto }">
+            <span class="text-sm text-[var(--text-secondary)]">{{ data.domainName ?? '-' }}</span>
+          </template>
+        </Column>
+
         <!-- 创建时间 -->
         <Column
           field="createdAt"

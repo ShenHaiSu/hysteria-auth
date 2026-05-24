@@ -11,7 +11,10 @@
       "lastHeartbeat": "Last Heartbeat",
       "provisionStatus": "Provision Status",
       "createdAt": "Created",
-      "actions": "Actions"
+      "actions": "Actions",
+      "configVersion": "Config Version",
+      "listenPort": "Listen Port",
+      "domainName": "Domain"
     }
   },
   "form": {
@@ -54,7 +57,9 @@
     "kickUserSuccess": "User kicked offline",
     "deleteConfirm": "Are you sure you want to delete this node?",
     "copySuccess": "Copied to clipboard",
-    "copyFailed": "Copy failed"
+    "copyFailed": "Copy failed",
+    "updateConfigSuccess": "Node configuration updated successfully",
+    "updateConfigFailed": "Node configuration update failed"
   },
   "register": {
     "successTitle": "Pre-registration Successful",
@@ -64,5 +69,76 @@
     "masterServerUrl": "Master Server URL",
     "expiresAt": "Token Expiry",
     "copy": "Copy"
+  },
+  "config": {
+    "title": "Hysteria 2 Configuration",
+    "editButton": "Edit Config",
+    "resetTab": "Reset to Defaults",
+    "hints": {
+      "obfsPassword": "Leave empty to keep current password",
+      "masqueradeHeaders": "Response headers in JSON format"
+    },
+    "masqueradeTypes": {
+      "file": "File",
+      "proxy": "Proxy",
+      "string": "String",
+      "reply": "Reply"
+    },
+    "resolverTypes": {
+      "system": "System",
+      "udp": "UDP",
+      "tcp": "TCP",
+      "tls": "TLS"
+    },
+    "billingCycles": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "tab": {
+      "listener": "Listener & Port",
+      "obfs": "Obfs & Congestion",
+      "bandwidth": "Bandwidth & Speed Test",
+      "udpSniff": "UDP & Sniff",
+      "masquerade": "Masquerade",
+      "dnsOps": "DNS & Operations"
+    },
+    "fields": {
+      "listenAddress": { "label": "Listen Address", "default": "0.0.0.0" },
+      "listenPort": { "label": "Listen Port", "default": "6789" },
+      "enablePortHopping": { "label": "Enable Port Hopping" },
+      "portHopRangeStart": { "label": "Port Hop Range Start" },
+      "portHopRangeEnd": { "label": "Port Hop Range End" },
+      "obfsType": { "label": "Obfuscation Type" },
+      "obfsPassword": { "label": "Obfuscation Password" },
+      "congestionControl": { "label": "Congestion Control" },
+      "brutalTxBandwidth": { "label": "Brutal TX Bandwidth", "unit": "bps" },
+      "bandwidthUp": { "label": "Bandwidth Up" },
+      "bandwidthDown": { "label": "Bandwidth Down" },
+      "ignoreClientBandwidth": { "label": "Ignore Client Bandwidth" },
+      "enableSpeedTest": { "label": "Enable Speed Test" },
+      "speedTestPingInterval": { "label": "Ping Interval", "unit": "s" },
+      "udpIdleTimeout": { "label": "UDP Idle Timeout", "unit": "s" },
+      "sniffEnabled": { "label": "Enable Sniff" },
+      "sniffTimeout": { "label": "Sniff Timeout", "unit": "s" },
+      "sniffRespectHttps": { "label": "Respect HTTPS Semantics" },
+      "masqueradeType": { "label": "Masquerade Type" },
+      "masqueradeFile": { "label": "Masquerade File Path" },
+      "masqueradeProxyUrl": { "label": "Masquerade Proxy URL" },
+      "masqueradeStringContent": { "label": "Masquerade String Content" },
+      "masqueradeStringHeaders": { "label": "Masquerade Response Headers JSON" },
+      "masqueradeStringStatusCode": { "label": "Masquerade Status Code" },
+      "resolverType": { "label": "DNS Resolver Type" },
+      "resolverTcpAddr": { "label": "TCP Resolver Address" },
+      "resolverUdpAddr": { "label": "UDP Resolver Address" },
+      "resolverTlsAddr": { "label": "TLS Resolver Address" },
+      "serverCost": { "label": "Server Cost", "unit": "/mo" },
+      "billingCycle": { "label": "Billing Cycle" },
+      "expirationDate": { "label": "Expiration Date" },
+      "domainName": { "label": "Domain Name" },
+      "remark": { "label": "Remark" },
+      "configVersion": { "label": "Config Version" },
+      "configUpdatedAt": { "label": "Config Updated" }
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { nodeApi } from '@/api/modules/nodes'
-import type { NodeDto, NodeDetail, NodeStatusRecord, PreRegisterNodeRequest } from '@/types/node.types'
+import type { NodeDto, NodeDetail, NodeStatusRecord, PreRegisterNodeRequest, UpdateNodeConfigRequest } from '@/types/node.types'
 
 /** 心跳超时阈值 (ms)：超过此时间未收到心跳判定为离线 */
 export const HEARTBEAT_TIMEOUT_MS = 90_000
@@ -79,6 +79,18 @@ export const useNodesStore = defineStore('nodes', () => {
     }
   }
 
+  /** Phase 7: 更新节点 Hysteria 2 配置 */
+  async function updateNodeConfig(id: string, data: UpdateNodeConfigRequest) {
+    isSubmitting.value = true
+    try {
+      await nodeApi.updateConfig(id, data)
+      // 配置更新后自动刷新节点详情以获取最新 configVersion 等
+      await fetchNodeDetail(id)
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
   async function rotateSecret(id: string) {
     isSubmitting.value = true
     try {
@@ -135,6 +147,7 @@ export const useNodesStore = defineStore('nodes', () => {
     fetchNodeDetail,
     fetchStatusHistory,
     preRegisterNode,
+    updateNodeConfig,
     rotateSecret,
     kickUser,
     resetFilters,

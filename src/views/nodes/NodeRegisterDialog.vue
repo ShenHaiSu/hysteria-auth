@@ -78,6 +78,56 @@
           :placeholder="t('nodes.form.fields.trafficStatsPort.label')"
         />
       </div>
+
+      <!-- Phase 7: 监听端口 -->
+      <div>
+        <label class="block text-sm font-medium text-[var(--text-primary)] mb-1">
+          {{ t('nodes.config.fields.listenPort.label') }}
+          <span class="text-xs text-[var(--text-muted)] ml-1"
+            >({{ t('common.status.optional') }})</span
+          >
+        </label>
+        <InputNumber
+          v-model="formData.listenPort"
+          class="w-full"
+          :min="1"
+          :max="65535"
+          :use-grouping="false"
+          :placeholder="t('nodes.config.fields.listenPort.default')"
+        />
+      </div>
+
+      <!-- Phase 7: 关联域名 -->
+      <div>
+        <label class="block text-sm font-medium text-[var(--text-primary)] mb-1">
+          {{ t('nodes.config.fields.domainName.label') }}
+          <span class="text-xs text-[var(--text-muted)] ml-1"
+            >({{ t('common.status.optional') }})</span
+          >
+        </label>
+        <InputText
+          v-model="formData.domainName"
+          class="w-full"
+          :placeholder="t('nodes.config.fields.domainName.label')"
+        />
+      </div>
+
+      <!-- Phase 7: 备注 -->
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-[var(--text-primary)] mb-1">
+          {{ t('nodes.config.fields.remark.label') }}
+          <span class="text-xs text-[var(--text-muted)] ml-1"
+            >({{ t('common.status.optional') }})</span
+          >
+        </label>
+        <Textarea
+          v-model="formData.remark"
+          class="w-full"
+          :auto-resize="true"
+          rows="2"
+          :placeholder="t('nodes.config.fields.remark.label')"
+        />
+      </div>
     </div>
 
     <!-- 成功阶段 -->
@@ -207,6 +257,9 @@ interface FormData {
   location: string
   port: number | undefined
   trafficStatsPort: number | undefined
+  listenPort: number | undefined
+  domainName: string
+  remark: string
 }
 
 const formData = ref<FormData>({
@@ -214,6 +267,9 @@ const formData = ref<FormData>({
   location: '',
   port: undefined,
   trafficStatsPort: undefined,
+  listenPort: undefined,
+  domainName: '',
+  remark: '',
 })
 
 const fieldErrors = ref<Record<string, string>>({})
@@ -230,6 +286,9 @@ watch(
         location: '',
         port: undefined,
         trafficStatsPort: undefined,
+        listenPort: undefined,
+        domainName: '',
+        remark: '',
       }
       fieldErrors.value = {}
       registerResult.value = null
@@ -261,6 +320,15 @@ async function handleSubmit() {
     }
     if (formData.value.trafficStatsPort !== undefined && formData.value.trafficStatsPort !== null) {
       payload.trafficStatsPort = formData.value.trafficStatsPort
+    }
+    if (formData.value.listenPort !== undefined && formData.value.listenPort !== null) {
+      payload.listenPort = formData.value.listenPort
+    }
+    if (formData.value.domainName.trim()) {
+      payload.domainName = formData.value.domainName.trim()
+    }
+    if (formData.value.remark.trim()) {
+      payload.remark = formData.value.remark.trim()
     }
 
     registerResult.value = await nodesStore.preRegisterNode(payload)
