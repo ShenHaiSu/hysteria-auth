@@ -76,14 +76,15 @@ public class ConfigGeneratorService
         var addr = node.ListenAddress ?? "0.0.0.0";
         var port = node.ListenPort ?? node.Port;
 
-        if (node.EnablePortHopping && node.PortHopRangeStart.HasValue && node.PortHopRangeEnd.HasValue)
-        {
-            sb.AppendLine($"listen: {addr}:{port},{addr}:{node.PortHopRangeStart}-{node.PortHopRangeEnd}");
-        }
-        else
-        {
-            sb.AppendLine($"listen: {addr}:{port}");
-        }
+        // if (node.EnablePortHopping && node.PortHopRangeStart.HasValue && node.PortHopRangeEnd.HasValue)
+        // {
+        //     sb.AppendLine($"listen: {addr}:{port},{addr}:{node.PortHopRangeStart}-{node.PortHopRangeEnd}");
+        // }
+        // else
+        // {
+        //     sb.AppendLine($"listen: {addr}:{port}");
+        // }
+        sb.AppendLine($"listen: {addr}:{port}");
         sb.AppendLine();
     }
 
