@@ -39,10 +39,12 @@ public class AuthServiceTests
         var auditLoggerMock = new Mock<ILogger<AuditService>>();
         var auditService = new AuditService(auditLogRepoMock.Object, auditLoggerMock.Object);
 
+        var configGenerator = new ConfigGeneratorService(aes, config);
+
         var nodeService = new NodeService(
             _nodeRepoMock.Object, Mock.Of<INodeStatusRepository>(),
             Mock.Of<ITrafficRepository>(), dbCtx, aes,
-            null!, null!, config,
+            null!, null!, configGenerator, config,
             Mock.Of<ILogger<NodeService>>(), auditService);
 
         _sut = new AuthService(_userRepoMock.Object, _authLogRepoMock.Object, nodeService);
