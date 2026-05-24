@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 export const userRoutes: RouteRecordRaw[] = [
   {
-    path: '/users',
+    path: 'users',
     name: 'Users',
     component: () => import('@/views/users/UserListView.vue'),
     meta: {
@@ -12,7 +12,7 @@ export const userRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/users/:id',
+    path: 'users/:id',
     name: 'UserDetail',
     component: () => import('@/views/users/UserDetailView.vue'),
     meta: {

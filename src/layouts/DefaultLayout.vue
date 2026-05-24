@@ -1,51 +1,3 @@
-<script setup lang="ts">
-import { computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
-import { useAppStore } from '@/stores/app.store'
-import { routes as allRoutes } from '@/router/routes'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppHeader from '@/components/layout/AppHeader.vue'
-import AppFooter from '@/components/layout/AppFooter.vue'
-import AppBreadcrumb from '@/components/common/AppBreadcrumb.vue'
-import type { AdminRole } from '@/types/common.types'
-
-const route = useRoute()
-const authStore = useAuthStore()
-const appStore = useAppStore()
-
-// 移动端菜单项（与 AppSidebar 逻辑一致）
-const mobileMenuItems = computed(() => {
-  const defaultLayout = allRoutes.find((r) => r.path === '/')
-  const role: AdminRole | null = authStore.role
-  return (
-    defaultLayout?.children?.filter(
-      (r) => !r.meta?.hidden && (!r.meta?.roles || (role && r.meta.roles.includes(role))),
-    ) ?? []
-  )
-})
-
-function isMobileItemActive(path: string) {
-  return route.path.startsWith(`/${path}`)
-}
-
-function onMobileNav(name: string | symbol | undefined) {
-  if (name) {
-    appStore.closeMobileMenu()
-  }
-}
-
-// 路由变化时关闭移动菜单
-watch(
-  () => route.fullPath,
-  () => {
-    if (appStore.mobileMenuVisible) {
-      appStore.closeMobileMenu()
-    }
-  },
-)
-</script>
-
 <template>
   <div class="flex h-screen bg-[var(--bg-primary)] overflow-hidden">
     <!-- 桌面端：侧边栏 (≥1024px) -->
@@ -107,3 +59,51 @@ watch(
     </main>
   </div>
 </template>
+
+<script setup lang="ts">
+import { computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
+import { useAppStore } from '@/stores/app.store'
+import { routes as allRoutes } from '@/router/routes'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
+import AppBreadcrumb from '@/components/common/AppBreadcrumb.vue'
+import type { AdminRole } from '@/types/common.types'
+
+const route = useRoute()
+const authStore = useAuthStore()
+const appStore = useAppStore()
+
+// 移动端菜单项（与 AppSidebar 逻辑一致）
+const mobileMenuItems = computed(() => {
+  const defaultLayout = allRoutes.find((r) => r.path === '/')
+  const role: AdminRole | null = authStore.role
+  return (
+    defaultLayout?.children?.filter(
+      (r) => !r.meta?.hidden && (!r.meta?.roles || (role && r.meta.roles.includes(role))),
+    ) ?? []
+  )
+})
+
+function isMobileItemActive(path: string) {
+  return route.path.startsWith(`/${path}`)
+}
+
+function onMobileNav(name: string | symbol | undefined) {
+  if (name) {
+    appStore.closeMobileMenu()
+  }
+}
+
+// 路由变化时关闭移动菜单
+watch(
+  () => route.fullPath,
+  () => {
+    if (appStore.mobileMenuVisible) {
+      appStore.closeMobileMenu()
+    }
+  },
+)
+</script>

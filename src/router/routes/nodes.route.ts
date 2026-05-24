@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 export const nodeRoutes: RouteRecordRaw[] = [
   {
-    path: '/nodes',
+    path: 'nodes',
     name: 'Nodes',
     component: () => import('@/views/nodes/NodeListView.vue'),
     meta: {
@@ -12,7 +12,7 @@ export const nodeRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/nodes/:id',
+    path: 'nodes/:id',
     name: 'NodeDetail',
     component: () => import('@/views/nodes/NodeDetailView.vue'),
     meta: {

@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 export const auditRoutes: RouteRecordRaw[] = [
   {
-    path: '/audit-logs',
+    path: 'audit-logs',
     name: 'AuditLogs',
     component: () => import('@/views/audit/AuditLogView.vue'),
     meta: {

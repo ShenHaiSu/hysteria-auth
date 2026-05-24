@@ -2,7 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 export const adminRoutes: RouteRecordRaw[] = [
   {
-    path: '/admins',
+    path: 'admins',
     name: 'Admins',
     component: () => import('@/views/admins/AdminListView.vue'),
     meta: {

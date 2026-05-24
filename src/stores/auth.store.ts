@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { useRouter } from 'vue-router'
+import router from '@/router'
 import { authApi } from '@/api/modules/auth'
 import { storage } from '@/utils/storage'
 import type { AdminDto, LoginRequest } from '@/types/auth.types'
@@ -55,7 +55,6 @@ export const useAuthStore = defineStore('auth', () => {
     storage.remove('expiresAt')
     storage.remove('adminInfo')
 
-    const router = useRouter()
     router.push({ name: 'Login' })
   }
 
