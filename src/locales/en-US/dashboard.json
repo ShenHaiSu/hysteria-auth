@@ -1,0 +1,23 @@
+{
+  "title": "Dashboard",
+  "cards": {
+    "totalUsers": "Total Users",
+    "activeUsers": "Active Users",
+    "onlineUsers": "Online Users",
+    "totalNodes": "Total Nodes",
+    "activeNodes": "Active Nodes",
+    "todayTraffic": "Today Traffic",
+    "monthTraffic": "Monthly Traffic",
+    "userOverview": "User Overview",
+    "nodeOverview": "Node Overview",
+    "todayTrafficOverview": "Today Traffic",
+    "monthTrafficOverview": "Monthly Traffic"
+  },
+  "charts": {
+    "trafficTrend": "Traffic Trend",
+    "userTrend": "User Growth Trend",
+    "bytesIn": "Download",
+    "bytesOut": "Upload",
+    "totalTraffic": "Total Traffic"
+  }
+}

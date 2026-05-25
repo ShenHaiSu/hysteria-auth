@@ -1,0 +1,23 @@
+{
+  "title": "仪表盘",
+  "cards": {
+    "totalUsers": "用户总数",
+    "activeUsers": "活跃用户",
+    "onlineUsers": "在线用户",
+    "totalNodes": "节点总数",
+    "activeNodes": "活跃节点",
+    "todayTraffic": "今日流量",
+    "monthTraffic": "本月流量",
+    "userOverview": "用户概览",
+    "nodeOverview": "节点概览",
+    "todayTrafficOverview": "今日流量",
+    "monthTrafficOverview": "本月流量"
+  },
+  "charts": {
+    "trafficTrend": "流量趋势",
+    "userTrend": "用户增长趋势",
+    "bytesIn": "下载",
+    "bytesOut": "上传",
+    "totalTraffic": "总流量"
+  }
+}

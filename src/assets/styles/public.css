@@ -1,0 +1,14 @@
+@import './variables.css' layer(base);
+@import 'tailwindcss';
+@import './transition.css';
+@import './scrollbar.css';
+
+html {
+  font-size: 13px;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}

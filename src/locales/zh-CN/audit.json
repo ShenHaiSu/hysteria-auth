@@ -1,0 +1,38 @@
+{
+  "title": "审计日志",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "action": "操作类型",
+      "targetType": "目标类型",
+      "targetName": "目标名称",
+      "adminUsername": "操作者",
+      "detail": "详情",
+      "ipAddress": "IP 地址",
+      "createdAt": "操作时间"
+    }
+  },
+  "actions": {
+    "create": "创建",
+    "update": "更新",
+    "delete": "删除",
+    "login": "登录",
+    "logout": "登出",
+    "kick_user": "踢下线"
+  },
+  "targets": {
+    "user": "用户",
+    "node": "节点",
+    "admin": "管理员",
+    "system": "系统"
+  },
+  "filters": {
+    "action": "操作类型",
+    "targetType": "目标类型",
+    "adminId": "操作者",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "allActions": "全部操作",
+    "allTargets": "全部目标"
+  }
+}

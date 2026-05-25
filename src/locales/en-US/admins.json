@@ -1,0 +1,34 @@
+{
+  "title": "Admin Management",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "username": "Username",
+      "role": "Role",
+      "isActive": "Status",
+      "createdAt": "Created",
+      "lastLoginAt": "Last Login",
+      "actions": "Actions"
+    }
+  },
+  "form": {
+    "createTitle": "Create Admin",
+    "editTitle": "Edit Admin",
+    "fields": {
+      "username": { "label": "Username" },
+      "password": { "label": "Password" },
+      "role": { "label": "Role" },
+      "isActive": { "label": "Active" }
+    }
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "admin": "Admin",
+    "readonly": "Read-only Admin"
+  },
+  "toast": {
+    "createSuccess": "Admin created",
+    "updateSuccess": "Admin updated",
+    "deleteConfirm": "Are you sure you want to delete this admin?"
+  }
+}

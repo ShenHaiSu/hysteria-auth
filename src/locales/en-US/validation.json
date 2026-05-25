@@ -1,0 +1,20 @@
+{
+  "required": "This field is required",
+  "minLength": "At least {min} characters required",
+  "maxLength": "At most {max} characters allowed",
+  "minValue": "Minimum value is {min}",
+  "maxValue": "Maximum value is {max}",
+  "pattern": "Invalid format",
+  "email": "Please enter a valid email",
+  "url": "Please enter a valid URL",
+  "integer": "Please enter an integer",
+  "number": "Please enter a number",
+  "password": "Password must be at least 8 characters",
+  "passwordMatch": "Passwords do not match",
+  "username": "Username can only contain letters, numbers and underscores",
+  "trafficBytes": "Enter a valid traffic value (0 for unlimited, or positive integer)",
+  "port": "Port must be between 1-65535",
+  "ipAddress": "Please enter a valid IP address",
+  "portRange": "Port must be between 1-65535",
+  "portHopRange": "Port hop start must be less than end"
+}

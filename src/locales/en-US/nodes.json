@@ -1,0 +1,141 @@
+{
+  "title": "Node Management",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "name": "Node Name",
+      "ipAddress": "IP Address",
+      "port": "Port",
+      "isActive": "Status",
+      "location": "Location",
+      "lastHeartbeat": "Last Heartbeat",
+      "provisionStatus": "Provision Status",
+      "createdAt": "Created",
+      "actions": "Actions",
+      "configVersion": "Config Version",
+      "domainName": "Domain"
+    }
+  },
+  "form": {
+    "registerTitle": "Pre-register Node",
+    "fields": {
+      "name": { "label": "Node Name" },
+      "location": { "label": "Location" },
+      "port": { "label": "Port" },
+      "trafficStatsPort": { "label": "Traffic Stats Port" }
+    }
+  },
+  "detail": {
+    "basicInfo": "Basic Info",
+    "statusHistory": "Status History",
+    "secretInfo": "Secret Info",
+    "secretVersion": "Secret Version",
+    "onlineUsers": "Online Users",
+    "noStatusHistory": "No status history data"
+  },
+  "status": {
+    "cpu": "CPU Usage",
+    "memory": "Memory Usage",
+    "memoryUsed": "Used Memory",
+    "memoryTotal": "Total Memory",
+    "networkIn": "Network In",
+    "networkOut": "Network Out",
+    "activeConnections": "Active Connections",
+    "period": {
+      "1h": "Last Hour",
+      "6h": "Last 6 Hours",
+      "24h": "Last 24 Hours",
+      "7d": "Last 7 Days"
+    }
+  },
+  "toast": {
+    "registerSuccess": "Node pre-registered successfully",
+    "rotateSecretSuccess": "Secret rotated successfully",
+    "rotateSecretConfirm": "Are you sure you want to rotate this node's secret? Old and new secrets will coexist during the transition period.",
+    "kickUserConfirm": "Are you sure you want to kick this user offline? This only disconnects the current connection, and the client may auto-reconnect. Consider disabling the user account as well.",
+    "kickUserSuccess": "User kicked offline",
+    "deleteConfirm": "Are you sure you want to delete this node?",
+    "copySuccess": "Copied to clipboard",
+    "copyFailed": "Copy failed",
+    "updateConfigSuccess": "Node configuration updated successfully",
+    "updateConfigFailed": "Node configuration update failed"
+  },
+  "register": {
+    "successTitle": "Pre-registration Successful",
+    "tokenWarning": "Please save the following information securely. The provision token is single-use and cannot be viewed again after closing this dialog.",
+    "provisionToken": "Provision Token",
+    "startupCommand": "Startup Command",
+    "masterServerUrl": "Master Server URL",
+    "expiresAt": "Token Expiry",
+    "copy": "Copy"
+  },
+  "config": {
+    "title": "Hysteria 2 Configuration",
+    "editButton": "Edit Config",
+    "resetTab": "Reset to Defaults",
+    "hints": {
+      "obfsPassword": "Leave empty to keep current password",
+      "masqueradeHeaders": "Response headers in JSON format"
+    },
+    "masqueradeTypes": {
+      "file": "File",
+      "proxy": "Proxy",
+      "string": "String",
+      "reply": "Reply"
+    },
+    "resolverTypes": {
+      "system": "System",
+      "udp": "UDP",
+      "tcp": "TCP",
+      "tls": "TLS"
+    },
+    "billingCycles": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "tab": {
+      "listener": "Port Hopping",
+      "obfs": "Obfs & Congestion",
+      "bandwidth": "Bandwidth & Speed Test",
+      "udpSniff": "UDP & Sniff",
+      "masquerade": "Masquerade",
+      "dnsOps": "DNS & Operations"
+    },
+    "fields": {
+      "enablePortHopping": { "label": "Enable Port Hopping" },
+      "portHopRangeStart": { "label": "Port Hop Range Start" },
+      "portHopRangeEnd": { "label": "Port Hop Range End" },
+      "obfsType": { "label": "Obfuscation Type" },
+      "obfsPassword": { "label": "Obfuscation Password" },
+      "congestionControl": { "label": "Congestion Control" },
+      "brutalTxBandwidth": { "label": "Brutal TX Bandwidth", "unit": "bps" },
+      "bandwidthUp": { "label": "Bandwidth Up" },
+      "bandwidthDown": { "label": "Bandwidth Down" },
+      "ignoreClientBandwidth": { "label": "Ignore Client Bandwidth" },
+      "enableSpeedTest": { "label": "Enable Speed Test" },
+      "speedTestPingInterval": { "label": "Ping Interval", "unit": "s" },
+      "udpIdleTimeout": { "label": "UDP Idle Timeout", "unit": "s" },
+      "sniffEnabled": { "label": "Enable Sniff" },
+      "sniffTimeout": { "label": "Sniff Timeout", "unit": "s" },
+      "sniffRespectHttps": { "label": "Respect HTTPS Semantics" },
+      "masqueradeType": { "label": "Masquerade Type" },
+      "masqueradeFile": { "label": "Masquerade File Path" },
+      "masqueradeProxyUrl": { "label": "Masquerade Proxy URL" },
+      "masqueradeStringContent": { "label": "Masquerade String Content" },
+      "masqueradeStringHeaders": { "label": "Masquerade Response Headers JSON" },
+      "masqueradeStringStatusCode": { "label": "Masquerade Status Code" },
+      "resolverType": { "label": "DNS Resolver Type" },
+      "resolverTcpAddr": { "label": "TCP Resolver Address" },
+      "resolverUdpAddr": { "label": "UDP Resolver Address" },
+      "resolverTlsAddr": { "label": "TLS Resolver Address" },
+      "serverCost": { "label": "Server Cost", "unit": "/mo" },
+      "billingCycle": { "label": "Billing Cycle" },
+      "expirationDate": { "label": "Expiration Date" },
+      "domainName": { "label": "Domain Name" },
+      "remark": { "label": "Remark" },
+      "configVersion": { "label": "Config Version" },
+      "configUpdatedAt": { "label": "Config Updated" }
+    }
+  }
+}

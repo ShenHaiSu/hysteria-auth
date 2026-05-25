@@ -1,0 +1,141 @@
+{
+  "title": "节点管理",
+  "table": {
+    "columns": {
+      "id": "ID",
+      "name": "节点名称",
+      "ipAddress": "IP 地址",
+      "port": "端口",
+      "isActive": "状态",
+      "location": "地区",
+      "lastHeartbeat": "最后心跳",
+      "provisionStatus": "注册状态",
+      "createdAt": "创建时间",
+      "actions": "操作",
+      "configVersion": "配置版本",
+      "domainName": "域名"
+    }
+  },
+  "form": {
+    "registerTitle": "预注册节点",
+    "fields": {
+      "name": { "label": "节点名称" },
+      "location": { "label": "地区" },
+      "port": { "label": "端口" },
+      "trafficStatsPort": { "label": "流量统计端口" }
+    }
+  },
+  "detail": {
+    "basicInfo": "基本信息",
+    "statusHistory": "状态历史",
+    "secretInfo": "密钥信息",
+    "secretVersion": "密钥版本",
+    "onlineUsers": "在线用户",
+    "noStatusHistory": "暂无状态历史数据"
+  },
+  "status": {
+    "cpu": "CPU 使用率",
+    "memory": "内存使用率",
+    "memoryUsed": "已用内存",
+    "memoryTotal": "总内存",
+    "networkIn": "网络流入",
+    "networkOut": "网络流出",
+    "activeConnections": "活跃连接数",
+    "period": {
+      "1h": "最近1小时",
+      "6h": "最近6小时",
+      "24h": "最近24小时",
+      "7d": "最近7天"
+    }
+  },
+  "toast": {
+    "registerSuccess": "节点预注册成功",
+    "rotateSecretSuccess": "密钥轮换成功",
+    "rotateSecretConfirm": "确定要轮换该节点的密钥吗？新旧密钥将在过渡期内共存。",
+    "kickUserConfirm": "确定要将该用户踢下线吗？该操作仅断开当前连接，客户端可能会自动重连。建议同时禁用该用户账号。",
+    "kickUserSuccess": "用户已下线",
+    "deleteConfirm": "确定要删除该节点吗？",
+    "copySuccess": "已复制到剪贴板",
+    "copyFailed": "复制失败",
+    "updateConfigSuccess": "节点配置更新成功",
+    "updateConfigFailed": "节点配置更新失败"
+  },
+  "register": {
+    "successTitle": "预注册成功",
+    "tokenWarning": "请妥善保存以下信息。预注册令牌为一次性使用，关闭后将无法再次查看。",
+    "provisionToken": "预注册令牌",
+    "startupCommand": "启动命令",
+    "masterServerUrl": "主服务器地址",
+    "expiresAt": "令牌有效期",
+    "copy": "复制"
+  },
+  "config": {
+    "title": "Hysteria 2 配置",
+    "editButton": "编辑配置",
+    "resetTab": "重置为默认值",
+    "hints": {
+      "obfsPassword": "留空表示不修改密码",
+      "masqueradeHeaders": "JSON 格式的响应头"
+    },
+    "masqueradeTypes": {
+      "file": "文件",
+      "proxy": "代理",
+      "string": "字符串",
+      "reply": "回复"
+    },
+    "resolverTypes": {
+      "system": "系统默认",
+      "udp": "UDP",
+      "tcp": "TCP",
+      "tls": "TLS"
+    },
+    "billingCycles": {
+      "monthly": "月付",
+      "quarterly": "季付",
+      "yearly": "年付"
+    },
+    "tab": {
+      "listener": "端口跳跃",
+      "obfs": "混淆与拥塞控制",
+      "bandwidth": "带宽与速度测试",
+      "udpSniff": "UDP 与协议嗅探",
+      "masquerade": "伪装",
+      "dnsOps": "DNS 与运营"
+    },
+    "fields": {
+      "enablePortHopping": { "label": "启用端口跳跃" },
+      "portHopRangeStart": { "label": "端口跳跃起始" },
+      "portHopRangeEnd": { "label": "端口跳跃结束" },
+      "obfsType": { "label": "混淆类型" },
+      "obfsPassword": { "label": "混淆密码" },
+      "congestionControl": { "label": "拥塞控制算法" },
+      "brutalTxBandwidth": { "label": "Brutal 发送带宽", "unit": "bps" },
+      "bandwidthUp": { "label": "上行带宽" },
+      "bandwidthDown": { "label": "下行带宽" },
+      "ignoreClientBandwidth": { "label": "忽略客户端带宽" },
+      "enableSpeedTest": { "label": "启用速度测试" },
+      "speedTestPingInterval": { "label": "Ping 间隔", "unit": "秒" },
+      "udpIdleTimeout": { "label": "UDP 空闲超时", "unit": "秒" },
+      "sniffEnabled": { "label": "启用协议嗅探" },
+      "sniffTimeout": { "label": "嗅探超时", "unit": "秒" },
+      "sniffRespectHttps": { "label": "遵从 HTTPS 语义" },
+      "masqueradeType": { "label": "伪装类型" },
+      "masqueradeFile": { "label": "伪装文件路径" },
+      "masqueradeProxyUrl": { "label": "伪装代理 URL" },
+      "masqueradeStringContent": { "label": "伪装字符串内容" },
+      "masqueradeStringHeaders": { "label": "伪装响应头 JSON" },
+      "masqueradeStringStatusCode": { "label": "伪装状态码" },
+      "resolverType": { "label": "DNS 解析器类型" },
+      "resolverTcpAddr": { "label": "TCP 解析器地址" },
+      "resolverUdpAddr": { "label": "UDP 解析器地址" },
+      "resolverTlsAddr": { "label": "TLS 解析器地址" },
+      "serverCost": { "label": "服务器费用", "unit": "/月" },
+      "billingCycle": { "label": "续费周期" },
+      "expirationDate": { "label": "到期日期" },
+      "domainName": { "label": "关联域名" },
+      "remark": { "label": "备注" },
+      "configVersion": { "label": "配置版本" },
+      "configUpdatedAt": { "label": "配置更新时间" }
+    }
+  }
+}

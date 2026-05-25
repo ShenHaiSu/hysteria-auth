@@ -1,0 +1,91 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "create": "Create",
+    "search": "Search",
+    "reset": "Reset",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "back": "Back",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "submit": "Submit",
+    "none": "None",
+    "keepUnchanged": "Leave empty to keep unchanged",
+    "unlimited": "Unlimited"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "online": "Online",
+    "offline": "Offline",
+    "pending": "Pending",
+    "provisioned": "Provisioned",
+    "all": "All",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "loading": "Loading...",
+    "optional": "Optional",
+    "unlimited": "Unlimited"
+  },
+  "unit": {
+    "bytes": "B",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB",
+    "tb": "TB"
+  },
+  "confirm": {
+    "title": "Confirm",
+    "message": "Are you sure?",
+    "deleteTitle": "Confirm Delete",
+    "deleteMessage": "Are you sure you want to delete? This action cannot be undone."
+  },
+  "toast": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info",
+    "exportSuccess": "Export successful",
+    "exportFailed": "Export failed",
+    "importSuccess": "Import successful",
+    "importFailed": "Import failed"
+  },
+  "error": {
+    "loadFailed": "Failed to load data",
+    "loadFailedDetail": "Please check your network and try again",
+    "saveFailed": "Failed to save",
+    "deleteFailed": "Failed to delete",
+    "forbidden": "No permission to perform this action",
+    "rateLimited": "Too many requests, please try again later",
+    "internalError": "Internal server error",
+    "networkError": "Network connection failed",
+    "notFound": "Data not found"
+  },
+  "empty": {
+    "title": "No Data",
+    "description": "No content to display"
+  },
+  "pagination": {
+    "total": "Total {total} items",
+    "perPage": "Per page",
+    "goto": "Go to",
+    "page": "Page"
+  },
+  "validation": {
+    "required": "Required",
+    "minLength": "Too short",
+    "maxLength": "Too long",
+    "minValue": "Value too small",
+    "maxValue": "Value too large",
+    "pattern": "Invalid format"
+  }
+}
