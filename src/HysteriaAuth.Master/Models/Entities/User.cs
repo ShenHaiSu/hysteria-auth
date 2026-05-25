@@ -39,6 +39,9 @@ public class User
 
     public string? Remark { get; set; }
 
-    [Timestamp]
-    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+    /// <summary>
+    /// 并发令牌（SQLite 不支持 ROWVERSION，使用 Guid 模拟）。
+    /// 每次 INSERT/UPDATE 时由 AppDbContext.SaveChangesAsync 自动生成新值。
+    /// </summary>
+    public Guid RowVersion { get; set; } = Guid.NewGuid();
 }

@@ -28,7 +28,7 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("Users");
             entity.HasIndex(u => u.Username).IsUnique();
-            entity.Property(u => u.RowVersion).IsRowVersion();
+            entity.Property(u => u.RowVersion).IsConcurrencyToken();
         });
 
         // ============================
@@ -140,6 +140,13 @@ public class AppDbContext : DbContext
             throw new InvalidOperationException("AdminAuditLogs 记录不可修改或删除。审计日志一旦写入即不可变更。");
         }
 
+        // SQLite 不支持 ROWVERSION 自动生成，由应用层为 User 维护 Guid 并发令牌
+        foreach (var entry in ChangeTracker.Entries<User>()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+        {
+            entry.Entity.RowVersion = Guid.NewGuid();
+        }
+
         return base.SaveChanges();
     }
 
@@ -151,6 +158,13 @@ public class AppDbContext : DbContext
         if (auditLogEntries.Any())
         {
             throw new InvalidOperationException("AdminAuditLogs 记录不可修改或删除。审计日志一旦写入即不可变更。");
+        }
+
+        // SQLite 不支持 ROWVERSION 自动生成，由应用层为 User 维护 Guid 并发令牌
+        foreach (var entry in ChangeTracker.Entries<User>()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+        {
+            entry.Entity.RowVersion = Guid.NewGuid();
         }
 
         return await base.SaveChangesAsync(cancellationToken);
