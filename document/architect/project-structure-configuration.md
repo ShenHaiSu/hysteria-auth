@@ -1,6 +1,6 @@
 # 项目结构与配置说明
 
-> **父文档**: [架构文档目录](README.md) | **关联**: [`deployment.md`](deployment.md) · [`security-design.md`](security-design.md)
+> **父文档**: [架构文档目录](README.md) | **关联**: [`deployment.md`](deployment.md) · [`security-design.md`](security-design.md) · [`spa-integration.md`](spa-integration.md)
 
 ---
 
@@ -61,7 +61,10 @@ HysteriaAuth/
 │   │   ├── Config/
 │   │   │   ├── AppSettings.cs         # 配置类
 │   │   │   ├── JwtSettings.cs         # JWT 配置
-│   │   │   └── RateLimitSettings.cs   # 速率限制配置
+│   │   │   ├── RateLimitSettings.cs   # 速率限制配置
+│   │   │   ├── SpaSettings.cs         # SPA 静态文件配置（新增）
+│   │   │   └── HttpsSettings.cs       # HTTPS 证书自动检测 + 监听端口配置（Phase 8 新增）
+│   │   ├── wwwroot/                   # SPA 前端构建产物（新增，路径可配置）
 │   │   ├── appsettings.json           # 配置文件
 │   │   └── Program.cs                 # 入口
 │   │
@@ -95,12 +98,15 @@ HysteriaAuth/
 │
 ├── document/
 │   ├── architect/                     # 架构设计文档
+│   │   ├── spa-integration.md         # SPA 集成设计（新增）
 │   ├── hysteria/                      # Hysteria 配置/API 参考
 │   └── develop/                       # 开发文档
 │
 ├── scripts/
 │   ├── deploy-master.sh               # 主服务器部署脚本
 │   ├── deploy-agent.sh                # Agent 部署脚本
+│   ├── dev-build.ps1                  # Windows 开发环境构建脚本（新增）
+│   ├── publish-linux.ps1              # Windows→Linux 交叉编译脚本（新增）
 │   ├── backup-db.sh                   # 数据库备份脚本
 │   └── restore-db.sh                  # 数据库恢复脚本
 │
@@ -161,6 +167,19 @@ HysteriaAuth/
         "AllowedHeaders": ["Authorization", "Content-Type"],
         "MaxAgeSeconds": 3600
     },
+    "Spa": {
+        "Enabled": true,
+        "StaticFilesPath": "wwwroot",
+        "FallbackFile": "index.html",
+        "CacheMaxAgeSeconds": 86400
+    },
+    "Https": {
+        "ListenAddress": "0.0.0.0",
+        "ListenPort": 5000,
+        "CertDirectoryPath": "cert",
+        "CertFileName": "server.cert",
+        "CertKeyFileName": "server.key"
+    },
     "Backup": {
         "AutoBackupEnabled": true,
         "BackupIntervalHours": 24,
@@ -189,6 +208,9 @@ HysteriaAuth/
 | `Traffic` | `TrafficDataRetentionDays` / `ConcurrentUpdateRetryCount` | 流量数据保留天数和并发重试次数 |
 | `Admin` | `MaxFailedLoginAttempts` / `LockoutDurationMinutes` | 管理员登录失败锁定策略 |
 | `RateLimit` | `AuthPerMinute` / `AdminApiPerMinute` | 各端点速率限制配置 |
+| `Spa` | `Enabled` / `StaticFilesPath` / `FallbackFile` | SPA 静态文件托管开关、构建产物路径（支持相对/绝对路径）、兜底文件名。详见 [`spa-integration.md`](spa-integration.md) |
+| `Https` | `ListenAddress` / `ListenPort` | Kestrel 监听地址和端口。默认 `0.0.0.0:5000`。无论 HTTP/HTTPS 均使用同一端口 |
+| `Https` | `CertDirectoryPath` / `CertFileName` / `CertKeyFileName` | HTTPS 证书自动检测：启动时检查该目录下是否存在指定证书文件，存在则启用 HTTPS。支持相对和绝对路径。详见 Phase 8 |
 | `Backup` | `AutoBackupEnabled` / `BackupIntervalHours` | 自动备份开关和间隔 |
 
 ---

@@ -12,6 +12,9 @@ public class PreRegisterNodeRequest
     public string? Location { get; set; }
     public int Port { get; set; } = 443;
     public int? TrafficStatsPort { get; set; }
+    // Phase 7 新增可选字段
+    public string? DomainName { get; set; }
+    public string? Remark { get; set; }
 }
 
 public class PreRegisterNodeResponse
@@ -40,6 +43,8 @@ public class RegisterWithTokenResponse
     public string NodeId { get; set; } = string.Empty;
     public string NodeSecret { get; set; } = string.Empty;
     public string TrafficStatsSecret { get; set; } = string.Empty;
+    public int ConfigVersion { get; set; }
+    public string? ConfigYaml { get; set; }
     public NodeConfigInfo Config { get; set; } = new();
 }
 
@@ -76,6 +81,8 @@ public class NodeConfigResponse
     public string NodeId { get; set; } = string.Empty;
     public string NodeSecret { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public int ConfigVersion { get; set; }
+    public string? ConfigYaml { get; set; }
     public NodeConfigInfo Config { get; set; } = new();
 }
 
@@ -114,11 +121,22 @@ public class UserTrafficEntry
 }
 
 // ============================
+// 心跳响应（Phase 7 新增 configVersion）
+// ============================
+
+public class HeartbeatResponse
+{
+    public bool Received { get; set; } = true;
+    public int ConfigVersion { get; set; }
+}
+
+// ============================
 // 节点 DTO（列表/详情返回）
 // ============================
 
 public class NodeDto
 {
+    // 基础字段
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string IpAddress { get; set; } = string.Empty;
@@ -129,6 +147,50 @@ public class NodeDto
     public string? Location { get; set; }
     public int? TrafficStatsPort { get; set; }
     public string ProvisionStatus { get; set; } = string.Empty;
+
+    // Phase 7: 端口跳跃（Agent 操作 iptables，不写入 YAML）
+    public bool EnablePortHopping { get; set; }
+    public int? PortHopRangeStart { get; set; }
+    public int? PortHopRangeEnd { get; set; }
+
+    // Phase 7: 混淆
+    public string? ObfsType { get; set; }
+
+    // Phase 7: 拥塞控制
+    public string? CongestionControl { get; set; }
+    public long? BrutalTxBandwidth { get; set; }
+
+    // Phase 7: 带宽
+    public string? BandwidthUp { get; set; }
+    public string? BandwidthDown { get; set; }
+    public bool? IgnoreClientBandwidth { get; set; }
+
+    // Phase 7: 速度测试
+    public bool? EnableSpeedTest { get; set; }
+
+    // Phase 7: UDP
+    public int? UdpIdleTimeout { get; set; }
+
+    // Phase 7: 协议嗅探
+    public bool? SniffEnabled { get; set; }
+
+    // Phase 7: 伪装
+    public string? MasqueradeType { get; set; }
+    public string? MasqueradeFile { get; set; }
+
+    // Phase 7: DNS 解析器
+    public string? ResolverType { get; set; }
+
+    // Phase 7: 配置版本
+    public int ConfigVersion { get; set; }
+    public DateTime? ConfigUpdatedAt { get; set; }
+
+    // Phase 7: 运营管理
+    public decimal? ServerCost { get; set; }
+    public string? BillingCycle { get; set; }
+    public DateTime? ExpirationDate { get; set; }
+    public string? DomainName { get; set; }
+    public string? Remark { get; set; }
 }
 
 public class NodeListResponse

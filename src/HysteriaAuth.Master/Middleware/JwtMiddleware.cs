@@ -12,7 +12,9 @@ public class JwtMiddleware
     private readonly ILogger<JwtMiddleware> _logger;
 
     // 需要 JWT 认证的路由前缀
-    private static readonly string[] ProtectedPaths = { "/api/v1/admin", "/api/v1/users" };
+    private static readonly string[] ProtectedPaths = { "/api/v1/admin", "/api/v1/users", "/api/v1/nodes" };
+    // 免认证路径（登录等）
+    private static readonly string[] ExcludedPaths = { "/api/v1/admin/login" };
 
     public JwtMiddleware(RequestDelegate next, ILogger<JwtMiddleware> logger)
     {
@@ -25,6 +27,13 @@ public class JwtMiddleware
         // 仅对管理相关路由启用 JWT 认证
         var path = context.Request.Path.Value ?? "";
         if (!ProtectedPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+        {
+            await _next(context);
+            return;
+        }
+
+        // 跳过免认证路径（如登录端点）
+        if (ExcludedPaths.Any(p => path.Equals(p, StringComparison.OrdinalIgnoreCase)))
         {
             await _next(context);
             return;

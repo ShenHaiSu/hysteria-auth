@@ -1,5 +1,7 @@
 using System.Text.Json;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using HysteriaAuth.Master.Config;
 using HysteriaAuth.Master.Data;
 using HysteriaAuth.Master.Middleware;
@@ -15,6 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 // ============================
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection(AdminSettings.SectionName));
+builder.Services.Configure<SpaSettings>(builder.Configuration.GetSection(SpaSettings.SectionName));
+builder.Services.Configure<HttpsSettings>(builder.Configuration.GetSection(HttpsSettings.SectionName));
 
 // ============================
 // 数据库
@@ -33,6 +37,11 @@ builder.Services.AddControllers()
     });
 
 // ============================
+// HTTP 客户端工厂（用于 KickService）
+// ============================
+builder.Services.AddHttpClient();
+
+// ============================
 // Repository 层注册
 // ============================
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -42,6 +51,7 @@ builder.Services.AddScoped<INodeRepository, NodeRepository>();
 builder.Services.AddScoped<INodeStatusRepository, NodeStatusRepository>();
 builder.Services.AddScoped<ITrafficRepository, TrafficRepository>();  // Phase 3
 builder.Services.AddScoped<ISessionRepository, SessionRepository>();  // Phase 3
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 // ============================
 // AES 加密服务（节点密钥加密存储）
@@ -60,6 +70,8 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NodeService>();
 builder.Services.AddScoped<TrafficService>();    // Phase 3
 builder.Services.AddScoped<KickService>();      // Phase 3
+builder.Services.AddScoped<AuditService>();
+builder.Services.AddScoped<ConfigGeneratorService>();  // Phase 7: Hysteria 2 YAML 配置生成器
 
 // ============================
 // 后台服务（节点离线检测 + 数据保留策略）
@@ -85,7 +97,115 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ============================================================
+// 监听端口规范化 + HTTPS 证书自动检测（Phase 8）
+// ============================================================
+// 第一段：在 builder.Build() 之前 —— 读取配置 + 证书检查 + Kestrel 配置
+
+var httpsSettings = builder.Configuration
+    .GetSection(HttpsSettings.SectionName)
+    .Get<HttpsSettings>() ?? new HttpsSettings();
+
+// 解析证书目录绝对路径（复用 SPA 路径解析规则）
+var certAbsolutePath = Path.IsPathRooted(httpsSettings.CertDirectoryPath)
+    ? httpsSettings.CertDirectoryPath
+    : Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath,
+        httpsSettings.CertDirectoryPath));
+
+var certFilePath = Path.Combine(certAbsolutePath, httpsSettings.CertFileName);
+var keyFilePath = Path.Combine(certAbsolutePath, httpsSettings.CertKeyFileName);
+bool httpsEnabled = File.Exists(certFilePath) && File.Exists(keyFilePath);
+
+// 单端口策略：ListenAddress:ListenPort 上根据证书决定 HTTP 还是 HTTPS
+builder.WebHost.ConfigureKestrel(options =>
+{
+    var addr = System.Net.IPAddress.Parse(httpsSettings.ListenAddress);
+    if (httpsEnabled)
+    {
+        // 手动加载证书：只提取 PEM 中的第一张证书（叶子证书），
+        // 避免多证书链 PEM（如 Let's Encrypt 叶子 + 中间 CA）导致
+        // X509Certificate2.CreateFromPemFile() 解析歧义，使 HasPrivateKey=false 进而抛出
+        // NotSupportedException: "The server mode SSL must use a certificate with the associated private key."
+        var certPem = File.ReadAllText(certFilePath);
+        var keyPem = File.ReadAllText(keyFilePath);
+
+        const string beginTag = "-----BEGIN CERTIFICATE-----";
+        const string endTag = "-----END CERTIFICATE-----";
+        int firstBegin = certPem.IndexOf(beginTag, StringComparison.Ordinal);
+        int firstEnd = certPem.IndexOf(endTag, firstBegin + beginTag.Length, StringComparison.Ordinal);
+        if (firstBegin < 0 || firstEnd < 0)
+        {
+            throw new InvalidOperationException(
+                $"Certificate file '{certFilePath}' does not contain a valid PEM certificate.");
+        }
+
+        string leafCertPem = certPem[firstBegin..(firstEnd + endTag.Length)];
+        string remainPem = certPem[(firstEnd + endTag.Length)..].Trim();
+
+        var serverCert = X509Certificate2.CreateFromPem(leafCertPem, keyPem);
+
+        options.Listen(addr, httpsSettings.ListenPort, listenOptions =>
+        {
+            // 中间 CA 证书（如 Let's Encrypt R1/R3）通常已内置于系统证书库，
+            // 客户端可通过 AIA / 系统信任库自动补全，此处仅传入叶子证书。
+            listenOptions.UseHttps(serverCert);
+        });
+    }
+    else
+    {
+        options.Listen(addr, httpsSettings.ListenPort);
+    }
+});
+
 var app = builder.Build();
+
+// ============================================================
+// 第二段：在 builder.Build() 之后 —— 日志输出
+// ============================================================
+
+if (httpsEnabled)
+{
+    app.Logger.LogInformation(
+        "HTTPS enabled on https://{Address}:{Port} — cert: {CertFile}, key: {KeyFile}, dir: {CertDir}",
+        httpsSettings.ListenAddress, httpsSettings.ListenPort,
+        httpsSettings.CertFileName, httpsSettings.CertKeyFileName, certAbsolutePath);
+}
+else
+{
+    var missingParts = new List<string>();
+    if (!File.Exists(certFilePath))
+        missingParts.Add($"certificate '{httpsSettings.CertFileName}'");
+    if (!File.Exists(keyFilePath))
+        missingParts.Add($"private key '{httpsSettings.CertKeyFileName}'");
+
+    app.Logger.LogWarning(
+        "HTTPS certificate NOT found — {Missing} missing in '{CertDir}'. " +
+        "Running in HTTP mode on http://{Address}:{Port} — ALL TRAFFIC IS UNENCRYPTED! " +
+        "This is INSECURE for production.",
+        string.Join(", ", missingParts), certAbsolutePath,
+        httpsSettings.ListenAddress, httpsSettings.ListenPort);
+
+    // 控制台醒目输出（黄色警告框，确保运维人员不会忽略）
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine();
+    Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
+    Console.WriteLine("║  ⚠️  SECURITY WARNING: HTTPS certificate not found!          ║");
+    Console.WriteLine("╠══════════════════════════════════════════════════════════════╣");
+    Console.WriteLine($"║  Certificate directory : {certAbsolutePath}");
+    Console.WriteLine($"║  Missing               : {string.Join(", ", missingParts)}");
+    Console.WriteLine("║                                                            ║");
+    Console.WriteLine($"║  Running in HTTP mode on http://{httpsSettings.ListenAddress}:{httpsSettings.ListenPort}");
+    Console.WriteLine("║  ALL TRAFFIC IS UNENCRYPTED — NOT SAFE FOR PRODUCTION!     ║");
+    Console.WriteLine("║                                                            ║");
+    Console.WriteLine("║  To enable HTTPS:                                          ║");
+    Console.WriteLine($"║  1. mkdir -p {certAbsolutePath}");
+    Console.WriteLine($"║  2. Place certificate  → {certFilePath}");
+    Console.WriteLine($"║  3. Place private key  → {keyFilePath}");
+    Console.WriteLine("║  4. Restart the server                                     ║");
+    Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+    Console.ResetColor();
+    Console.WriteLine();
+}
 
 // ============================
 // 数据库自动迁移 + 种子数据
@@ -93,7 +213,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated();
+    dbContext.Database.Migrate();  // 使用 Migration 以确保应用所有数据库变更（如 ExpandNodeTable）
 
     // 种子数据：创建默认 super_admin 账号
     var adminSettings = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AdminSettings>>().Value;
@@ -116,11 +236,68 @@ using (var scope = app.Services.CreateScope())
 // 中间件管道（顺序敏感）
 // ============================
 app.UseGlobalExceptionHandler();    // 1. 全局异常处理（最外层）
-app.UseNodeAuth();                  // 2. 节点密钥认证（/api/v1/auth/*, /api/v1/nodes/*）
-app.UseJwtAuth();                   // 3. JWT 认证（/api/v1/admin/*, /api/v1/users/*）
+app.UseCors("AdminCors");           // 2. CORS（必须在认证中间件之前，否则 OPTIONS 预检会被拦截）
+app.UseNodeAuth();                  // 3. 节点密钥认证（/api/v1/auth/*, /api/v1/nodes/*）
+app.UseJwtAuth();                   // 4. JWT 认证（/api/v1/admin/*, /api/v1/users/*）
+app.UseAuditContext();              // 5. 审计上下文中间件（注入 ClientIp）
 
-app.UseCors("AdminCors");           // 4. CORS
+// ============================
+// 5. SPA 静态文件托管（条件启用）
+// ============================
+var spaSettings = app.Services.GetRequiredService<
+    Microsoft.Extensions.Options.IOptions<SpaSettings>>().Value;
 
-app.MapControllers();               // 5. 路由到控制器
+string? spaAbsolutePath = null;
+if (spaSettings.Enabled)
+{
+    var contentRoot = app.Environment.ContentRootPath;
+    var rawPath = spaSettings.StaticFilesPath;
+    spaAbsolutePath = Path.IsPathRooted(rawPath)
+        ? rawPath
+        : Path.GetFullPath(Path.Combine(contentRoot, rawPath));
+
+    if (Directory.Exists(spaAbsolutePath))
+    {
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(spaAbsolutePath),
+            OnPrepareResponse = ctx =>
+            {
+                // 对带 hash 的静态资源设置长缓存
+                var ext = Path.GetExtension(ctx.File.Name);
+                if (ext is ".js" or ".css" or ".woff" or ".woff2"
+                    or ".ttf" or ".svg" or ".png" or ".ico")
+                {
+                    ctx.Context.Response.Headers.CacheControl =
+                        $"public, max-age={spaSettings.CacheMaxAgeSeconds}";
+                }
+            }
+        });
+
+        app.Logger.LogInformation(
+            "SPA static files enabled: {Path} (resolved from '{RawPath}')",
+            spaAbsolutePath, rawPath);
+    }
+    else
+    {
+        app.Logger.LogWarning(
+            "SPA static files path not found: {Path} (resolved from '{RawPath}'). " +
+            "Static file serving is disabled. Run 'npm run build' and place dist/* into this directory.",
+            spaAbsolutePath, rawPath);
+    }
+}
+
+app.MapControllers();               // 6. API 路由（必须在 MapFallbackToFile 之前）
+
+// ============================
+// 7. SPA 兜底路由（必须在 MapControllers 之后）
+// ============================
+if (spaSettings.Enabled && spaAbsolutePath != null && Directory.Exists(spaAbsolutePath))
+{
+    app.MapFallbackToFile(spaSettings.FallbackFile, new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(spaAbsolutePath)
+    });
+}
 
 app.Run();

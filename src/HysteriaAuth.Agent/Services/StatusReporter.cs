@@ -7,11 +7,13 @@ namespace HysteriaAuth.Agent.Services;
 /// <summary>
 /// 状态上报模块 — 定时将系统监控数据 + 流量数据通过心跳上报到主服务器。
 /// Phase 3: 集成 TrafficCollector 采集的 userTraffic 和 onlineUsers 到心跳中。
+/// Phase 7: 心跳响应中检查 configVersion，检测到变更时触发配置同步。
 /// </summary>
 public class StatusReporter : BackgroundService
 {
     private readonly AgentConfig _config;
     private readonly SystemMonitor _systemMonitor;
+    private readonly Initializer _initializer;
     private readonly HttpClient _httpClient;
     private readonly ILogger<StatusReporter> _logger;
 
@@ -19,15 +21,21 @@ public class StatusReporter : BackgroundService
     private TrafficData? _pendingTrafficData;
     private readonly object _trafficLock = new();
 
+    // Phase 7: 本地缓存的配置版本
+    private int _localConfigVersion;
+
     public StatusReporter(
         AgentConfig config,
         SystemMonitor systemMonitor,
+        Initializer initializer,
         ILogger<StatusReporter> logger)
     {
         _config = config;
         _systemMonitor = systemMonitor;
+        _initializer = initializer;
         _httpClient = new HttpClient();
         _logger = logger;
+        _localConfigVersion = config.ConfigVersion;
     }
 
     /// <summary>
@@ -117,6 +125,10 @@ public class StatusReporter : BackgroundService
                     _logger.LogDebug("心跳上报成功: CPU={Cpu}%, Mem={Mem}%, 流量用户={TrafficCount}",
                         metrics.CpuUsagePercent, metrics.MemoryUsagePercent,
                         payload.UserTraffic.Count);
+
+                    // Phase 7: 检查心跳响应中的 configVersion
+                    await CheckConfigVersionAsync(response);
+
                     return;
                 }
 
@@ -135,5 +147,36 @@ public class StatusReporter : BackgroundService
 
         _logger.LogError("心跳上报最终失败，已尝试 {Max} 次", maxRetries);
     }
-}
 
+    /// <summary>
+    /// Phase 7: 检查心跳响应中的 configVersion，如果远程版本更新则触发配置同步。
+    /// </summary>
+    private async Task CheckConfigVersionAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(body)) return;
+
+            var heartbeatResponse = JsonSerializer.Deserialize<HeartbeatResponse>(body,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (heartbeatResponse == null) return;
+
+            if (heartbeatResponse.ConfigVersion > _localConfigVersion)
+            {
+                _logger.LogInformation(
+                    "检测到配置变更 (本地: {Local}, 远程: {Remote})，触发配置同步",
+                    _localConfigVersion, heartbeatResponse.ConfigVersion);
+
+                await _initializer.SyncConfigFromMasterAsync();
+                _localConfigVersion = heartbeatResponse.ConfigVersion;
+                _config.ConfigVersion = heartbeatResponse.ConfigVersion;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "检查心跳响应 configVersion 时发生异常（非关键）");
+        }
+    }
+}

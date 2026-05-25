@@ -149,8 +149,49 @@ namespace HysteriaAuth.Master.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BandwidthDown")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BandwidthUp")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BillingCycle")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("BrutalTxBandwidth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ConfigUpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ConfigVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CongestionControl")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("DomainName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EnablePortHopping")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool?>("EnableSpeedTest")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ExpirationDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("IgnoreClientBandwidth")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("IpAddress")
                         .IsRequired()
@@ -167,12 +208,50 @@ namespace HysteriaAuth.Master.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("MasqueradeFile")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MasqueradeProxyUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("MasqueradeReplyBps")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("MasqueradeStringContent")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MasqueradeStringHeaders")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("MasqueradeStringStatusCode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("MasqueradeType")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ObfsPassword")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObfsType")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Port")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PortHopRangeEnd")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PortHopRangeStart")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ProvisionStatus")
@@ -184,6 +263,49 @@ namespace HysteriaAuth.Master.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
+                    b.Property<long?>("QuicInitConnectionReceiveWindow")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("QuicInitStreamReceiveWindow")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("QuicMaxConnectionReceiveWindow")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("QuicMaxIdleTimeout")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("QuicMaxStreamReceiveWindow")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("QuicMaxUdpPayloadSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Remark")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ResolverResolveConcurrency")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ResolverResolveInterval")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ResolverTcpAddr")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolverTlsAddr")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolverType")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResolverUdpAddr")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SecretKey")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -192,12 +314,36 @@ namespace HysteriaAuth.Master.Migrations
                     b.Property<int>("SecretVersion")
                         .HasColumnType("INTEGER");
 
+                    b.Property<decimal?>("ServerCost")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<bool?>("SniffEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool?>("SniffRespectHttps")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SniffTimeout")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("SpeedTestDownloadSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SpeedTestPingInterval")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("SpeedTestUploadSize")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("TrafficStatsPort")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("TrafficStatsSecret")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("UdpIdleTimeout")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -300,6 +446,9 @@ namespace HysteriaAuth.Master.Migrations
                     b.Property<DateTime?>("EndedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("IdleCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("NodeId")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -399,11 +548,9 @@ namespace HysteriaAuth.Master.Migrations
                     b.Property<string>("Remark")
                         .HasColumnType("TEXT");
 
-                    b.Property<byte[]>("RowVersion")
+                    b.Property<Guid>("RowVersion")
                         .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("BLOB");
+                        .HasColumnType("TEXT");
 
                     b.Property<long>("TotalTrafficBytes")
                         .HasColumnType("INTEGER");

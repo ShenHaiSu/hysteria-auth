@@ -1,8 +1,13 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 5000
+# Stage 1: 构建前端 SPA
+FROM node:22-alpine AS spa-build
+WORKDIR /spa
+COPY hysteria-auth-web/package*.json ./
+RUN npm ci
+COPY hysteria-auth-web/ ./
+RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# Stage 2: 构建后端
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["src/HysteriaAuth.Master/HysteriaAuth.Master.csproj", "src/HysteriaAuth.Master/"]
 RUN dotnet restore "src/HysteriaAuth.Master/HysteriaAuth.Master.csproj"
@@ -13,10 +18,13 @@ RUN dotnet build "HysteriaAuth.Master.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "HysteriaAuth.Master.csproj" -c Release -o /app/publish
 
-FROM base AS final
+# Stage 3: 最终镜像
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY --from=spa-build /spa/dist ./wwwroot
 RUN mkdir -p /var/lib/hysteria-auth /var/log/hysteria-auth /var/backups/hysteria-auth
 ENV ASPNETCORE_URLS=http://+:5000
 ENV ASPNETCORE_ENVIRONMENT=Production
+EXPOSE 5000
 ENTRYPOINT ["dotnet", "HysteriaAuth.Master.dll"]

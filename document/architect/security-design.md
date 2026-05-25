@@ -11,7 +11,7 @@
 | 密码加密 | 使用 BCrypt 算法存储用户密码和管理员密码（Work Factor = 12） |
 | API 认证 | 管理员 API 使用 JWT Token（HMAC-SHA256），过期时间可配置 |
 | 节点认证 | 节点间通信使用 Secret Key，通过 `X-Node-Secret` 请求头传递 |
-| HTTPS | 生产环境强制使用 HTTPS |
+| HTTPS | Master Server 启动时自动检测 `Https.CertDirectoryPath` 目录下的证书文件。存在则在 `Https.ListenPort` 上启用 HTTPS；缺失则在同端口回退 HTTP 并在日志和控制台输出醒目安全警告。监听地址/端口由 `appsettings.json` → `Https` 节统一管理。生产环境**强烈建议**部署有效证书。详见 `document/developStage/09-phase8-https-auto-detection.md` |
 | 请求签名 | 关键操作添加请求签名防重放 |
 | trafficStats 安全 | 绑定 `127.0.0.1` + 设置 secret，防止未授权访问 |
 | 管理员登录保护 | 连续失败 5 次后锁定 15 分钟（可配置） |

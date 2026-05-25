@@ -23,7 +23,9 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
-        var user = await _userService.CreateAsync(request);
+        var adminId = (long)HttpContext.Items["AdminId"]!;
+        var clientIp = HttpContext.Items["ClientIp"]?.ToString() ?? "unknown";
+        var user = await _userService.CreateAsync(request, adminId, clientIp);
         return CreatedAtAction(nameof(GetById), new { userId = user.Id }, user);
     }
 
@@ -58,7 +60,9 @@ public class UsersController : ControllerBase
     [HttpPut("{userId:long}")]
     public async Task<IActionResult> Update(long userId, [FromBody] UpdateUserRequest request)
     {
-        var user = await _userService.UpdateAsync(userId, request);
+        var adminId = (long)HttpContext.Items["AdminId"]!;
+        var clientIp = HttpContext.Items["ClientIp"]?.ToString() ?? "unknown";
+        var user = await _userService.UpdateAsync(userId, request, adminId, clientIp);
         return Ok(user);
     }
 
@@ -68,7 +72,9 @@ public class UsersController : ControllerBase
     [HttpDelete("{userId:long}")]
     public async Task<IActionResult> Delete(long userId)
     {
-        await _userService.SoftDeleteAsync(userId);
+        var adminId = (long)HttpContext.Items["AdminId"]!;
+        var clientIp = HttpContext.Items["ClientIp"]?.ToString() ?? "unknown";
+        await _userService.SoftDeleteAsync(userId, adminId, clientIp);
         return NoContent();
     }
 
@@ -78,7 +84,9 @@ public class UsersController : ControllerBase
     [HttpPost("{userId:long}/reset-traffic")]
     public async Task<IActionResult> ResetTraffic(long userId)
     {
-        await _userService.ResetTrafficAsync(userId);
+        var adminId = (long)HttpContext.Items["AdminId"]!;
+        var clientIp = HttpContext.Items["ClientIp"]?.ToString() ?? "unknown";
+        await _userService.ResetTrafficAsync(userId, adminId, clientIp);
         return Ok(new { message = "流量已重置" });
     }
 

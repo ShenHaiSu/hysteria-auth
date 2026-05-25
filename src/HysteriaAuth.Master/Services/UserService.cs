@@ -9,13 +9,15 @@ namespace HysteriaAuth.Master.Services;
 public class UserService
 {
     private readonly IUserRepository _userRepo;
+    private readonly AuditService _auditService;
 
-    public UserService(IUserRepository userRepo)
+    public UserService(IUserRepository userRepo, AuditService auditService)
     {
         _userRepo = userRepo;
+        _auditService = auditService;
     }
 
-    public async Task<UserDto> CreateAsync(CreateUserRequest request)
+    public async Task<UserDto> CreateAsync(CreateUserRequest request, long adminId, string clientIp)
     {
         if (await _userRepo.CheckUsernameExistsAsync(request.Username))
             throw new ConflictException("用户名已存在");
@@ -37,7 +39,26 @@ public class UserService
         };
 
         user = await _userRepo.AddAsync(user);
-        return MapToDto(user);
+        var dto = MapToDto(user);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "create",
+            targetType: "user",
+            targetId: user.Id.ToString(),
+            detail: new
+            {
+                username = dto.Username,
+                dto.Email,
+                dto.TotalTrafficBytes,
+                dto.IsActive,
+                dto.Remark
+            },
+            clientIp: clientIp
+        );
+
+        return dto;
     }
 
     public async Task<UserListResponse> GetAllAsync(int page, int pageSize, string? search, bool? isActive, string? nodeId)
@@ -62,11 +83,14 @@ public class UserService
         return MapToDto(user);
     }
 
-    public async Task<UserDto> UpdateAsync(long id, UpdateUserRequest request)
+    public async Task<UserDto> UpdateAsync(long id, UpdateUserRequest request, long adminId, string clientIp)
     {
         var user = await _userRepo.GetByIdAsync(id);
         if (user == null)
             throw new NotFoundException("用户不存在");
+
+        // 记录变更前数据
+        var before = MapToDto(user);
 
         if (request.Email != null) user.Email = request.Email;
         if (request.TotalTrafficBytes.HasValue) user.TotalTrafficBytes = request.TotalTrafficBytes.Value;
@@ -79,27 +103,108 @@ public class UserService
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password, 12);
 
         await _userRepo.UpdateAsync(user);
-        return MapToDto(user);
+
+        // 记录变更后数据
+        var after = MapToDto(user);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "update",
+            targetType: "user",
+            targetId: id.ToString(),
+            detail: new
+            {
+                before = new
+                {
+                    before.Email,
+                    before.IsActive,
+                    before.TotalTrafficBytes,
+                    before.UsedTrafficBytes,
+                    before.Remark
+                },
+                after = new
+                {
+                    after.Email,
+                    after.IsActive,
+                    after.TotalTrafficBytes,
+                    after.UsedTrafficBytes,
+                    after.Remark
+                },
+                changedFields = GetChangedFields(before, after)
+            },
+            clientIp: clientIp
+        );
+
+        return after;
     }
 
-    public async Task SoftDeleteAsync(long id)
+    public async Task SoftDeleteAsync(long id, long adminId, string clientIp)
     {
         var user = await _userRepo.GetByIdAsync(id);
         if (user == null)
             throw new NotFoundException("用户不存在");
+
+        // 记录变更前数据
+        var before = MapToDto(user);
 
         user.IsActive = false;
         await _userRepo.UpdateAsync(user);
+
+        // 记录变更后数据
+        var after = MapToDto(user);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "delete",
+            targetType: "user",
+            targetId: id.ToString(),
+            detail: new
+            {
+                before = new { before.IsActive },
+                after = new { after.IsActive }
+            },
+            clientIp: clientIp
+        );
     }
 
-    public async Task ResetTrafficAsync(long id)
+    public async Task ResetTrafficAsync(long id, long adminId, string clientIp)
     {
         var user = await _userRepo.GetByIdAsync(id);
         if (user == null)
             throw new NotFoundException("用户不存在");
 
+        // 记录变更前数据
+        var beforeUsedTraffic = user.UsedTrafficBytes;
+
         user.UsedTrafficBytes = 0;
         await _userRepo.UpdateAsync(user);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "update",
+            targetType: "user",
+            targetId: id.ToString(),
+            detail: new
+            {
+                before = new { usedTrafficBytes = beforeUsedTraffic },
+                after = new { usedTrafficBytes = 0 }
+            },
+            clientIp: clientIp
+        );
+    }
+
+    private static List<string> GetChangedFields(UserDto before, UserDto after)
+    {
+        var changedFields = new List<string>();
+        if (before.Email != after.Email) changedFields.Add("Email");
+        if (before.IsActive != after.IsActive) changedFields.Add("IsActive");
+        if (before.TotalTrafficBytes != after.TotalTrafficBytes) changedFields.Add("TotalTrafficBytes");
+        if (before.UsedTrafficBytes != after.UsedTrafficBytes) changedFields.Add("UsedTrafficBytes");
+        if (before.Remark != after.Remark) changedFields.Add("Remark");
+        return changedFields;
     }
 
     private static UserDto MapToDto(User user)

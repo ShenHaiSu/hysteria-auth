@@ -12,15 +12,17 @@ public class AdminService
     private readonly IAdminRepository _adminRepo;
     private readonly JwtService _jwtService;
     private readonly AdminSettings _settings;
+    private readonly AuditService _auditService;
 
-    public AdminService(IAdminRepository adminRepo, JwtService jwtService, IOptions<AdminSettings> options)
+    public AdminService(IAdminRepository adminRepo, JwtService jwtService, IOptions<AdminSettings> options, AuditService auditService)
     {
         _adminRepo = adminRepo;
         _jwtService = jwtService;
         _settings = options.Value;
+        _auditService = auditService;
     }
 
-    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    public async Task<LoginResponse> LoginAsync(LoginRequest request, string clientIp)
     {
         var admin = await _adminRepo.GetByUsernameAsync(request.Username);
         if (admin == null)
@@ -49,6 +51,16 @@ public class AdminService
         admin.LastLoginAt = DateTime.UtcNow;
         await _adminRepo.UpdateAsync(admin);
 
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: admin.Id,
+            action: "login",
+            targetType: "admin",
+            targetId: admin.Id.ToString(),
+            detail: new { username = admin.Username },
+            clientIp: clientIp
+        );
+
         var token = _jwtService.GenerateToken(admin.Id, admin.Username, admin.Role);
         var expiresAt = _jwtService.GetExpirationTime();
 
@@ -68,7 +80,7 @@ public class AdminService
         };
     }
 
-    public async Task<AdminDto> CreateAdminAsync(CreateAdminRequest request)
+    public async Task<AdminDto> CreateAdminAsync(CreateAdminRequest request, long adminId, string clientIp)
     {
         var existing = await _adminRepo.GetByUsernameAsync(request.Username);
         if (existing != null)
@@ -84,7 +96,24 @@ public class AdminService
         };
 
         admin = await _adminRepo.AddAsync(admin);
-        return MapToDto(admin);
+        var dto = MapToDto(admin);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: adminId,
+            action: "create",
+            targetType: "admin",
+            targetId: admin.Id.ToString(),
+            detail: new
+            {
+                username = dto.Username,
+                dto.Role,
+                dto.IsActive
+            },
+            clientIp: clientIp
+        );
+
+        return dto;
     }
 
     public async Task<List<AdminDto>> GetAllAdminsAsync(int page, int pageSize)
@@ -93,11 +122,14 @@ public class AdminService
         return items.Select(MapToDto).ToList();
     }
 
-    public async Task<AdminDto> UpdateAdminAsync(long adminId, UpdateAdminRequest request)
+    public async Task<AdminDto> UpdateAdminAsync(long adminId, UpdateAdminRequest request, long currentAdminId, string clientIp)
     {
         var admin = await _adminRepo.GetByIdAsync(adminId);
         if (admin == null)
             throw new NotFoundException("管理员不存在");
+
+        // 记录变更前数据
+        var before = MapToDto(admin);
 
         if (request.Role != null) admin.Role = request.Role;
         if (request.IsActive.HasValue) admin.IsActive = request.IsActive.Value;
@@ -105,7 +137,34 @@ public class AdminService
             admin.Password = BCrypt.Net.BCrypt.HashPassword(request.Password, 12);
 
         await _adminRepo.UpdateAsync(admin);
-        return MapToDto(admin);
+
+        // 记录变更后数据
+        var after = MapToDto(admin);
+
+        // 写入审计日志
+        await _auditService.LogAsync(
+            adminId: currentAdminId,
+            action: "update",
+            targetType: "admin",
+            targetId: adminId.ToString(),
+            detail: new
+            {
+                before = new { before.Role, before.IsActive },
+                after = new { after.Role, after.IsActive },
+                changedFields = GetChangedFields(before, after)
+            },
+            clientIp: clientIp
+        );
+
+        return after;
+    }
+
+    private static List<string> GetChangedFields(AdminDto before, AdminDto after)
+    {
+        var changedFields = new List<string>();
+        if (before.Role != after.Role) changedFields.Add("Role");
+        if (before.IsActive != after.IsActive) changedFields.Add("IsActive");
+        return changedFields;
     }
 
     private static AdminDto MapToDto(Admin admin)

@@ -24,12 +24,15 @@ public class NodeRepository : INodeRepository
             .FirstOrDefaultAsync(n => n.ProvisionToken == token);
     }
 
-    public async Task<(List<Node> Items, int Total)> GetAllAsync(int page, int pageSize, bool? isActive = null)
+    public async Task<(List<Node> Items, int Total)> GetAllAsync(int page, int pageSize, bool? isActive = null, string? provisionStatus = null)
     {
         var query = _context.Nodes.AsQueryable();
 
         if (isActive.HasValue)
             query = query.Where(n => n.IsActive == isActive.Value);
+
+        if (!string.IsNullOrWhiteSpace(provisionStatus))
+            query = query.Where(n => n.ProvisionStatus == provisionStatus);
 
         var total = await query.CountAsync();
         var items = await query

@@ -50,6 +50,9 @@ public class RegisterWithTokenResponse
     public string NodeId { get; set; } = string.Empty;
     public string NodeSecret { get; set; } = string.Empty;
     public string TrafficStatsSecret { get; set; } = string.Empty;
+    // Phase 7: 新增配置版本和完整 YAML
+    public int ConfigVersion { get; set; }
+    public string? ConfigYaml { get; set; }
     public NodeConfigInfo Config { get; set; } = new();
 }
 
@@ -115,6 +118,16 @@ public class UserTrafficEntry
 }
 
 // ============================
+// 心跳响应模型（Phase 7 新增 configVersion）
+// ============================
+
+public class HeartbeatResponse
+{
+    public bool Received { get; set; }
+    public int ConfigVersion { get; set; }
+}
+
+// ============================
 // Agent 完整配置
 // ============================
 
@@ -126,6 +139,9 @@ public class AgentConfig
     public string MasterServerUrl { get; set; } = string.Empty;
     public string NodeSecret { get; set; } = string.Empty;
     public string AgentVersion { get; set; } = "1.0.0";
+    // Phase 7: 本地缓存的配置版本和 YAML 路径
+    public int ConfigVersion { get; set; } = 1;
+    public string? ConfigYamlPath { get; set; }
     public InitConfig Init { get; set; } = new();
     public AgentAuthProxyConfig AuthProxy { get; set; } = new();
     public TrafficStatsConfig TrafficStats { get; set; } = new();
