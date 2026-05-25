@@ -108,9 +108,12 @@ else {
     Write-Host "  -> Web project not found at '$WebPath', skipping frontend build" -ForegroundColor Yellow
 }
 
-# Step 3: Ensure appsettings.json
+# Step 3: Ensure appsettings.json and create example backup
 Write-Host "[3/4] Checking appsettings.json..." -ForegroundColor Yellow
 $appSettings = "$buildDir\app\appsettings.json"
+$exampleAppSettings = "$buildDir\app\example.appsettings.json"
+
+# Copy default appsettings.json if not exists
 if (-not (Test-Path $appSettings)) {
     Copy-Item "$ProjectRoot\src\$projectName\appsettings.json" $appSettings
     Write-Host "  -> Copied default appsettings.json" -ForegroundColor Green
@@ -118,6 +121,10 @@ if (-not (Test-Path $appSettings)) {
 else {
     Write-Host "  -> appsettings.json exists, preserving." -ForegroundColor Green
 }
+
+# Always create/update example.appsettings.json as a reference copy
+Copy-Item "$ProjectRoot\src\$projectName\appsettings.json" $exampleAppSettings -Force
+Write-Host "  -> Created example.appsettings.json (reference copy)" -ForegroundColor Green
 
 # Step 4: Create archive
 Write-Host "[4/4] Creating archive..." -ForegroundColor Yellow

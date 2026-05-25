@@ -60,7 +60,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Master-Windows-x86
+          name: Master-Windows-x64
           path: server/release-artifacts/Master-win-x64.zip
           if-no-files-found: error
 
@@ -88,7 +88,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Agent-Windows-x86
+          name: Agent-Windows-x64
           path: server/release-artifacts/Agent-win-x64.zip
           if-no-files-found: error
 
@@ -126,7 +126,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Master-Linux-x86
+          name: Master-Linux-x64
           path: server/release-artifacts/Master-linux-x64.tar.gz
           if-no-files-found: error
 
@@ -154,7 +154,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Agent-Linux-x86
+          name: Agent-Linux-x64
           path: server/release-artifacts/Agent-linux-x64.tar.gz
           if-no-files-found: error
 
@@ -185,22 +185,22 @@ jobs:
 
             | 组件 | 平台 | 下载 |
             |------|------|------|
-            | Master | Windows x64 | [Master-Windows-x86.zip](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Windows-x86.zip) |
-            | Agent | Windows x64 | [Agent-Windows-x86.zip](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Windows-x86.zip) |
-            | Master | Linux x64 | [Master-Linux-x86.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Linux-x86.tar.gz) |
-            | Agent | Linux x64 | [Agent-Linux-x86.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Linux-x86.tar.gz) |
+            | Master | Windows x64 | [Master-Windows-x64.zip](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Windows-x64.zip) |
+            | Agent | Windows x64 | [Agent-Windows-x64.zip](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Windows-x64.zip) |
+            | Master | Linux x64 | [Master-Linux-x64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Linux-x64.tar.gz) |
+            | Agent | Linux x64 | [Agent-Linux-x64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Linux-x64.tar.gz) |
 
             ### 快速下载 (latest)
 
-            - Master Windows: `https://github.com/${{ github.repository }}/releases/latest/download/Master-Windows-x86.zip`
-            - Agent Windows: `https://github.com/${{ github.repository }}/releases/latest/download/Agent-Windows-x86.zip`
-            - Master Linux: `https://github.com/${{ github.repository }}/releases/latest/download/Master-Linux-x86.tar.gz`
-            - Agent Linux: `https://github.com/${{ github.repository }}/releases/latest/download/Agent-Linux-x86.tar.gz`
+            - Master Windows: `https://github.com/${{ github.repository }}/releases/latest/download/Master-Windows-x64.zip`
+            - Agent Windows: `https://github.com/${{ github.repository }}/releases/latest/download/Agent-Windows-x64.zip`
+            - Master Linux: `https://github.com/${{ github.repository }}/releases/latest/download/Master-Linux-x64.tar.gz`
+            - Agent Linux: `https://github.com/${{ github.repository }}/releases/latest/download/Agent-Linux-x64.tar.gz`
           files: |
-            artifacts/Master-Windows-x86/Master-win-x64.zip
-            artifacts/Agent-Windows-x86/Agent-win-x64.zip
-            artifacts/Master-Linux-x86/Master-linux-x64.tar.gz
-            artifacts/Agent-Linux-x86/Agent-linux-x64.tar.gz
+            artifacts/Master-Windows-x64/Master-win-x64.zip
+            artifacts/Agent-Windows-x64/Agent-win-x64.zip
+            artifacts/Master-Linux-x64/Master-linux-x64.tar.gz
+            artifacts/Agent-Linux-x64/Agent-linux-x64.tar.gz
           draft: false
           prerelease: false
           generate_release_notes: false
