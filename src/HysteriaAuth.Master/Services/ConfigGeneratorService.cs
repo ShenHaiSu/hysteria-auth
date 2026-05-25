@@ -73,17 +73,10 @@ public class ConfigGeneratorService
 
     private static void GenerateListen(System.Text.StringBuilder sb, Node node)
     {
-        var addr = node.ListenAddress ?? "0.0.0.0";
-        var port = node.ListenPort ?? node.Port;
+        // Hysteria2 服务端仅监控单个端口，使用 IpAddress + Port
+        var addr = node.IpAddress;
+        var port = node.Port;
 
-        // if (node.EnablePortHopping && node.PortHopRangeStart.HasValue && node.PortHopRangeEnd.HasValue)
-        // {
-        //     sb.AppendLine($"listen: {addr}:{port},{addr}:{node.PortHopRangeStart}-{node.PortHopRangeEnd}");
-        // }
-        // else
-        // {
-        //     sb.AppendLine($"listen: {addr}:{port}");
-        // }
         sb.AppendLine($"listen: {addr}:{port}");
         sb.AppendLine();
     }

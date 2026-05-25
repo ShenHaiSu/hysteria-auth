@@ -47,12 +47,7 @@ public class Node
     [MaxLength(16)]
     public string ProvisionStatus { get; set; } = "pending";
 
-    // ===== 监听 & 端口跳跃（新字段，映射 listen） =====
-    [MaxLength(45)]
-    public string? ListenAddress { get; set; } = "0.0.0.0";
-
-    public int? ListenPort { get; set; } = 6789;
-
+    // ===== 端口跳跃（Agent 操作 iptables 实现，不写入 YAML） =====
     public bool EnablePortHopping { get; set; } = true;
 
     public int? PortHopRangeStart { get; set; } = 61000;

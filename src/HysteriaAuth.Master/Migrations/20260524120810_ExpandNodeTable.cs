@@ -98,19 +98,6 @@ namespace HysteriaAuth.Master.Migrations
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
-                name: "ListenAddress",
-                table: "Nodes",
-                type: "TEXT",
-                maxLength: 45,
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "ListenPort",
-                table: "Nodes",
-                type: "INTEGER",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
                 name: "MasqueradeFile",
                 table: "Nodes",
                 type: "TEXT",
@@ -155,6 +142,18 @@ namespace HysteriaAuth.Master.Migrations
                 maxLength: 16,
                 nullable: true);
 
+            migrationBuilder.AddColumn<int>(
+                name: "PortHopRangeEnd",
+                table: "Nodes",
+                type: "INTEGER",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "PortHopRangeStart",
+                table: "Nodes",
+                type: "INTEGER",
+                nullable: true);
+
             migrationBuilder.AddColumn<string>(
                 name: "ObfsPassword",
                 table: "Nodes",
@@ -167,18 +166,6 @@ namespace HysteriaAuth.Master.Migrations
                 table: "Nodes",
                 type: "TEXT",
                 maxLength: 32,
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "PortHopRangeEnd",
-                table: "Nodes",
-                type: "INTEGER",
-                nullable: true);
-
-            migrationBuilder.AddColumn<int>(
-                name: "PortHopRangeStart",
-                table: "Nodes",
-                type: "INTEGER",
                 nullable: true);
 
             migrationBuilder.AddColumn<long>(
@@ -368,14 +355,6 @@ namespace HysteriaAuth.Master.Migrations
                 table: "Nodes");
 
             migrationBuilder.DropColumn(
-                name: "ListenAddress",
-                table: "Nodes");
-
-            migrationBuilder.DropColumn(
-                name: "ListenPort",
-                table: "Nodes");
-
-            migrationBuilder.DropColumn(
                 name: "MasqueradeFile",
                 table: "Nodes");
 
@@ -408,15 +387,15 @@ namespace HysteriaAuth.Master.Migrations
                 table: "Nodes");
 
             migrationBuilder.DropColumn(
-                name: "ObfsType",
-                table: "Nodes");
-
-            migrationBuilder.DropColumn(
                 name: "PortHopRangeEnd",
                 table: "Nodes");
 
             migrationBuilder.DropColumn(
                 name: "PortHopRangeStart",
+                table: "Nodes");
+
+            migrationBuilder.DropColumn(
+                name: "ObfsType",
                 table: "Nodes");
 
             migrationBuilder.DropColumn(

@@ -73,8 +73,6 @@ public class NodeService
             ProvisionStatus = "pending",
             IsActive = false, // 注册完成后才激活
             CreatedAt = DateTime.UtcNow,
-            // Phase 7 新字段初始化
-            ListenPort = request.ListenPort ?? 6789,
             DomainName = request.DomainName,
             Remark = request.Remark
         };
@@ -95,7 +93,6 @@ public class NodeService
                 port = request.Port,
                 location = request.Location,
                 trafficStatsPort = request.TrafficStatsPort,
-                listenPort = request.ListenPort,
                 domainName = request.DomainName,
                 remark = request.Remark
             },
@@ -282,9 +279,7 @@ public class NodeService
             ProvisionStatus = node.ProvisionStatus,
             SecretVersion = node.SecretVersion,
             TrafficStatsSecret = node.TrafficStatsSecret != null ? "***encrypted***" : null,
-            // Phase 7 新字段
-            ListenAddress = node.ListenAddress,
-            ListenPort = node.ListenPort,
+            // 端口跳跃（Agent 管理 iptables）
             EnablePortHopping = node.EnablePortHopping,
             PortHopRangeStart = node.PortHopRangeStart,
             PortHopRangeEnd = node.PortHopRangeEnd,
@@ -493,8 +488,7 @@ public class NodeService
             throw new NotFoundException("节点不存在");
 
         // 逐一判断非 null 才赋值
-        if (request.ListenAddress != null) node.ListenAddress = request.ListenAddress;
-        if (request.ListenPort.HasValue) node.ListenPort = request.ListenPort;
+        // 端口跳跃（Agent 操作 iptables）
         if (request.EnablePortHopping.HasValue) node.EnablePortHopping = request.EnablePortHopping.Value;
         if (request.PortHopRangeStart.HasValue) node.PortHopRangeStart = request.PortHopRangeStart;
         if (request.PortHopRangeEnd.HasValue) node.PortHopRangeEnd = request.PortHopRangeEnd;
@@ -659,9 +653,7 @@ public class NodeService
             Location = node.Location,
             TrafficStatsPort = node.TrafficStatsPort,
             ProvisionStatus = node.ProvisionStatus,
-            // Phase 7 新字段
-            ListenAddress = node.ListenAddress,
-            ListenPort = node.ListenPort,
+            // 端口跳跃（Agent 管理 iptables）
             EnablePortHopping = node.EnablePortHopping,
             PortHopRangeStart = node.PortHopRangeStart,
             PortHopRangeEnd = node.PortHopRangeEnd,
@@ -693,9 +685,9 @@ public class NodeService
     private static List<string> GetUpdatedFieldNames(UpdateNodeConfigRequest request)
     {
         var fields = new List<string>();
-        if (request.ListenAddress != null) fields.Add(nameof(request.ListenAddress));
-        if (request.ListenPort.HasValue) fields.Add(nameof(request.ListenPort));
         if (request.EnablePortHopping.HasValue) fields.Add(nameof(request.EnablePortHopping));
+        if (request.PortHopRangeStart.HasValue) fields.Add(nameof(request.PortHopRangeStart));
+        if (request.PortHopRangeEnd.HasValue) fields.Add(nameof(request.PortHopRangeEnd));
         if (request.ObfsType != null) fields.Add(nameof(request.ObfsType));
         if (request.ObfsPassword != null) fields.Add(nameof(request.ObfsPassword));
         if (request.CongestionControl != null) fields.Add(nameof(request.CongestionControl));

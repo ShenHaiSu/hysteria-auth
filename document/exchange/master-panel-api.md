@@ -488,7 +488,6 @@ Authorization: Bearer {admin_token}
     "location": "Tokyo, Japan",
     "port": 443,
     "trafficStatsPort": 9999,
-    "listenPort": 6789,
     "domainName": "hysteria-tokyo.example.com",
     "remark": "日本东京线路"
 }
@@ -498,11 +497,10 @@ Authorization: Bearer {admin_token}
 |------|------|------|------|
 | `name` | string | ✅ | 节点名称 |
 | `location` | string | ❌ | 节点位置描述 |
-| `port` | int | ❌ | Hysteria 服务端口（历史兼容字段），默认 `443` |
+| `port` | int | ❌ | Hysteria 2 服务监听端口，默认 `443` |
 | `trafficStatsPort` | int | ❌ | Hysteria trafficStats API 端口，默认自动分配 |
-| `listenPort` | int | ❌ | **Phase 7 新增**。Hysteria 2 实际监听端口，默认 `6789` |
-| `domainName` | string | ❌ | **Phase 7 新增**。节点关联域名，将写入 Hysteria 2 YAML 的 `realm` 字段 |
-| `remark` | string | ❌ | **Phase 7 新增**。节点备注信息 |
+| `domainName` | string | ❌ | **Phase 7**。节点关联域名，将写入 Hysteria 2 YAML 的 `realm` 字段 |
+| `remark` | string | ❌ | **Phase 7**。节点备注信息 |
 
 **成功响应 (HTTP 201)：**
 
@@ -523,7 +521,7 @@ Authorization: Bearer {admin_token}
 | `startupCommand` | string | 一键启动命令，可直接复制到边缘节点执行 |
 
 > **前端提示**：`startupCommand` 可直接展示给运维人员复制使用。令牌过期后需重新预注册。
-> **注意**：`port` 字段保留用于向后兼容，实际 Hysteria 2 配置文件使用 `listenPort`（若未指定则回退 `port`）。
+> **Hysteria 2 监听端口**：`port` 字段即为 Hysteria 2 服务端实际监听端口。Hysteria 2 仅支持单端口监听；如需端口跳跃，配置 `enablePortHopping` 及端口范围，由 Agent 在节点上通过 iptables DNAT 将范围内 UDP 流量转发到 `port`。
 
 ---
 
@@ -564,8 +562,6 @@ Authorization: Bearer {admin_token}
             "location": "Tokyo, Japan",
             "trafficStatsPort": 9999,
             "provisionStatus": "provisioned",
-            "listenAddress": "0.0.0.0",
-            "listenPort": 6789,
             "enablePortHopping": true,
             "portHopRangeStart": 61000,
             "portHopRangeEnd": 63000,
@@ -600,7 +596,7 @@ Authorization: Bearer {admin_token}
 | `id` | string | 节点唯一标识 |
 | `name` | string | 节点名称 |
 | `ipAddress` | string | 节点 IP 地址 |
-| `port` | int | Hysteria 服务端口（历史兼容字段，实际监听端口见 `listenPort`） |
+| `port` | int | Hysteria 2 服务监听端口 |
 | `isActive` | bool | 是否激活（管理员可控制） |
 | `createdAt` | string (ISO 8601) | 创建时间 |
 | `lastHeartbeat` | string (ISO 8601) / null | 最后心跳时间。`null` = 从未上报 |
@@ -608,15 +604,15 @@ Authorization: Bearer {admin_token}
 | `trafficStatsPort` | int / null | Hysteria trafficStats API 端口 |
 | `provisionStatus` | string | 预注册状态：`pending`(待注册) / `provisioned`(已注册) |
 
-**Phase 7 扩展 — 监听与端口跳跃：**
+**Phase 7 扩展 — 端口跳跃（Agent 操作 iptables，不写入 YAML）：**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `listenAddress` | string / null | Hysteria 2 监听地址，默认 `"0.0.0.0"` |
-| `listenPort` | int / null | Hysteria 2 实际监听端口，默认 `6789` |
-| `enablePortHopping` | bool | 是否启用端口跳跃，默认 `true` |
+| `enablePortHopping` | bool | 是否启用端口跳跃，默认 `true`。由 Agent 在节点上通过 iptables DNAT 实现 |
 | `portHopRangeStart` | int / null | 端口跳跃范围起始，默认 `61000` |
 | `portHopRangeEnd` | int / null | 端口跳跃范围结束，默认 `63000` |
+
+> **端口跳跃原理**：Hysteria 2 服务端仅监听单个端口（`ipAddress:port`）。Agent 根据 `enablePortHopping=true` 时在节点上执行 `iptables -t nat -A PREROUTING -p udp --dport {start}:{end} -j DNAT --to-destination :{port}`，将范围内 UDP 流量转发到服务端监听端口。ConfigGenerator 生成的 YAML 中 `listen` 仅包含单端口。
 
 **Phase 7 扩展 — 混淆与拥塞控制：**
 
@@ -698,8 +694,6 @@ Authorization: Bearer {admin_token}
     "provisionStatus": "provisioned",
     "secretVersion": 1,
     "trafficStatsSecret": "***encrypted***",
-    "listenAddress": "0.0.0.0",
-    "listenPort": 6789,
     "enablePortHopping": true,
     "portHopRangeStart": 61000,
     "portHopRangeEnd": 63000,
@@ -833,8 +827,6 @@ Authorization: Bearer {admin_token}
 
 ```json
 {
-    "listenAddress": "0.0.0.0",
-    "listenPort": 6789,
     "enablePortHopping": false,
     "portHopRangeStart": 61000,
     "portHopRangeEnd": 63000,
@@ -875,9 +867,7 @@ Authorization: Bearer {admin_token}
 
 | 分类 | 字段 | 类型 | 说明 |
 |------|------|------|------|
-| **监听** | `listenAddress` | string / null | 监听地址，默认 `"0.0.0.0"` |
-| | `listenPort` | int / null | 监听端口，默认 `6789` |
-| | `enablePortHopping` | bool / null | 启用端口跳跃。关闭后 YAML 仅生成单端口 `listen` |
+| **端口跳跃** | `enablePortHopping` | bool / null | 启用端口跳跃。关闭后 Agent 不操作 iptables |
 | | `portHopRangeStart` | int / null | 端口跳跃起始 |
 | | `portHopRangeEnd` | int / null | 端口跳跃结束 |
 | **混淆** | `obfsType` | string / null | 混淆类型：`salamander` |
@@ -921,7 +911,6 @@ Authorization: Bearer {admin_token}
     "name": "东京节点",
     "configVersion": 4,
     "configUpdatedAt": "2025-05-24T10:30:00Z",
-    "enablePortHopping": false,
     "remark": "日本东京线路 - 带宽已升级",
     "... 其余所有字段 ..."
 }
@@ -930,7 +919,7 @@ Authorization: Bearer {admin_token}
 **常见用法示例：**
 
 ```json
-// 1. 仅关闭端口跳跃
+// 1. 关闭端口跳跃
 { "enablePortHopping": false }
 
 // 2. 修改混淆密码
@@ -964,7 +953,7 @@ Edge Agent: GET /nodes/{id}/config
 
 > **审计日志**：每次配置变更自动写入审计日志（`action=update_config`），包含被修改的字段名列表。
 > **敏感字段加密**：`obfsPassword` 在服务端以 AES-256-GCM 加密存储，API 请求中传入明文（传输层由 HTTPS 保护）。
-> **前端表单建议**：建议按分类组织 Tab 页（监听/混淆/拥塞/带宽/伪装/DNS/运营），每个 Tab 内提供"重置为默认值"按钮。
+> **前端表单建议**：建议按分类组织 Tab 页（端口跳跃/混淆/拥塞/带宽/伪装/DNS/运营），每个 Tab 内提供"重置为默认值"按钮。
 
 ---
 

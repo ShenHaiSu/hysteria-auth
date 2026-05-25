@@ -207,13 +207,6 @@ namespace HysteriaAuth.Master.Migrations
                     b.Property<DateTime?>("LastHeartbeat")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ListenAddress")
-                        .HasMaxLength(45)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("ListenPort")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Location")
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");

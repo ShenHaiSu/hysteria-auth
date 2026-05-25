@@ -13,7 +13,6 @@ public class PreRegisterNodeRequest
     public int Port { get; set; } = 443;
     public int? TrafficStatsPort { get; set; }
     // Phase 7 新增可选字段
-    public int? ListenPort { get; set; }
     public string? DomainName { get; set; }
     public string? Remark { get; set; }
 }
@@ -149,9 +148,7 @@ public class NodeDto
     public int? TrafficStatsPort { get; set; }
     public string ProvisionStatus { get; set; } = string.Empty;
 
-    // Phase 7: 监听 & 端口跳跃
-    public string? ListenAddress { get; set; }
-    public int? ListenPort { get; set; }
+    // Phase 7: 端口跳跃（Agent 操作 iptables，不写入 YAML）
     public bool EnablePortHopping { get; set; }
     public int? PortHopRangeStart { get; set; }
     public int? PortHopRangeEnd { get; set; }

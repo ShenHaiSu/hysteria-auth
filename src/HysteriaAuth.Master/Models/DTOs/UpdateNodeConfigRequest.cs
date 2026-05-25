@@ -5,9 +5,7 @@ namespace HysteriaAuth.Master.Models.DTOs;
 /// </summary>
 public class UpdateNodeConfigRequest
 {
-    // 监听 & 端口跳跃
-    public string? ListenAddress { get; set; }
-    public int? ListenPort { get; set; }
+    // 端口跳跃（Agent 操作 iptables）
     public bool? EnablePortHopping { get; set; }
     public int? PortHopRangeStart { get; set; }
     public int? PortHopRangeEnd { get; set; }
