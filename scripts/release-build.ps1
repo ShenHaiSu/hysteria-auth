@@ -18,14 +18,14 @@ param(
     [ValidateSet("Master", "Agent")]
     [string]$Target,
 
-    [string]$WebPath = "..\web",
+    [string]$WebPath = "../web",
 
     [string]$OutputDir = "release-artifacts"
 )
 
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Resolve-Path "$ScriptDir\.."
+$ProjectRoot = Resolve-Path (Join-Path $ScriptDir "..")
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host " Hysteria Auth - Release Build" -ForegroundColor Cyan
@@ -44,7 +44,7 @@ $archiveExt = if ($targetIsWindows) { "zip" } else { "tar.gz" }
 $archiveName = "$Target-$Runtime"
 
 # 创建临时构建目录
-$buildDir = "$ProjectRoot\$OutputDir\build-$Target-$Runtime"
+$buildDir = Join-Path (Join-Path $ProjectRoot $OutputDir) "build-$Target-$Runtime"
 if (Test-Path $buildDir) { Remove-Item -Recurse -Force $buildDir }
 New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
 
@@ -60,7 +60,7 @@ $publishArgs = @(
     "/p:PublishSingleFile=true"
 )
 
-dotnet publish "src/$projectName" @publishArgs -o "$buildDir\app"
+dotnet publish "src/$projectName" @publishArgs -o (Join-Path $buildDir "app")
 if ($LASTEXITCODE -ne 0) { 
     Pop-Location
     throw "$Target build failed for $Runtime" 
@@ -71,7 +71,7 @@ Pop-Location
 
 # Step 2: Build Frontend (if WebPath is provided and exists)
 Write-Host "[2/4] Building Frontend..." -ForegroundColor Yellow
-$webAbs = Resolve-Path "$ProjectRoot\$WebPath" -ErrorAction SilentlyContinue
+$webAbs = Resolve-Path (Join-Path $ProjectRoot $WebPath) -ErrorAction SilentlyContinue
 if ($webAbs) {
     Write-Host "  -> Web project found at: $webAbs" -ForegroundColor Gray
     Write-Host "  -> Running 'bun install'..." -ForegroundColor Gray
@@ -91,9 +91,9 @@ if ($webAbs) {
         }
         else {
             Pop-Location
-            $frontendDist = "$webAbs\dist"
+            $frontendDist = Join-Path $webAbs "dist"
             if (Test-Path $frontendDist) {
-                $spaTarget = "$buildDir\app\wwwroot"
+                $spaTarget = Join-Path (Join-Path $buildDir "app") "wwwroot"
                 if (Test-Path $spaTarget) { Remove-Item -Recurse -Force $spaTarget }
                 Copy-Item -Recurse $frontendDist $spaTarget
                 Write-Host "  -> Frontend built and copied to wwwroot/" -ForegroundColor Green
@@ -110,12 +110,14 @@ else {
 
 # Step 3: Ensure appsettings.json and create example backup
 Write-Host "[3/4] Checking appsettings.json..." -ForegroundColor Yellow
-$appSettings = "$buildDir\app\appsettings.json"
-$exampleAppSettings = "$buildDir\app\example.appsettings.json"
+$appDir = Join-Path $buildDir "app"
+$appSettings = Join-Path $appDir "appsettings.json"
+$exampleAppSettings = Join-Path $appDir "example.appsettings.json"
+$sourceAppSettings = Join-Path (Join-Path (Join-Path $ProjectRoot "src") $projectName) "appsettings.json"
 
 # Copy default appsettings.json if not exists
 if (-not (Test-Path $appSettings)) {
-    Copy-Item "$ProjectRoot\src\$projectName\appsettings.json" $appSettings
+    Copy-Item $sourceAppSettings $appSettings
     Write-Host "  -> Copied default appsettings.json" -ForegroundColor Green
 }
 else {
@@ -123,23 +125,23 @@ else {
 }
 
 # Always create/update example.appsettings.json as a reference copy
-Copy-Item "$ProjectRoot\src\$projectName\appsettings.json" $exampleAppSettings -Force
+Copy-Item $sourceAppSettings $exampleAppSettings -Force
 Write-Host "  -> Created example.appsettings.json (reference copy)" -ForegroundColor Green
 
 # Step 4: Create archive
 Write-Host "[4/4] Creating archive..." -ForegroundColor Yellow
-$archivePath = "$ProjectRoot\$OutputDir\$archiveName.$archiveExt"
+$archivePath = Join-Path (Join-Path $ProjectRoot $OutputDir) "$archiveName.$archiveExt"
 
 if ($targetIsWindows) {
     # Windows: Create zip using Compress-Archive
     if (Test-Path $archivePath) { Remove-Item -Force $archivePath }
-    Compress-Archive -Path "$buildDir\app\*" -DestinationPath $archivePath -Force
+    Compress-Archive -Path (Join-Path $appDir "*") -DestinationPath $archivePath -Force
 }
 else {
     # Linux: create tar.gz
-    Push-Location "$buildDir"
+    Push-Location $buildDir
     if (Test-Path $archivePath) { Remove-Item -Force $archivePath }
-    tar -czf $archivePath -C "$buildDir" "app"
+    tar -czf $archivePath -C $buildDir "app"
     Pop-Location
 }
 
@@ -151,6 +153,6 @@ Remove-Item -Recurse -Force $buildDir
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host " Release Build Complete!" -ForegroundColor Green
-Write-Host " Archive: $OutputDir\$archiveName.$archiveExt" -ForegroundColor Green
+Write-Host " Archive: $(Join-Path $OutputDir "$archiveName.$archiveExt")" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
