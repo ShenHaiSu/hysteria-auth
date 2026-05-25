@@ -38,7 +38,7 @@ $publishArgs = @(
     "/p:PublishSingleFile=true"
 )
 
-dotnet publish src/HysteriaAuth.Master @publishArgs -o "$OutputDir"
+dotnet publish src/HysteriaAuth.Master @publishArgs -o "$OutputDir\master"
 if ($LASTEXITCODE -ne 0) { throw "Master build failed" }
 
 dotnet publish src/HysteriaAuth.Agent @publishArgs -o "$OutputDir\agent"
@@ -54,7 +54,7 @@ if ([string]::IsNullOrEmpty($FrontendDistPath)) {
 else {
     $frontendAbs = Resolve-Path $FrontendDistPath -ErrorAction SilentlyContinue
     if ($frontendAbs) {
-        $spaTarget = "$OutputDir\wwwroot"
+        $spaTarget = "$OutputDir\master\wwwroot"
         if (Test-Path $spaTarget) { Remove-Item -Recurse -Force $spaTarget }
         Copy-Item -Recurse $frontendAbs $spaTarget
         Write-Host "  -> Frontend copied: $($frontendAbs) -> $spaTarget" -ForegroundColor Green
@@ -67,7 +67,7 @@ else {
 
 # Step 3: Ensure appsettings.json for local dev
 Write-Host "[3/4] Checking appsettings.json..." -ForegroundColor Yellow
-$appSettings = "$OutputDir\appsettings.json"
+$appSettings = "$OutputDir\master\appsettings.json"
 if (-not (Test-Path $appSettings)) {
     Copy-Item "$ProjectRoot\src\HysteriaAuth.Master\appsettings.json" $appSettings
     Write-Host "  -> Copied default appsettings.json" -ForegroundColor Green
@@ -78,10 +78,10 @@ else {
 
 # Step 4: Verify output
 Write-Host "[4/4] Verifying output..." -ForegroundColor Yellow
-$exe = "$OutputDir\HysteriaAuth.Master.exe"
+$exe = "$OutputDir\master\HysteriaAuth.Master.exe"
 if (Test-Path $exe) {
     Write-Host "  -> Master EXE: $exe" -ForegroundColor Green
-    Write-Host "  -> Run: $exe" -ForegroundColor Green
+    Write-Host "  -> Agent EXE : $OutputDir\agent\HysteriaAuth.Agent.exe" -ForegroundColor Green
 }
 else {
     throw "Master EXE not found at $exe"
@@ -94,7 +94,7 @@ Write-Host " Output: $OutputDir" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "To start the master server:" -ForegroundColor White
-Write-Host "  cd $OutputDir" -ForegroundColor White
+Write-Host "  cd $OutputDir\master" -ForegroundColor White
 Write-Host "  .\HysteriaAuth.Master.exe" -ForegroundColor White
 Write-Host ""
 Write-Host "Then open: http://localhost:5000  (SPA frontend)" -ForegroundColor White
