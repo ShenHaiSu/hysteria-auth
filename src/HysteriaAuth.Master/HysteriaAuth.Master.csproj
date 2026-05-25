@@ -33,4 +33,11 @@
     <TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.Design" />
   </ItemGroup>
 
+  <!-- 保留 SQLitePCL 原生库程序集，防止被 PublishTrimmed 裁剪导致 DllNotFoundException -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="SQLitePCLRaw.batteries_v2" />
+    <TrimmerRootAssembly Include="SQLitePCLRaw.core" />
+    <TrimmerRootAssembly Include="SQLitePCLRaw.provider.e_sqlite3" />
+  </ItemGroup>
+
 </Project>
