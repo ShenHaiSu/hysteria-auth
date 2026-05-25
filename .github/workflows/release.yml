@@ -10,7 +10,7 @@ permissions:
 
 env:
   DOTNET_VERSION: '10.0'
-  NODE_VERSION: '22'
+  NODE_VERSION: '24'
 
 jobs:
   # 使用 tag 名称作为版本号
@@ -32,6 +32,14 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: server
+          path: server
+
+      - uses: actions/checkout@v4
+        with:
+          ref: web
+          path: web
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -45,15 +53,15 @@ jobs:
 
       - name: Build Master (win-x64)
         run: |
-          cd server-dev
-          .\scripts\release-build.ps1 -Runtime "win-x64" -Target "Master" -WebPath "..\web-dev" -OutputDir "release-artifacts"
+          Set-Location server
+          .\scripts\release-build.ps1 -Runtime "win-x64" -Target "Master" -WebPath "..\web" -OutputDir "release-artifacts"
         shell: pwsh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: Master-Windows-x86
-          path: server-dev/release-artifacts/Master-win-x64.zip
+          path: server/release-artifacts/Master-win-x64.zip
           if-no-files-found: error
 
   # Windows 构建 - Agent
@@ -62,6 +70,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: server
+          path: server
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -70,7 +81,7 @@ jobs:
 
       - name: Build Agent (win-x64)
         run: |
-          cd server-dev
+          Set-Location server
           .\scripts\release-build.ps1 -Runtime "win-x64" -Target "Agent" -OutputDir "release-artifacts"
         shell: pwsh
 
@@ -78,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Agent-Windows-x86
-          path: server-dev/release-artifacts/Agent-win-x64.zip
+          path: server/release-artifacts/Agent-win-x64.zip
           if-no-files-found: error
 
   # Linux 构建 - Master
@@ -87,6 +98,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: server
+          path: server
+
+      - uses: actions/checkout@v4
+        with:
+          ref: web
+          path: web
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -100,15 +119,15 @@ jobs:
 
       - name: Build Master (linux-x64)
         run: |
-          cd server-dev
-          pwsh ./scripts/release-build.ps1 -Runtime "linux-x64" -Target "Master" -WebPath "../web-dev" -OutputDir "release-artifacts"
+          cd server
+          pwsh ./scripts/release-build.ps1 -Runtime "linux-x64" -Target "Master" -WebPath "../web" -OutputDir "release-artifacts"
         shell: pwsh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: Master-Linux-x86
-          path: server-dev/release-artifacts/Master-linux-x64.tar.gz
+          path: server/release-artifacts/Master-linux-x64.tar.gz
           if-no-files-found: error
 
   # Linux 构建 - Agent
@@ -117,6 +136,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: server
+          path: server
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -125,7 +147,7 @@ jobs:
 
       - name: Build Agent (linux-x64)
         run: |
-          cd server-dev
+          cd server
           pwsh ./scripts/release-build.ps1 -Runtime "linux-x64" -Target "Agent" -OutputDir "release-artifacts"
         shell: pwsh
 
@@ -133,7 +155,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Agent-Linux-x86
-          path: server-dev/release-artifacts/Agent-linux-x64.tar.gz
+          path: server/release-artifacts/Agent-linux-x64.tar.gz
           if-no-files-found: error
 
   # 创建 Release 并上传产物

@@ -6,7 +6,7 @@
     参数:
       -Runtime: 目标运行时 (win-x64 / linux-x64)
       -Target: 构建目标 (Master / Agent)
-      -WebPath: 前端项目路径 (相对于 server-dev)
+      -WebPath: 前端项目路径 (相对于 server)
       -OutputDir: 输出目录
 #>
 param(
@@ -18,7 +18,7 @@ param(
     [ValidateSet("Master", "Agent")]
     [string]$Target,
 
-    [string]$WebPath = "..\web-dev",
+    [string]$WebPath = "..\web",
 
     [string]$OutputDir = "release-artifacts"
 )
@@ -39,9 +39,8 @@ Write-Host ""
 
 # 确定项目名称和扩展名
 $projectName = "HysteriaAuth.$Target"
-$isWindows = $Runtime -like "win-*"
-$exeExt = if ($isWindows) { ".exe" } else { "" }
-$archiveExt = if ($isWindows) { "zip" } else { "tar.gz" }
+$targetIsWindows = $Runtime -like "win-*"
+$archiveExt = if ($targetIsWindows) { "zip" } else { "tar.gz" }
 $archiveName = "$Target-$Runtime"
 
 # 创建临时构建目录
@@ -124,7 +123,7 @@ else {
 Write-Host "[4/4] Creating archive..." -ForegroundColor Yellow
 $archivePath = "$ProjectRoot\$OutputDir\$archiveName.$archiveExt"
 
-if ($isWindows) {
+if ($targetIsWindows) {
     # Windows: Create zip using Compress-Archive
     if (Test-Path $archivePath) { Remove-Item -Force $archivePath }
     Compress-Archive -Path "$buildDir\app\*" -DestinationPath $archivePath -Force
