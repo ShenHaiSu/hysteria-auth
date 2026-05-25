@@ -36,6 +36,20 @@ else
     echo "Run 'npm run build' in your Vue project and copy dist/* to wwwroot/"
 fi
 
+# 3.5. 检查 HTTPS 证书目录
+echo "Checking HTTPS certificate..."
+if [ -f "/opt/hysteria-auth/master/cert/server.cert" ] &&
+   [ -f "/opt/hysteria-auth/master/cert/server.key" ]; then
+    echo "  -> HTTPS certificate found. Server will use HTTPS on port 5000."
+else
+    echo "  -> ⚠️  WARNING: HTTPS certificate not found in cert/ directory."
+    echo "     The server will run in HTTP mode on port 5000 (UNENCRYPTED)."
+    echo "     To enable HTTPS, place your SSL certificate files:"
+    echo "       /opt/hysteria-auth/master/cert/server.cert"
+    echo "       /opt/hysteria-auth/master/cert/server.key"
+    echo "     Then restart: sudo systemctl restart hysteria-auth-master"
+fi
+
 # 4. 设置权限
 sudo chown -R www-data:www-data /opt/hysteria-auth/master
 sudo chown -R www-data:www-data /var/lib/hysteria-auth
@@ -57,7 +71,9 @@ ExecStart=/opt/hysteria-auth/master/HysteriaAuth.Master
 Restart=always
 RestartSec=5
 Environment=ASPNETCORE_ENVIRONMENT=Production
-Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+# Phase 8: ASPNETCORE_URLS 已由 appsettings.json → Https.ListenAddress + Https.ListenPort 接管，
+# ConfigureKestrel 显式绑定后此环境变量不再生效，故注释移除。
+# Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
 
 [Install]
 WantedBy=multi-user.target

@@ -563,7 +563,7 @@ Content-Type: application/json
 
 | 要求 | 说明 |
 |------|------|
-| HTTPS | **生产环境强制执行** |
+| HTTPS | 启动时自动检测 `Https.CertDirectoryPath` 目录下的 `server.cert` + `server.key`，存在则在 `Https.ListenPort` 上启用 HTTPS；缺失则在同端口回退 HTTP 并输出安全警告。监听地址/端口统一由 `appsettings.json` → `Https` 配置节管理。生产环境**强烈建议**部署有效证书 |
 | 节点通信 | 使用 `X-Node-Secret` 请求头传递密钥 |
 | trafficStats | 绑定 `127.0.0.1` + 设置 secret，禁止公网暴露 |
 | 认证代理 | Edge Agent 认证代理绑定 `127.0.0.1` |
@@ -866,6 +866,13 @@ public async Task<AuthResult> AuthenticateAsync(AuthRequest request)
         "FallbackFile": "index.html",
         "CacheMaxAgeSeconds": 86400
     },
+    "Https": {
+        "ListenAddress": "0.0.0.0",
+        "ListenPort": 5000,
+        "CertDirectoryPath": "cert",
+        "CertFileName": "server.cert",
+        "CertKeyFileName": "server.key"
+    },
     "Backup": {
         "AutoBackupEnabled": true,
         "BackupIntervalHours": 24,
@@ -949,7 +956,7 @@ public async Task<AuthResult> AuthenticateAsync(AuthRequest request)
 
 ### 13.2 systemd 服务
 
-**主服务器**：用户 `www-data`，`Type=notify`，`Restart=always`
+**主服务器**：用户 `www-data`，`Type=notify`，`Restart=always`。监听地址/端口已由 `appsettings.json` → `Https` 节接管，`Environment=ASPNETCORE_URLS` 可移除（Phase 8 后不再需要）。
 
 **Edge Agent**：用户 `root`，`Type=notify`，`Restart=always`，`After=hysteria-server.service`
 

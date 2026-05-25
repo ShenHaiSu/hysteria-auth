@@ -62,7 +62,8 @@ HysteriaAuth/
 │   │   │   ├── AppSettings.cs         # 配置类
 │   │   │   ├── JwtSettings.cs         # JWT 配置
 │   │   │   ├── RateLimitSettings.cs   # 速率限制配置
-│   │   │   └── SpaSettings.cs         # SPA 静态文件配置（新增）
+│   │   │   ├── SpaSettings.cs         # SPA 静态文件配置（新增）
+│   │   │   └── HttpsSettings.cs       # HTTPS 证书自动检测 + 监听端口配置（Phase 8 新增）
 │   │   ├── wwwroot/                   # SPA 前端构建产物（新增，路径可配置）
 │   │   ├── appsettings.json           # 配置文件
 │   │   └── Program.cs                 # 入口
@@ -172,6 +173,13 @@ HysteriaAuth/
         "FallbackFile": "index.html",
         "CacheMaxAgeSeconds": 86400
     },
+    "Https": {
+        "ListenAddress": "0.0.0.0",
+        "ListenPort": 5000,
+        "CertDirectoryPath": "cert",
+        "CertFileName": "server.cert",
+        "CertKeyFileName": "server.key"
+    },
     "Backup": {
         "AutoBackupEnabled": true,
         "BackupIntervalHours": 24,
@@ -201,6 +209,8 @@ HysteriaAuth/
 | `Admin` | `MaxFailedLoginAttempts` / `LockoutDurationMinutes` | 管理员登录失败锁定策略 |
 | `RateLimit` | `AuthPerMinute` / `AdminApiPerMinute` | 各端点速率限制配置 |
 | `Spa` | `Enabled` / `StaticFilesPath` / `FallbackFile` | SPA 静态文件托管开关、构建产物路径（支持相对/绝对路径）、兜底文件名。详见 [`spa-integration.md`](spa-integration.md) |
+| `Https` | `ListenAddress` / `ListenPort` | Kestrel 监听地址和端口。默认 `0.0.0.0:5000`。无论 HTTP/HTTPS 均使用同一端口 |
+| `Https` | `CertDirectoryPath` / `CertFileName` / `CertKeyFileName` | HTTPS 证书自动检测：启动时检查该目录下是否存在指定证书文件，存在则启用 HTTPS。支持相对和绝对路径。详见 Phase 8 |
 | `Backup` | `AutoBackupEnabled` / `BackupIntervalHours` | 自动备份开关和间隔 |
 
 ---
