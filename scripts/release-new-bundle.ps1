@@ -178,7 +178,7 @@ function Main {
     Write-Host ""
     
     # 6. 确认创建
-    $confirm = Read-Host "确认创建 $newVersion? (Y/n)"
+    $confirm = Read-Host "确认创建 ${newVersion}? (Y/n)"
     if ($confirm -match '^[nN](o)?$') {
         Write-Info "已取消创建"
         exit 0
