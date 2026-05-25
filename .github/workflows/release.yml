@@ -11,6 +11,7 @@ permissions:
 env:
   DOTNET_VERSION: '10.0'
   NODE_VERSION: '24'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # 强制使用nodejs24
 
 jobs:
   # 使用 tag 名称作为版本号
@@ -440,10 +441,10 @@ jobs:
             - [🐛 问题反馈](https://github.com/${{ github.repository }}/issues)
             - [🐳 Docker 部署](https://github.com/${{ github.repository }}/tree/main/docker)
           files: |
-            artifacts/Master-Windows-x64/*.zip
-            artifacts/Agent-Windows-x64/*.zip
-            artifacts/Master-Linux-x64/*.tar.gz
-            artifacts/Agent-Linux-x64/*.tar.gz
+            artifacts/Master-Windows-x64/Master-win-x64.zip
+            artifacts/Agent-Windows-x64/Agent-win-x64.zip
+            artifacts/Master-Linux-x64/Master-linux-x64.tar.gz
+            artifacts/Agent-Linux-x64/Agent-linux-x64.tar.gz
           draft: false
           prerelease: false
           generate_release_notes: false
