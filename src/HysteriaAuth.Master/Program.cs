@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using HysteriaAuth.Master.Config;
@@ -121,8 +122,34 @@ builder.WebHost.ConfigureKestrel(options =>
     var addr = System.Net.IPAddress.Parse(httpsSettings.ListenAddress);
     if (httpsEnabled)
     {
-        options.Listen(addr, httpsSettings.ListenPort,
-            listenOptions => listenOptions.UseHttps(certFilePath, keyFilePath));
+        // 手动加载证书：只提取 PEM 中的第一张证书（叶子证书），
+        // 避免多证书链 PEM（如 Let's Encrypt 叶子 + 中间 CA）导致
+        // X509Certificate2.CreateFromPemFile() 解析歧义，使 HasPrivateKey=false 进而抛出
+        // NotSupportedException: "The server mode SSL must use a certificate with the associated private key."
+        var certPem = File.ReadAllText(certFilePath);
+        var keyPem = File.ReadAllText(keyFilePath);
+
+        const string beginTag = "-----BEGIN CERTIFICATE-----";
+        const string endTag = "-----END CERTIFICATE-----";
+        int firstBegin = certPem.IndexOf(beginTag, StringComparison.Ordinal);
+        int firstEnd = certPem.IndexOf(endTag, firstBegin + beginTag.Length, StringComparison.Ordinal);
+        if (firstBegin < 0 || firstEnd < 0)
+        {
+            throw new InvalidOperationException(
+                $"Certificate file '{certFilePath}' does not contain a valid PEM certificate.");
+        }
+
+        string leafCertPem = certPem[firstBegin..(firstEnd + endTag.Length)];
+        string remainPem = certPem[(firstEnd + endTag.Length)..].Trim();
+
+        var serverCert = X509Certificate2.CreateFromPem(leafCertPem, keyPem);
+
+        options.Listen(addr, httpsSettings.ListenPort, listenOptions =>
+        {
+            // 中间 CA 证书（如 Let's Encrypt R1/R3）通常已内置于系统证书库，
+            // 客户端可通过 AIA / 系统信任库自动补全，此处仅传入叶子证书。
+            listenOptions.UseHttps(serverCert);
+        });
     }
     else
     {
