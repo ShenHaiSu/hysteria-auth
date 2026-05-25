@@ -196,9 +196,9 @@ jobs:
             PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
 
             if [ -z "$PREVIOUS_TAG" ]; then
-              COMMITS=$(git log --pretty=format:"%s|||%h|||%an" --no-merges -50)
+              COMMITS=$(git log --pretty=format:"%s|%h|%an" --no-merges -50)
             else
-              COMMITS=$(git log --pretty=format:"%s|||%h|||%an" --no-merges ${PREVIOUS_TAG}..HEAD -50)
+              COMMITS=$(git log --pretty=format:"%s|%h|%an" --no-merges ${PREVIOUS_TAG}..HEAD -50)
             fi
 
             # 分类 commit
@@ -213,9 +213,9 @@ jobs:
 
             while IFS= read -r line; do
               [ -z "$line" ] && continue
-              MSG=$(echo "$line" | cut -d'|||' -f1)
-              HASH=$(echo "$line" | cut -d'|||' -f2)
-              AUTHOR=$(echo "$line" | cut -d'|||' -f3)
+              MSG=$(echo "$line" | cut -d'|' -f1)
+              HASH=$(echo "$line" | cut -d'|' -f2)
+              AUTHOR=$(echo "$line" | cut -d'|' -f3)
 
               # 收集贡献者
               if ! echo "$CONTRIBUTORS" | grep -q "$AUTHOR"; then
