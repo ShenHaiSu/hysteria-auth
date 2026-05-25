@@ -1,0 +1,186 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '10.0'
+  NODE_VERSION: '22'
+
+jobs:
+  # 使用 tag 名称作为版本号
+  set-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - name: Set version from tag
+        id: set-version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+  # Windows 构建 - Master
+  build-windows-master:
+    needs: set-version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build Master (win-x64)
+        run: |
+          cd server-dev
+          .\scripts\release-build.ps1 -Runtime "win-x64" -Target "Master" -WebPath "..\web-dev" -OutputDir "release-artifacts"
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Master-Windows-x86
+          path: server-dev/release-artifacts/Master-win-x64.zip
+          if-no-files-found: error
+
+  # Windows 构建 - Agent
+  build-windows-agent:
+    needs: set-version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build Agent (win-x64)
+        run: |
+          cd server-dev
+          .\scripts\release-build.ps1 -Runtime "win-x64" -Target "Agent" -OutputDir "release-artifacts"
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Agent-Windows-x86
+          path: server-dev/release-artifacts/Agent-win-x64.zip
+          if-no-files-found: error
+
+  # Linux 构建 - Master
+  build-linux-master:
+    needs: set-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build Master (linux-x64)
+        run: |
+          cd server-dev
+          pwsh ./scripts/release-build.ps1 -Runtime "linux-x64" -Target "Master" -WebPath "../web-dev" -OutputDir "release-artifacts"
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Master-Linux-x86
+          path: server-dev/release-artifacts/Master-linux-x64.tar.gz
+          if-no-files-found: error
+
+  # Linux 构建 - Agent
+  build-linux-agent:
+    needs: set-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build Agent (linux-x64)
+        run: |
+          cd server-dev
+          pwsh ./scripts/release-build.ps1 -Runtime "linux-x64" -Target "Agent" -OutputDir "release-artifacts"
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Agent-Linux-x86
+          path: server-dev/release-artifacts/Agent-linux-x64.tar.gz
+          if-no-files-found: error
+
+  # 创建 Release 并上传产物
+  create-release:
+    needs: [set-version, build-windows-master, build-windows-agent, build-linux-master, build-linux-agent]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts/ -type f
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.set-version.outputs.version }}
+          name: Release ${{ needs.set-version.outputs.version }}
+          body: |
+            ## Hysteria Auth ${{ needs.set-version.outputs.version }}
+
+            ### 下载链接
+
+            | 组件 | 平台 | 下载 |
+            |------|------|------|
+            | Master | Windows x64 | [Master-Windows-x86.zip](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Windows-x86.zip) |
+            | Agent | Windows x64 | [Agent-Windows-x86.zip](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Windows-x86.zip) |
+            | Master | Linux x64 | [Master-Linux-x86.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Linux-x86.tar.gz) |
+            | Agent | Linux x64 | [Agent-Linux-x86.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Linux-x86.tar.gz) |
+
+            ### 快速下载 (latest)
+
+            - Master Windows: `https://github.com/${{ github.repository }}/releases/latest/download/Master-Windows-x86.zip`
+            - Agent Windows: `https://github.com/${{ github.repository }}/releases/latest/download/Agent-Windows-x86.zip`
+            - Master Linux: `https://github.com/${{ github.repository }}/releases/latest/download/Master-Linux-x86.tar.gz`
+            - Agent Linux: `https://github.com/${{ github.repository }}/releases/latest/download/Agent-Linux-x86.tar.gz`
+          files: |
+            artifacts/Master-Windows-x86/Master-win-x64.zip
+            artifacts/Agent-Windows-x86/Agent-win-x64.zip
+            artifacts/Master-Linux-x86/Master-linux-x64.tar.gz
+            artifacts/Agent-Linux-x86/Agent-linux-x64.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
