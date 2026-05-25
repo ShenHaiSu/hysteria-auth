@@ -64,6 +64,10 @@ coveragereport/
 wwwroot/*
 !wwwroot/.gitkeep
 
+## Phase 8: HTTPS 证书文件（禁止入库）
+cert/*
+!cert/.gitkeep
+
 ## Backup Files
 *.bak
 *.swp

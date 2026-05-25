@@ -17,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.Configure<AdminSettings>(builder.Configuration.GetSection(AdminSettings.SectionName));
 builder.Services.Configure<SpaSettings>(builder.Configuration.GetSection(SpaSettings.SectionName));
+builder.Services.Configure<HttpsSettings>(builder.Configuration.GetSection(HttpsSettings.SectionName));
 
 // ============================
 // 数据库
@@ -95,7 +96,89 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ============================================================
+// 监听端口规范化 + HTTPS 证书自动检测（Phase 8）
+// ============================================================
+// 第一段：在 builder.Build() 之前 —— 读取配置 + 证书检查 + Kestrel 配置
+
+var httpsSettings = builder.Configuration
+    .GetSection(HttpsSettings.SectionName)
+    .Get<HttpsSettings>() ?? new HttpsSettings();
+
+// 解析证书目录绝对路径（复用 SPA 路径解析规则）
+var certAbsolutePath = Path.IsPathRooted(httpsSettings.CertDirectoryPath)
+    ? httpsSettings.CertDirectoryPath
+    : Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath,
+        httpsSettings.CertDirectoryPath));
+
+var certFilePath = Path.Combine(certAbsolutePath, httpsSettings.CertFileName);
+var keyFilePath = Path.Combine(certAbsolutePath, httpsSettings.CertKeyFileName);
+bool httpsEnabled = File.Exists(certFilePath) && File.Exists(keyFilePath);
+
+// 单端口策略：ListenAddress:ListenPort 上根据证书决定 HTTP 还是 HTTPS
+builder.WebHost.ConfigureKestrel(options =>
+{
+    var addr = System.Net.IPAddress.Parse(httpsSettings.ListenAddress);
+    if (httpsEnabled)
+    {
+        options.Listen(addr, httpsSettings.ListenPort,
+            listenOptions => listenOptions.UseHttps(certFilePath, keyFilePath));
+    }
+    else
+    {
+        options.Listen(addr, httpsSettings.ListenPort);
+    }
+});
+
 var app = builder.Build();
+
+// ============================================================
+// 第二段：在 builder.Build() 之后 —— 日志输出
+// ============================================================
+
+if (httpsEnabled)
+{
+    app.Logger.LogInformation(
+        "HTTPS enabled on https://{Address}:{Port} — cert: {CertFile}, key: {KeyFile}, dir: {CertDir}",
+        httpsSettings.ListenAddress, httpsSettings.ListenPort,
+        httpsSettings.CertFileName, httpsSettings.CertKeyFileName, certAbsolutePath);
+}
+else
+{
+    var missingParts = new List<string>();
+    if (!File.Exists(certFilePath))
+        missingParts.Add($"certificate '{httpsSettings.CertFileName}'");
+    if (!File.Exists(keyFilePath))
+        missingParts.Add($"private key '{httpsSettings.CertKeyFileName}'");
+
+    app.Logger.LogWarning(
+        "HTTPS certificate NOT found — {Missing} missing in '{CertDir}'. " +
+        "Running in HTTP mode on http://{Address}:{Port} — ALL TRAFFIC IS UNENCRYPTED! " +
+        "This is INSECURE for production.",
+        string.Join(", ", missingParts), certAbsolutePath,
+        httpsSettings.ListenAddress, httpsSettings.ListenPort);
+
+    // 控制台醒目输出（黄色警告框，确保运维人员不会忽略）
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine();
+    Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
+    Console.WriteLine("║  ⚠️  SECURITY WARNING: HTTPS certificate not found!          ║");
+    Console.WriteLine("╠══════════════════════════════════════════════════════════════╣");
+    Console.WriteLine($"║  Certificate directory : {certAbsolutePath}");
+    Console.WriteLine($"║  Missing               : {string.Join(", ", missingParts)}");
+    Console.WriteLine("║                                                            ║");
+    Console.WriteLine($"║  Running in HTTP mode on http://{httpsSettings.ListenAddress}:{httpsSettings.ListenPort}");
+    Console.WriteLine("║  ALL TRAFFIC IS UNENCRYPTED — NOT SAFE FOR PRODUCTION!     ║");
+    Console.WriteLine("║                                                            ║");
+    Console.WriteLine("║  To enable HTTPS:                                          ║");
+    Console.WriteLine($"║  1. mkdir -p {certAbsolutePath}");
+    Console.WriteLine($"║  2. Place certificate  → {certFilePath}");
+    Console.WriteLine($"║  3. Place private key  → {keyFilePath}");
+    Console.WriteLine("║  4. Restart the server                                     ║");
+    Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+    Console.ResetColor();
+    Console.WriteLine();
+}
 
 // ============================
 // 数据库自动迁移 + 种子数据
