@@ -13,7 +13,6 @@
       "createdAt": "创建时间",
       "actions": "操作",
       "configVersion": "配置版本",
-      "listenPort": "监听端口",
       "domainName": "域名"
     }
   },
@@ -96,7 +95,7 @@
       "yearly": "年付"
     },
     "tab": {
-      "listener": "监听与端口",
+      "listener": "端口跳跃",
       "obfs": "混淆与拥塞控制",
       "bandwidth": "带宽与速度测试",
       "udpSniff": "UDP 与协议嗅探",
@@ -104,8 +103,6 @@
       "dnsOps": "DNS 与运营"
     },
     "fields": {
-      "listenAddress": { "label": "监听地址", "default": "0.0.0.0" },
-      "listenPort": { "label": "监听端口", "default": "6789" },
       "enablePortHopping": { "label": "启用端口跳跃" },
       "portHopRangeStart": { "label": "端口跳跃起始" },
       "portHopRangeEnd": { "label": "端口跳跃结束" },

@@ -98,13 +98,6 @@
 
           <div>
             <span class="text-xs text-[var(--text-muted)] uppercase tracking-wide">{{
-              t('nodes.config.fields.listenPort.label')
-            }}</span>
-            <p class="text-sm text-[var(--text-primary)]">{{ node.listenPort ?? '-' }}</p>
-          </div>
-
-          <div>
-            <span class="text-xs text-[var(--text-muted)] uppercase tracking-wide">{{
               t('nodes.table.columns.location')
             }}</span>
             <p class="text-sm text-[var(--text-primary)]">{{ node.location ?? '-' }}</p>

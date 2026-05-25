@@ -207,8 +207,7 @@ Content-Type: application/json
     "nodeId": "edge-node-01",
     "nodeSecret": "a1b2c3d4e5f6...",
     "trafficStatsSecret": "f6e5d4c3b2a1...",
-    "configVersion": 1,
-    "configYaml": "# 自动生成于 2025-05-24T10:00:00Z | 节点: 东京节点 | 配置版本: 1\n\nlisten: 0.0.0.0:6789,0.0.0.0:61000-63000\n\nobfs:\n  type: salamander\n  salamander:\n    password: \"...\"\n\nquic:\n  maxIdleTimeout: 30s\n\nbandwidth:\n  congestion:\n    algorithm: bbr\n\nudpIdleTimeout: 60s\n\nauth:\n  type: http\n  http:\n    url: https://master.example.com/api/v1/auth?nodeId=edge-node-01\n    secret: \"a1b2c3d4e5f6...\"\n\nresolver:\n  type: system\n\ntrafficStats:\n  listen: 127.0.0.1:9999\n  secret: \"f6e5d4c3b2a1...\"\n",
+    "configYaml": "# 自动生成于 2025-05-24T10:00:00Z | 节点: 东京节点 | 配置版本: 1\n\nlisten: 10.0.0.1:443\n\nobfs:\n  type: salamander\n  salamander:\n    password: \"...\"\n\nquic:\n  maxIdleTimeout: 30s\n\nbandwidth:\n  congestion:\n    algorithm: bbr\n\nudpIdleTimeout: 60s\n\nauth:\n  type: http\n  http:\n    url: https://master.example.com/api/v1/auth?nodeId=edge-node-01\n    secret: \"a1b2c3d4e5f6...\"\n\nresolver:\n  type: system\n\ntrafficStats:\n  listen: 127.0.0.1:9999\n  secret: \"f6e5d4c3b2a1...\"\n",
     "config": {
         "authProxyPort": 8080,
         "healthCheckPort": 8081,
@@ -233,7 +232,7 @@ Content-Type: application/json
 | `config.heartbeatIntervalSeconds` | int | 心跳上报间隔（秒） |
 
 > **重要**: 令牌为**一次性使用**。注册成功后 Master 将令牌清零，`provisionStatus` 设为 `provisioned`。重复使用同一令牌返回 `403`。
-> **Edge Agent 处理**：注册成功后 Edge Agent 应将 `configYaml` 写入 Hysteria 2 配置文件，缓存 `configVersion`，并根据 `enablePortHopping` 字段应用 iptables 端口跳跃规则。
+> **Edge Agent 处理**：注册成功后 Edge Agent 应将 `configYaml` 写入 Hysteria 2 配置文件，缓存 `configVersion`；如果节点启用了端口跳跃（`enablePortHopping=true`），还需应用 iptables DNAT 规则（将端口范围内 UDP 流量转发到 `port`），最后启动/重载 Hysteria 2 服务。
 
 ---
 
@@ -294,8 +293,7 @@ X-Node-Secret: {node_secret}
     "nodeId": "edge-node-01",
     "nodeSecret": "当前有效的节点密钥",
     "isActive": true,
-    "configVersion": 3,
-    "configYaml": "# 自动生成于 2025-05-24T10:30:00Z | 节点: 东京节点 | 配置版本: 3\n\nlisten: 0.0.0.0:6789,0.0.0.0:61000-63000\n\nrealm: hysteria-tokyo.example.com\n\nobfs:\n  type: salamander\n  salamander:\n    password: \"...\"\n\nquic:\n  maxIdleTimeout: 30s\n\nbandwidth:\n  up: 100 mbps\n  down: 200 mbps\n  congestion:\n    algorithm: bbr\n\nudpIdleTimeout: 60s\n\nauth:\n  type: http\n  http:\n    url: https://master.example.com/api/v1/auth?nodeId=edge-node-01\n    secret: \"...\"\n\nresolver:\n  type: system\n\ntrafficStats:\n  listen: 127.0.0.1:9999\n  secret: \"...\"\n",
+    "configYaml": "# 自动生成于 2025-05-24T10:30:00Z | 节点: 东京节点 | 配置版本: 3\n\nlisten: 10.0.0.1:443\n\nrealm: hysteria-tokyo.example.com\n\nobfs:\n  type: salamander\n  salamander:\n    password: \"...\"\n\nquic:\n  maxIdleTimeout: 30s\n\nbandwidth:\n  up: 100 mbps\n  down: 200 mbps\n  congestion:\n    algorithm: bbr\n\nudpIdleTimeout: 60s\n\nauth:\n  type: http\n  http:\n    url: https://master.example.com/api/v1/auth?nodeId=edge-node-01\n    secret: \"...\"\n\nresolver:\n  type: system\n\ntrafficStats:\n  listen: 127.0.0.1:9999\n  secret: \"...\"\n",
     "config": {
         "authProxyPort": 8080,
         "healthCheckPort": 8081,

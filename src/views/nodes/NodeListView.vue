@@ -173,19 +173,6 @@
           </template>
         </Column>
 
-        <!-- 监听端口 (默认隐藏) -->
-        <Column
-          field="listenPort"
-          :header="t('nodes.table.columns.listenPort')"
-          style="width: 90px"
-          class="text-center"
-          :hidden="true"
-        >
-          <template #body="{ data }: { data: NodeDto }">
-            <span class="text-sm text-[var(--text-primary)]">{{ data.listenPort ?? '-' }}</span>
-          </template>
-        </Column>
-
         <!-- 域名 (默认隐藏) -->
         <Column
           field="domainName"

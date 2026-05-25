@@ -13,7 +13,6 @@
       "createdAt": "Created",
       "actions": "Actions",
       "configVersion": "Config Version",
-      "listenPort": "Listen Port",
       "domainName": "Domain"
     }
   },
@@ -96,7 +95,7 @@
       "yearly": "Yearly"
     },
     "tab": {
-      "listener": "Listener & Port",
+      "listener": "Port Hopping",
       "obfs": "Obfs & Congestion",
       "bandwidth": "Bandwidth & Speed Test",
       "udpSniff": "UDP & Sniff",
@@ -104,8 +103,6 @@
       "dnsOps": "DNS & Operations"
     },
     "fields": {
-      "listenAddress": { "label": "Listen Address", "default": "0.0.0.0" },
-      "listenPort": { "label": "Listen Port", "default": "6789" },
       "enablePortHopping": { "label": "Enable Port Hopping" },
       "portHopRangeStart": { "label": "Port Hop Range Start" },
       "portHopRangeEnd": { "label": "Port Hop Range End" },

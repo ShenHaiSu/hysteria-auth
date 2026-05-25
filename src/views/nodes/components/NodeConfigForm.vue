@@ -35,34 +35,11 @@
               @click="resetTab('listener')"
             />
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                {{ t('nodes.config.fields.listenAddress.label') }}
-                <span class="text-xs text-[var(--text-muted)] ml-1">
-                  ({{ t('nodes.config.fields.listenAddress.default') }})
-                </span>
-              </label>
-              <InputText v-model="form.listenAddress" class="w-full" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-[var(--text-primary)] mb-1">
-                {{ t('nodes.config.fields.listenPort.label') }}
-                <span class="text-xs text-[var(--text-muted)] ml-1">
-                  ({{ t('nodes.config.fields.listenPort.default') }})
-                </span>
-              </label>
-              <InputNumber v-model="form.listenPort" class="w-full" :min="1" :max="65535" :use-grouping="false" />
-              <small v-if="fieldErrors.listenPort" class="text-[var(--status-error)]">
-                {{ fieldErrors.listenPort }}
-              </small>
-            </div>
-            <div class="flex items-center gap-3">
-              <ToggleSwitch :model-value="form.enablePortHopping" @update:model-value="form.enablePortHopping = $event" />
-              <label class="text-sm text-[var(--text-primary)]">
-                {{ t('nodes.config.fields.enablePortHopping.label') }}
-              </label>
-            </div>
+          <div class="flex items-center gap-3">
+            <ToggleSwitch :model-value="form.enablePortHopping" @update:model-value="form.enablePortHopping = $event" />
+            <label class="text-sm text-[var(--text-primary)]">
+              {{ t('nodes.config.fields.enablePortHopping.label') }}
+            </label>
           </div>
 
           <!-- 端口跳跃范围 (仅在启用时显示) -->
@@ -497,8 +474,6 @@ const fieldErrors = ref<Record<string, string>>({})
 
 // 表单数据类型 (所有值要么是原始类型，要么是 null)
 interface FormData {
-  listenAddress: string
-  listenPort: number | null
   enablePortHopping: boolean
   portHopRangeStart: number | null
   portHopRangeEnd: number | null
@@ -563,8 +538,6 @@ watch(
 function initializeForm() {
   const cfg = props.currentConfig
 
-  form.listenAddress = cfg.listenAddress ?? '0.0.0.0'
-  form.listenPort = cfg.listenPort ?? 6789
   form.enablePortHopping = cfg.enablePortHopping ?? true
   form.portHopRangeStart = cfg.portHopRangeStart ?? 61000
   form.portHopRangeEnd = cfg.portHopRangeEnd ?? 63000
@@ -641,11 +614,6 @@ function computeDiff(): UpdateNodeConfigRequest {
 function validate(): boolean {
   const errors: Record<string, string> = {}
 
-  const listenPort = form.listenPort as number | null
-  if (listenPort !== null && (listenPort < 1 || listenPort > 65535)) {
-    errors.listenPort = t('validation.portRange')
-  }
-
   const portStart = form.portHopRangeStart as number | null
   const portEnd = form.portHopRangeEnd as number | null
   if (portStart !== null && portEnd !== null) {
@@ -698,7 +666,7 @@ async function handleSubmit() {
 /** 重置某个 Tab 的所有字段为初始值 */
 function resetTab(tab: string) {
   const tabDefaults: Record<string, string[]> = {
-    listener: ['listenAddress', 'listenPort', 'enablePortHopping', 'portHopRangeStart', 'portHopRangeEnd'],
+    listener: ['enablePortHopping', 'portHopRangeStart', 'portHopRangeEnd'],
     obfs: ['obfsType', 'obfsPassword', 'congestionControl', 'brutalTxBandwidth'],
     bandwidth: ['bandwidthUp', 'bandwidthDown', 'ignoreClientBandwidth', 'enableSpeedTest', 'speedTestPingInterval'],
     udpSniff: ['udpIdleTimeout', 'sniffEnabled', 'sniffTimeout', 'sniffRespectHttps'],

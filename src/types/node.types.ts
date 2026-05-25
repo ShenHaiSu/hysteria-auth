@@ -16,10 +16,8 @@ export interface NodeDto {
   location: string | null
   trafficStatsPort?: number
   provisionStatus: ProvisionStatus
-  // ═══ Phase 7 新增 ═══
-  // 监听与端口跳跃
-  listenAddress?: string | null
-  listenPort?: number | null
+  // ═══ Phase 7 ═══
+  // 端口跳跃（Agent 通过 iptables DNAT 实现，不写入 YAML）
   enablePortHopping?: boolean
   portHopRangeStart?: number | null
   portHopRangeEnd?: number | null
@@ -85,8 +83,7 @@ export interface PreRegisterNodeRequest {
   location?: string
   port?: number
   trafficStatsPort?: number
-  // Phase 7 新增
-  listenPort?: number
+  // Phase 7
   domainName?: string
   remark?: string
 }
@@ -103,9 +100,7 @@ export interface PreRegisterNodeResponse {
  * 所有字段可选，null 表示不修改
  */
 export interface UpdateNodeConfigRequest {
-  // 监听
-  listenAddress?: string | null
-  listenPort?: number | null
+  // 端口跳跃
   enablePortHopping?: boolean | null
   portHopRangeStart?: number | null
   portHopRangeEnd?: number | null

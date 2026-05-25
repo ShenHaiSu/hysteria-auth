@@ -33,7 +33,8 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "loading": "Loading...",
-    "optional": "Optional"
+    "optional": "Optional",
+    "unlimited": "Unlimited"
   },
   "unit": {
     "bytes": "B",

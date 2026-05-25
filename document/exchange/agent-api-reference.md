@@ -15,7 +15,7 @@ Edge Agent 是部署在每个边缘节点（VPS）上的轻量级进程，它承
 │                    边缘节点 (VPS)                             │
 │                                                              │
 │  Hysteria Server (Hysteria 2)                                │
-│  (监听 :6789 QUIC，iptables 转发 61000-63000 → 6789)         │
+│  (监听 :Port QUIC，iptables DNAT 端口跳跃→Port)              │
 │       │                                                      │
 │       │ POST /auth (HTTP Auth)                               │
 │       ▼                                                      │
@@ -30,7 +30,6 @@ Edge Agent 是部署在每个边缘节点（VPS）上的轻量级进程，它承
 │  │ ─────────── │                                            │
 │  │ configYaml  │ 写入 /etc/hysteria/config.yaml              │
 │  │ configVers. │ 缓存版本号，心跳时对比                      │
-│  │ iptables    │ 应用端口跳跃 DNAT 规则                      │
 │  └─────────────┘                                             │
 │       │                                                      │
 │       │ GET /traffic?clear=1 + GET /online                   │
@@ -227,7 +226,7 @@ Base64编码: echo -n "username:password" | base64
 
 ```json
 {
-    "server": "edge-node-ip:6789",
+    "server": "edge-node-ip:61000-63000",
     "auth": "dXNlcm5hbWU6cGFzc3dvcmQ=",
     "socks5": {
         "listen": "127.0.0.1:1080"
@@ -235,7 +234,7 @@ Base64编码: echo -n "username:password" | base64
 }
 ```
 
-> **端口说明**：如果节点启用端口跳跃（默认 `true`），客户端可连接 `61000-63000` 范围内的**任一端口**，iptables 会自动 DNAT 转发到 `6789`。手动指定 `server` 时建议填写 `listenPort`（默认 `6789`）。
+> **端口说明**：Hysteria 2 服务端仅监听单个端口（配置中的 `port`）。若节点启用了端口跳跃（`enablePortHopping=true`），客户端可连接 `portHopRangeStart-portHopRangeEnd` 范围内的任一端口，Agent 通过 iptables DNAT 将范围内 UDP 流量全部转发到服务端监听端口。若未启用端口跳跃，客户端直接连接 `ipAddress:port`。
 
 ---
 
@@ -263,7 +262,7 @@ Edge Agent 启动后通过以下流程自动管理 Hysteria 2 服务端配置：
 4. 缓存 `configVersion` 到本地
 5. 如果节点配置了端口跳跃（`enablePortHopping=true`），应用 iptables DNAT 规则：
    ```bash
-   iptables -t nat -A PREROUTING -i eth0 -p udp --dport 61000:63000 -j DNAT --to-destination :6789
+   iptables -t nat -A PREROUTING -i eth0 -p udp --dport {start}:{end} -j DNAT --to-destination :{port}
    ```
 6. 启动/重载 Hysteria 2 服务
 
