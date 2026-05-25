@@ -11,7 +11,7 @@ permissions:
 env:
   DOTNET_VERSION: '10.0'
   NODE_VERSION: '24'
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # 强制使用nodejs24
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # 使用Node.js24
 
 jobs:
   # 使用 tag 名称作为版本号
@@ -172,233 +172,7 @@ jobs:
       - name: List artifacts
         run: |
           echo "Downloaded artifacts:"
-          ls -laR artifacts/
-          echo "---"
-          find artifacts/ -type f -name "*.zip" -o -name "*.tar.gz" | while read f; do
-            echo "Found: $f ($(du -h "$f" | cut -f1))"
-          done
-
-      - name: Checkout repository for git operations
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate Multi-branch Changelog
-        id: changelog
-        run: |
-          set -e
-
-          CURRENT_TAG="${{ needs.set-version.outputs.version }}"
-          REPO_URL="https://github.com/${{ github.repository }}.git"
-
-          # 清理函数：确保临时目录被清理
-          cleanup() {
-            rm -rf /tmp/changelog-server /tmp/changelog-web 2>/dev/null || true
-          }
-          trap cleanup EXIT
-
-          # 函数：获取分支的 changelog 并输出到 stdout
-          get_branch_changelog() {
-            local branch=$1
-            local tmp_dir="/tmp/changelog-$branch"
-
-            # 克隆分支（完整克隆以获取 tags）
-            git clone --branch="$branch" --single-branch "$REPO_URL" "$tmp_dir" 2>/dev/null
-            cd "$tmp_dir"
-
-            # 获取上一个 tag（按时间排序，获取当前 tag 之前的最后一个 tag）
-            PREVIOUS_TAG=$(git tag --sort=-creatordate | head -20 | while read t; do
-              # 检查 tag 是否在当前分支的祖先中
-              if git merge-base --is-ancestor "$t" HEAD 2>/dev/null; then
-                # 排除当前 tag
-                if [ "$t" != "$CURRENT_TAG" ]; then
-                  echo "$t"
-                  break
-                fi
-              fi
-            done)
-
-            # 获取 commit 列表
-            if [ -n "$PREVIOUS_TAG" ]; then
-              echo "  [Info] Using tag range: $PREVIOUS_TAG..HEAD for $branch" >&2
-              COMMITS=$(git log --pretty=format:"%s|||%h|||%an" --no-merges ${PREVIOUS_TAG}..HEAD 2>/dev/null || echo "")
-            else
-              # 如果没有找到 previous tag，限制为最近 30 天
-              echo "  [Info] No previous tag found, using 30-day range for $branch" >&2
-              COMMITS=$(git log --pretty=format:"%s|||%h|||%an" --no-merges --since="30 days ago" 2>/dev/null || echo "")
-            fi
-
-            cd /
-
-            # 分类 commit
-            local FEATURES="" FIXES="" DOCS="" REFACTOR="" PERF="" CI="" OTHER=""
-            local -A CONTRIB_MAP
-
-            if [ -n "$COMMITS" ]; then
-              while IFS= read -r line; do
-                [ -z "$line" ] && continue
-                MSG=$(echo "$line" | awk -F'\\|\\|\\|' '{print $1}')
-                HASH=$(echo "$line" | awk -F'\\|\\|\\|' '{print $2}')
-                AUTHOR=$(echo "$line" | awk -F'\\|\\|\\|' '{print $3}')
-
-                # 收集贡献者
-                CONTRIB_MAP["$AUTHOR"]=1
-
-                # 分类（使用 Conventional Commits 格式）
-                if echo "$MSG" | grep -qiE "^(feat|feature)(\(.+\))?:"; then
-                  FEATURES="${FEATURES}- ${MSG} (\`${HASH}\`)
-          "
-                elif echo "$MSG" | grep -qiE "^(fix|bug)(\(.+\))?:"; then
-                  FIXES="${FIXES}- ${MSG} (\`${HASH}\`)
-          "
-                elif echo "$MSG" | grep -qiE "^(doc|docs)(\(.+\))?:"; then
-                  DOCS="${DOCS}- ${MSG} (\`${HASH}\`)
-          "
-                elif echo "$MSG" | grep -qiE "^refactor(\(.+\))?:"; then
-                  REFACTOR="${REFACTOR}- ${MSG} (\`${HASH}\`)
-          "
-                elif echo "$MSG" | grep -qiE "^perf(\(.+\))?:"; then
-                  PERF="${PERF}- ${MSG} (\`${HASH}\`)
-          "
-                elif echo "$MSG" | grep -qiE "^(ci|build|chore)(\(.+\))?:"; then
-                  CI="${CI}- ${MSG} (\`${HASH}\`)
-          "
-                else
-                  OTHER="${OTHER}- ${MSG} (\`${HASH}\`)
-          "
-                fi
-              done <<< "$COMMITS"
-            fi
-
-            # 生成 markdown
-            local BODY=""
-            if [ -n "$FEATURES" ]; then
-              BODY+="### ✨ 新功能
-
-          ${FEATURES}
-          "
-            fi
-            if [ -n "$FIXES" ]; then
-              BODY+="### 🐛 修复
-
-          ${FIXES}
-          "
-            fi
-            if [ -n "$DOCS" ]; then
-              BODY+="### 📚 文档
-
-          ${DOCS}
-          "
-            fi
-            if [ -n "$REFACTOR" ]; then
-              BODY+="### ♻️ 重构
-
-          ${REFACTOR}
-          "
-            fi
-            if [ -n "$PERF" ]; then
-              BODY+="### ⚡ 性能优化
-
-          ${PERF}
-          "
-            fi
-            if [ -n "$CI" ]; then
-              BODY+="### 🔧 CI/CD
-
-          ${CI}
-          "
-            fi
-            if [ -n "$OTHER" ]; then
-              BODY+="### 📝 其他变更
-
-          ${OTHER}
-          "
-            fi
-
-            # 输出贡献者列表
-            local CONTRIB_LIST=""
-            for author in "${!CONTRIB_MAP[@]}"; do
-              CONTRIB_LIST="${CONTRIB_LIST}- ${author}
-          "
-            done
-
-            # 输出结果（使用特殊分隔符以便外部解析）
-            echo "===BODY_START==="
-            echo "$BODY"
-            echo "===BODY_END==="
-            echo "===CONTRIB_START==="
-            echo "$CONTRIB_LIST"
-            echo "===CONTRIB_END==="
-
-            rm -rf "$tmp_dir"
-          }
-
-          # 获取 server 分支 changelog
-          echo "Fetching server branch changes..."
-          SERVER_OUTPUT=$(get_branch_changelog "server")
-
-          # 获取 web 分支 changelog
-          echo "Fetching web branch changes..."
-          WEB_OUTPUT=$(get_branch_changelog "web")
-
-          # 解析 server 输出
-          SERVER_BODY=$(echo "$SERVER_OUTPUT" | sed -n '/===BODY_START===/,/===BODY_END===/{/===BODY_START===\|===BODY_END===/d;p}')
-          SERVER_CONTRIBUTORS=$(echo "$SERVER_OUTPUT" | sed -n '/===CONTRIB_START===/,/===CONTRIB_END===/{/===CONTRIB_START===\|===CONTRIB_END===/d;p}')
-
-          # 解析 web 输出
-          WEB_BODY=$(echo "$WEB_OUTPUT" | sed -n '/===BODY_START===/,/===BODY_END===/{/===BODY_START===\|===BODY_END===/d;p}')
-          WEB_CONTRIBUTORS=$(echo "$WEB_OUTPUT" | sed -n '/===CONTRIB_START===/,/===CONTRIB_END===/{/===CONTRIB_START===\|===CONTRIB_END===/d;p}')
-
-          # 生成完整 changelog
-          FULL_BODY=""
-
-          # Server 部分
-          if [ -n "$SERVER_BODY" ]; then
-            FULL_BODY+="## 🖥️ 服务端 (server)
-
-          ${SERVER_BODY}
-          "
-          else
-            FULL_BODY+="## 🖥️ 服务端 (server)
-
-          无变更。
-
-          "
-          fi
-
-          # Web 部分
-          if [ -n "$WEB_BODY" ]; then
-            FULL_BODY+="## 🌐 前端 (web)
-
-          ${WEB_BODY}
-          "
-          else
-            FULL_BODY+="## 🌐 前端 (web)
-
-          无变更。
-
-          "
-          fi
-
-          # 合并贡献者列表
-          ALL_CONTRIBUTORS=$(echo -e "${SERVER_CONTRIBUTORS}\n${WEB_CONTRIBUTORS}" | grep -v '^$' | sort -u)
-
-          if [ -n "$ALL_CONTRIBUTORS" ]; then
-            FULL_BODY+="## 👥 贡献者
-
-          感谢以下贡献者的辛勤工作！
-
-          ${ALL_CONTRIBUTORS}
-          "
-          fi
-
-          # 输出到 GITHUB_OUTPUT
-          echo "changelog<<CHANGELOG_END" >> $GITHUB_OUTPUT
-          echo "$FULL_BODY" >> $GITHUB_OUTPUT
-          echo "CHANGELOG_END" >> $GITHUB_OUTPUT
-
-          echo "Changelog generation complete."
+          find artifacts/ -type f
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -406,40 +180,23 @@ jobs:
           tag_name: ${{ needs.set-version.outputs.version }}
           name: Release ${{ needs.set-version.outputs.version }}
           body: |
-            # 🎉 Hysteria Auth ${{ needs.set-version.outputs.version }}
+            ## Hysteria Auth ${{ needs.set-version.outputs.version }}
 
-            ## 📦 组件下载
+            ### 下载链接
 
-            | 组件 | 平台 | 架构 | 下载 |
-            |------|------|------|------|
-            | Master | Windows | x64 | [下载](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Windows-x64.zip) |
-            | Agent | Windows | x64 | [下载](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Windows-x64.zip) |
-            | Master | Linux | x64 | [下载](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Linux-x64.tar.gz) |
-            | Agent | Linux | x64 | [下载](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Linux-x64.tar.gz) |
+            | 组件 | 平台 | 下载 |
+            |------|------|------|
+            | Master | Windows x64 | [Master-Windows-x64.zip](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Windows-x64.zip) |
+            | Agent | Windows x64 | [Agent-Windows-x64.zip](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Windows-x64.zip) |
+            | Master | Linux x64 | [Master-Linux-x64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Master-Linux-x64.tar.gz) |
+            | Agent | Linux x64 | [Agent-Linux-x64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ needs.set-version.outputs.version }}/Agent-Linux-x64.tar.gz) |
 
-            ## ⚡ 快速下载 (latest)
+            ### 快速下载 (latest)
 
-            ```bash
-            # Master Windows
-            curl -L https://github.com/${{ github.repository }}/releases/latest/download/Master-Windows-x64.zip -o Master-Windows-x64.zip
-
-            # Agent Windows
-            curl -L https://github.com/${{ github.repository }}/releases/latest/download/Agent-Windows-x64.zip -o Agent-Windows-x64.zip
-
-            # Master Linux
-            curl -L https://github.com/${{ github.repository }}/releases/latest/download/Master-Linux-x64.tar.gz -o Master-Linux-x64.tar.gz
-
-            # Agent Linux
-            curl -L https://github.com/${{ github.repository }}/releases/latest/download/Agent-Linux-x64.tar.gz -o Agent-Linux-x64.tar.gz
-            ```
-
-            ${{ steps.changelog.outputs.changelog }}
-
-            ## 📖 相关链接
-
-            - [📚 文档](https://github.com/${{ github.repository }}/tree/main/document)
-            - [🐛 问题反馈](https://github.com/${{ github.repository }}/issues)
-            - [🐳 Docker 部署](https://github.com/${{ github.repository }}/tree/main/docker)
+            - Master Windows: `https://github.com/${{ github.repository }}/releases/latest/download/Master-Windows-x64.zip`
+            - Agent Windows: `https://github.com/${{ github.repository }}/releases/latest/download/Agent-Windows-x64.zip`
+            - Master Linux: `https://github.com/${{ github.repository }}/releases/latest/download/Master-Linux-x64.tar.gz`
+            - Agent Linux: `https://github.com/${{ github.repository }}/releases/latest/download/Agent-Linux-x64.tar.gz`
           files: |
             artifacts/Master-Windows-x64/Master-win-x64.zip
             artifacts/Agent-Windows-x64/Agent-win-x64.zip
