@@ -87,9 +87,10 @@ public class NodesController : ControllerBase
     public async Task<IActionResult> GetNodes(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] bool? isActive = null)
+        [FromQuery] bool? isActive = null,
+        [FromQuery] string? provisionStatus = null)
     {
-        var result = await _nodeService.GetNodesAsync(page, pageSize, isActive);
+        var result = await _nodeService.GetNodesAsync(page, pageSize, isActive, provisionStatus);
         return Ok(result);
     }
 

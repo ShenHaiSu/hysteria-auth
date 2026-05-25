@@ -246,9 +246,9 @@ public class NodeService
     // 3.4 节点列表/详情/历史状态
     // ============================
 
-    public async Task<NodeListResponse> GetNodesAsync(int page, int pageSize, bool? isActive)
+    public async Task<NodeListResponse> GetNodesAsync(int page, int pageSize, bool? isActive, string? provisionStatus = null)
     {
-        var (items, total) = await _nodeRepo.GetAllAsync(page, pageSize, isActive);
+        var (items, total) = await _nodeRepo.GetAllAsync(page, pageSize, isActive, provisionStatus);
 
         return new NodeListResponse
         {
